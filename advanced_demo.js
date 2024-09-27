@@ -1,8 +1,10 @@
 // import the modules
+
 import { WORKLET_URL_ABSOLUTE } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/worklet_url.js'
 import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/sequencer/sequencer.js'
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
 
+try {
 // load the soundfont
 fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     // load the soundfont into an array buffer
@@ -83,3 +85,6 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         }
     });
 });
+} catch (error) {
+    console.error('Failed to import module:', error);
+  }
