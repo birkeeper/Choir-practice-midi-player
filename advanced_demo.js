@@ -54,6 +54,9 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
             document.getElementById("message").innerText = "Now playing: " + e.midiName;
+            for (let i = 0; i < 5; i++) {
+                createChannelControl(i);
+            }
         }, "example-time-change"); // make sure to add a unique id!
 
         // add time adjustment
@@ -76,4 +79,38 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         }
     });
 });
+
+function createChannelControl(channel) {
+    const container = document.createElement('div');
+    container.className = 'channel-control';
+
+    const nameLabel = document.createElement('span');
+    nameLabel.className = 'channel-name';
+    nameLabel.textContent = 'test';
+    container.appendChild(nameLabel);
+
+    const volumeSlider = document.createElement('input');
+    volumeSlider.type = 'range';
+    volumeSlider.className = 'volume-slider';
+    volumeSlider.min = 0;
+    volumeSlider.max = 100;
+    volumeSlider.value = 50
+    container.appendChild(volumeSlider);
+
+    const instruments = [
+            'Acoustic Grand Piano', 'Bright Acoustic Piano'];
+    const instrumentSelect = document.createElement('select');
+    instruments.forEach(instrument => {
+        const option = document.createElement('option');
+        option.value = instrument;
+        option.textContent = instrument;
+        if (instrument === 'Bright Acoustic Piano') {
+            option.selected = true;
+        }
+        instrumentSelect.appendChild(option);
+    });
+    container.appendChild(instrumentSelect);
+
+    return container;
+}
 
