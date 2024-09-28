@@ -54,8 +54,12 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
             document.getElementById("message").innerText = "Now playing: " + e.midiName;
+            
+            const channelControlsContainer = document.getElementById('channel-controls');
+            channelControlsContainer.innerHTML = ''; // Clear existing controls
             for (let i = 0; i < 5; i++) {
-                createChannelControl(i);
+                const channelControl = createChannelControl(i);
+                channelControlsContainer.appendChild(channelControl);
             }
         }, "example-time-change"); // make sure to add a unique id!
 
