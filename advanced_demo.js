@@ -4,7 +4,6 @@ import { WORKLET_URL_ABSOLUTE } from './libraries/spessasynth_lib/src/spessasynt
 import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/sequencer/sequencer.js'
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
 
-try {
 // load the soundfont
 fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     // load the soundfont into an array buffer
@@ -41,7 +40,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         }
         else
         {
-            seq.loadNewSongList(parsedSongs); // the sequencer is alreadu created, no need to create a new one.
+            seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
         }
         seq.loop = false;                                                       // the sequencer loops a single song by default
 
@@ -63,11 +62,6 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             seq.currentTime = (slider.value / 1000) * seq.duration; // switch the time (the sequencer adjusts automatically)
         }
 
-        // add button controls
-        document.getElementById("previous").onclick = () => {
-            seq.previousSong(); // go back by one song
-        }
-
         // on pause click
         document.getElementById("pause").onclick = () => {
             if (seq.paused) {
@@ -80,11 +74,6 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
 
             }
         }
-        document.getElementById("next").onclick = () => {
-            seq.nextSong(); // go to next song
-        }
     });
 });
-} catch (error) {
-    console.error('Failed to import module:', error);
-  }
+
