@@ -14,7 +14,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     // create the context and add audio worklet
     const context = new AudioContext();
     await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/src/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
-    const synth = new Synthetizer(context.destination, soundFontBuffer);     // create the synthetizer
+    const synth = new Synthetizer(context.destination, soundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
     let seq;
 
     // add an event listener for the file inout
