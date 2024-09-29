@@ -58,8 +58,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
-            synth.resetControllers();
-            
+                        
             let nrOfTracks = e.tracksAmount;
             const channelsPerTrack = e.usedChannelsOnTrack;
             const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
@@ -106,6 +105,7 @@ function createChannelControl(channel, synth, pan) {
     volumeSlider.min = 0;
     volumeSlider.max = 127;
     volumeSlider.value = 127;
+    synth.lockController(channel, midiControllers.mainVolume, false);
     synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
     synth.lockController(channel, midiControllers.mainVolume, true);
     volumeSlider.onchange = () => {
@@ -130,10 +130,12 @@ function createChannelControl(channel, synth, pan) {
     container.appendChild(instrumentSelect);
 
     //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
+    synth.lockController(channel, midiControllers.modulationWheel, false);
     synth.controllerChange (channel, midiControllers.modulationWheel, 0);
     synth.lockController(channel, midiControllers.modulationWheel, true);
 
     //set and lock the pan of the channel
+    synth.lockController(channel, midiControllers.pan, false);
     synth.controllerChange (channel, midiControllers.pan, pan);
     synth.lockController(channel, midiControllers.pan, true);
 
