@@ -63,7 +63,8 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             const channelsPerTrack = e.usedChannelsOnTrack;
             const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
             for (const channel of channels) {
-                const channelControl = createChannelControl(channel,synth);
+                let pan = Math.round(channel/(channels.size()-1)); // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable.
+                const channelControl = createChannelControl(channel, synth, pan);
                 channelControlsContainer.appendChild(channelControl);
             }
         }, "example-time-change"); // make sure to add a unique id!
@@ -89,7 +90,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     });
 });
 
-function createChannelControl(channel, synth) {
+function createChannelControl(channel, synth, pan) {
     const container = document.createElement('div');
     container.className = 'channel-control';
 
@@ -104,8 +105,12 @@ function createChannelControl(channel, synth) {
     volumeSlider.min = 0;
     volumeSlider.max = 127;
     volumeSlider.value = 127;
+    synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
+    synth.lockController(channel, midiControllers.mainVolume, true);
     volumeSlider.onchange = () => {
+        synth.lockController(channel, midiControllers.mainVolume, false);
         synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
+        synth.lockController(channel, midiControllers.mainVolume, true);
     }
     container.appendChild(volumeSlider);
 
@@ -122,6 +127,14 @@ function createChannelControl(channel, synth) {
         instrumentSelect.appendChild(option);
     });
     container.appendChild(instrumentSelect);
+
+    //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
+    synth.controllerChange (channel, midiControllers.modulationWheel, 0);
+    synth.lockController(channel, midiControllers.modulationWheel, true);
+
+    //set and lock the pan of the channel
+    synth.controllerChange (channel, midiControllers.pan, pan);
+    synth.lockController(channel, midiControllers.pan, true);
 
     return container;
 }
