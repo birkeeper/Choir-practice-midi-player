@@ -58,12 +58,12 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
-            
+                        
             let nrOfTracks = e.tracksAmount;
             const channelsPerTrack = e.usedChannelsOnTrack;
             const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
             for (const channel of channels) {
-                let pan = Math.round(channel/(channels.size()-1)); // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable.
+                let pan = Math.round((127*channel)/(channels.size-1)); // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable.
                 const channelControl = createChannelControl(channel, synth, pan);
                 channelControlsContainer.appendChild(channelControl);
             }
@@ -105,6 +105,7 @@ function createChannelControl(channel, synth, pan) {
     volumeSlider.min = 0;
     volumeSlider.max = 127;
     volumeSlider.value = 127;
+    synth.lockController(channel, midiControllers.mainVolume, false);
     synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
     synth.lockController(channel, midiControllers.mainVolume, true);
     volumeSlider.onchange = () => {
@@ -129,10 +130,12 @@ function createChannelControl(channel, synth, pan) {
     container.appendChild(instrumentSelect);
 
     //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
+    synth.lockController(channel, midiControllers.modulationWheel, false);
     synth.controllerChange (channel, midiControllers.modulationWheel, 0);
     synth.lockController(channel, midiControllers.modulationWheel, true);
 
     //set and lock the pan of the channel
+    synth.lockController(channel, midiControllers.pan, false);
     synth.controllerChange (channel, midiControllers.pan, pan);
     synth.lockController(channel, midiControllers.pan, true);
 
