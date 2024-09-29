@@ -58,12 +58,13 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
+            synth.resetControllers();
             
             let nrOfTracks = e.tracksAmount;
             const channelsPerTrack = e.usedChannelsOnTrack;
             const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
             for (const channel of channels) {
-                let pan = Math.round(channel/(channels.size-1)); // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable.
+                let pan = Math.round((127*channel)/(channels.size-1)); // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable.
                 const channelControl = createChannelControl(channel, synth, pan);
                 channelControlsContainer.appendChild(channelControl);
             }
