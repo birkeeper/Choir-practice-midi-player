@@ -12,7 +12,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     document.getElementById("message").innerText = "SoundFont has been loaded!";
 
     // create the context and add audio worklet
-    const context = new AudioContext();
+    const context = new AudioContext({latencyHint: "playback"});
     await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/src/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
     const synth = new Synthetizer(context.destination, soundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
     let seq;
