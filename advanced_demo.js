@@ -57,8 +57,12 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
-            for (let i = 0; i < 5; i++) {
-                const channelControl = createChannelControl(i);
+            
+            let nrOfTracks = e.tracksAmount;
+            const channelsPerTrack = e.usedChannelsOnTrack;
+            const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
+            for (const channel of channels) {
+                const channelControl = createChannelControl(channel);
                 channelControlsContainer.appendChild(channelControl);
             }
         }, "example-time-change"); // make sure to add a unique id!
@@ -90,7 +94,7 @@ function createChannelControl(channel) {
 
     const nameLabel = document.createElement('span');
     nameLabel.className = 'channel-name';
-    nameLabel.textContent = 'test';
+    nameLabel.textContent = channel;
     container.appendChild(nameLabel);
 
     const volumeSlider = document.createElement('input');
