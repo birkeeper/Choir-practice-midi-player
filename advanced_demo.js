@@ -6,7 +6,7 @@ import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/syn
 import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
 
 // load the soundfont
-fetch("./soundfonts/KBH-Real-Choir-V2.5.sf2").then(async response => {
+fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     // load the soundfont into an array buffer
     let soundFontBuffer = await response.arrayBuffer();
     document.getElementById("message").innerText = "SoundFont has been loaded!";
