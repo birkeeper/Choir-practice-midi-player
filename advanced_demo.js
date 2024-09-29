@@ -3,6 +3,7 @@
 import { WORKLET_URL_ABSOLUTE } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/worklet_url.js'
 import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/sequencer/sequencer.js'
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
+import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
 
 // load the soundfont
 fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
@@ -62,7 +63,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             const channelsPerTrack = e.usedChannelsOnTrack;
             const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
             for (const channel of channels) {
-                const channelControl = createChannelControl(channel);
+                const channelControl = createChannelControl(channel,synth);
                 channelControlsContainer.appendChild(channelControl);
             }
         }, "example-time-change"); // make sure to add a unique id!
@@ -88,7 +89,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     });
 });
 
-function createChannelControl(channel) {
+function createChannelControl(channel, synth) {
     const container = document.createElement('div');
     container.className = 'channel-control';
 
@@ -101,8 +102,11 @@ function createChannelControl(channel) {
     volumeSlider.type = 'range';
     volumeSlider.className = 'volume-slider';
     volumeSlider.min = 0;
-    volumeSlider.max = 100;
-    volumeSlider.value = 50
+    volumeSlider.max = 127;
+    volumeSlider.value = 127;
+    volumeSlider.onchange = () => {
+        synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
+    }
     container.appendChild(volumeSlider);
 
     const instruments = [
@@ -121,4 +125,6 @@ function createChannelControl(channel) {
 
     return container;
 }
+
+
 
