@@ -90,7 +90,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     });
 });
 
-const INSTRUMENTS = new Map(['Piano', 0], ['Clarinet', 71]); // map of midi instruments to soundfont preset numbers
+const INSTRUMENTS = new Map([['Piano', 0], ['Clarinet', 71]]); // map of midi instruments to soundfont preset numbers
 
 function createChannelControl(channel, synth, pan) {
     const container = document.createElement('div');
