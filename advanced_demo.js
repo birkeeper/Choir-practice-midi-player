@@ -90,6 +90,8 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     });
 });
 
+const INSTRUMENTS = new Map(['Piano', 0], ['Clarinet', 71]); // map of midi instruments to soundfont preset numbers
+
 function createChannelControl(channel, synth, pan) {
     const container = document.createElement('div');
     container.className = 'channel-control';
@@ -115,19 +117,21 @@ function createChannelControl(channel, synth, pan) {
     }
     container.appendChild(volumeSlider);
 
-    const instruments = [
-            'Acoustic Grand Piano', 'Bright Acoustic Piano'];
-    const instrumentSelect = document.createElement('select');
-    instruments.forEach(instrument => {
-        const option = document.createElement('option');
-        option.value = instrument;
-        option.textContent = instrument;
-        if (instrument === 'Bright Acoustic Piano') {
-            option.selected = true;
+    if (!synth.channelProperties[channel].isDrum) {
+        const instrumentSelect = document.createElement('select');
+        for (const [instrument, preset] of INSTRUMENTS) {
+            const option = document.createElement('option');
+            option.value = instrument;
+            option.textContent = instrument;
+            if (instrument === 'Clarinet') {
+                option.selected = true;
+                synth.programChange(channel, preset);
+            }
+            instrumentSelect.appendChild(option);
         }
-        instrumentSelect.appendChild(option);
-    });
-    container.appendChild(instrumentSelect);
+        instrumentSelect.addEventListener('change', function(event) {synth.programChange(channel, INSTRUMENTS.get(event.target.value));});
+        container.appendChild(instrumentSelect);
+    }
 
     //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
     synth.lockController(channel, midiControllers.modulationWheel, false);
