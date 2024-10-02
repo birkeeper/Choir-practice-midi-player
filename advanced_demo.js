@@ -5,6 +5,8 @@ import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/seque
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
 import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
 
+const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
+
 // load the soundfont
 fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     // load the soundfont into an array buffer
@@ -117,7 +119,8 @@ function createChannelControl(channel, synth, pan) {
     }
     container.appendChild(volumeSlider);
 
-    if (!synth.channelProperties[channel].isDrum) {
+    if (channel === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel].isDrum = true; }
+    if (!synth.channelProperties[channel].isDrum) { // do not show instrument drop-down menu when the channel is used for percussion.
         const instrumentSelect = document.createElement('select');
         for (const [instrument, preset] of INSTRUMENTS) {
             const option = document.createElement('option');
