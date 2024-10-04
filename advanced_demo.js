@@ -4,6 +4,7 @@ import { WORKLET_URL_ABSOLUTE } from './libraries/spessasynth_lib/src/spessasynt
 import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/sequencer/sequencer.js'
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
 import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
+import {getUsedProgramsAndKeys} from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/used_keys_loaded.js'
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
@@ -60,7 +61,10 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
-                        
+            
+            let preset = getUsedProgramsAndKeys(e, soundFontBuffer);
+            console.log(preset);
+            
             let nrOfTracks = e.tracksAmount;
             const channelsPerTrack = e.usedChannelsOnTrack;
             const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
