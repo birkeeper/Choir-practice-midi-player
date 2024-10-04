@@ -5,6 +5,7 @@ import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/seque
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
 import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
 import { getUsedProgramsAndKeys } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/used_keys_loaded.js'
+import { MIDI } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js'
 
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
