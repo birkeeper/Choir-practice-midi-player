@@ -62,7 +62,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
             
-            let preset = getUsedProgramsAndKeys(e, soundFontBuffer);
+            let preset = getUsedProgramsAndKeys(e.midiData, synth.soundfontManager);
             console.log(preset);
             
             let nrOfTracks = e.tracksAmount;
