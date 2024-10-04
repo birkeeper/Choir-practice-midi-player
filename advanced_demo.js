@@ -4,7 +4,6 @@ import { WORKLET_URL_ABSOLUTE } from './libraries/spessasynth_lib/src/spessasynt
 import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/sequencer/sequencer.js'
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
 import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
-import { SpessaSynthGroupCollapsed, SpessaSynthGroupEnd, SpessaSynthInfo } from './libraries/spessasynth_lib/src/spessasynth_lib/utils/loggin.js'
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
@@ -160,8 +159,7 @@ function createChannelControl(channel, synth, pan) {
  */
 function getUsedProgramsAndKeys(mid, soundfont)
 {
-    SpessaSynthGroupCollapsed("%cSearching for all used programs and keys...",
-        consoleColors.info);
+    console.log("%cSearching for all used programs and keys...");
     // find every bank:program combo and every key:velocity for each. Make sure to care about ports and drums
     const channelsAmount = 16;
     /**
@@ -187,9 +185,7 @@ function getUsedProgramsAndKeys(mid, soundfont)
         ch.string = ch.bank + ":" + ch.program;
         if(!usedProgramsAndKeys[ch.string])
         {
-            SpessaSynthInfo(`%cDetected a new preset: %c${ch.string}`,
-                consoleColors.info,
-                consoleColors.recognized);
+            console.log(`%cDetected a new preset: %c${ch.string}`);
             usedProgramsAndKeys[ch.string] = new Set();
         }
     }
@@ -344,13 +340,10 @@ function getUsedProgramsAndKeys(mid, soundfont)
     {
         if(usedProgramsAndKeys[key].size === 0)
         {
-            SpessaSynthInfo(`%cDetected change but no keys for %c${key}`,
-                consoleColors.info,
-                consoleColors.value)
+            console.log(`%cDetected change but no keys for %c${key}`);
             delete usedProgramsAndKeys[key];
         }
     }
-    SpessaSynthGroupEnd();
     return usedProgramsAndKeys;
 }
 
