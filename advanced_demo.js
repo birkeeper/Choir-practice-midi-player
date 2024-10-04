@@ -4,7 +4,7 @@ import { WORKLET_URL_ABSOLUTE } from './libraries/spessasynth_lib/src/spessasynt
 import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/sequencer/sequencer.js'
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
 import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
-import { DEFAULT_PERCUSSION } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
+import { getUsedProgramsAndKeys } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/used_keys_loaded.js'
 
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
@@ -30,22 +30,22 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         // resume the context if paused
         await context.resume();
         // parse all the files
-        const parsedSongs = [];
-        for (let file of event.target.files) {
-            const buffer = await file.arrayBuffer();
-            parsedSongs.push({
+        const parsedSong = [];
+        let file = event.target.files [0];
+        const buffer = await file.arrayBuffer();
+        parsedSong.push({
                 binary: buffer,     // binary: the binary data of the file
                 altName: file.name  // altName: the fallback name if the MIDI doesn't have one. Here we set it to the file name
             });
-        }
+        const parsedMidi = new MIDI(parsedSong[0].binary);
         if(seq === undefined)
         {
-            seq = new Sequencer(parsedSongs, synth);                          // create the sequencer with the parsed midis
+            seq = new Sequencer(parsedSong, synth);                          // create the sequencer with the parsed midis
             seq.play();                                                             // play the midi
         }
         else
         {
-            seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
+            seq.loadNewSongList(parsedSong); // the sequencer is already created, no need to create a new one.
         }
         seq.loop = false;                                                       // the sequencer loops a single song by default
 
@@ -63,7 +63,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
             
-            let preset = getUsedProgramsAndKeys(e, synth.soundfontManager);
+            let preset = getUsedProgramsAndKeys(parsedMidi, synth.soundfontManager);
             console.log(preset);
             
             let nrOfTracks = e.tracksAmount;
