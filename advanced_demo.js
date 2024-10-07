@@ -4,9 +4,7 @@ import { WORKLET_URL_ABSOLUTE } from './libraries/spessasynth_lib/src/spessasynt
 import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/sequencer/sequencer.js'
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
 import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
-import { getUsedProgramsAndKeys } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/used_keys_loaded.js'
-import { MIDI } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js'
-
+import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/synthetizer/worklet_system/message_protocol/worklet_message.js'
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
@@ -31,22 +29,23 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         // resume the context if paused
         await context.resume();
         // parse all the files
-        const parsedSong = [];
-        let file = event.target.files [0];
-        const buffer = await file.arrayBuffer();
-        parsedSong.push({
+        const parsedSongs = [];
+        for (let file of event.target.files) {
+            const buffer = await file.arrayBuffer();
+            parsedSongs.push({
                 binary: buffer,     // binary: the binary data of the file
                 altName: file.name  // altName: the fallback name if the MIDI doesn't have one. Here we set it to the file name
             });
-        const parsedMidi = new MIDI(parsedSong[0].binary);
+        }
         if(seq === undefined)
         {
-            seq = new Sequencer(parsedSong, synth);                          // create the sequencer with the parsed midis
-            seq.play();                                                             // play the midi
+            seq = new Sequencer(parsedSongs, synth);                          // create the sequencer with the parsed midis
+            seq.pause();                                                      
         }
         else
         {
-            seq.loadNewSongList(parsedSong); // the sequencer is already created, no need to create a new one.
+            seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
+            seq.pause();
         }
         seq.loop = false;                                                       // the sequencer loops a single song by default
 
@@ -63,18 +62,30 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
-            
-            let preset = getUsedProgramsAndKeys(parsedMidi, synth.soundfontManager);
-            console.log(preset);
-            
+                        
             let nrOfTracks = e.tracksAmount;
             const channelsPerTrack = e.usedChannelsOnTrack;
             const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
+            const instrumentControls = []; // array of instrument controls to be able to control them
             for (const channel of channels) {
                 let pan = Math.round((127*channel)/(channels.size-1)); // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable.
-                const channelControl = createChannelControl(channel, synth, pan);
+                const channelControl = createChannelControl(channel, synth, pan, instrumentControls);
                 channelControlsContainer.appendChild(channelControl);
             }
+
+            synth.eventHandler.removeEvent("programchange","program-change-event");
+            synth.eventHandler.addEvent("programchange","program-change-event", e => {
+                const options = instrumentControls[e.channel].options;
+                if (e.bank === 0) {
+                    for (let i=0; i<options.length; i++) {
+                        if (options[i].textContent === "Default") {
+                            options[i].value = `${e.bank}:${e.program}`;
+                            log.console(`preset ${e.bank}:${e.program}`);
+                            break;
+                        }
+                    }
+                }
+            });
         }, "example-time-change"); // make sure to add a unique id!
 
         // add time adjustment
@@ -98,9 +109,9 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     });
 });
 
-const INSTRUMENTS = new Map([['Piano', 0], ['Clarinet', 71]]); // map of midi instruments to soundfont preset numbers
+const INSTRUMENTS = new Map([['Piano', "0:0"], ['Clarinet', "0:71"]]); // map of midi instruments to soundfont preset numbers
 
-function createChannelControl(channel, synth, pan) {
+function createChannelControl(channel, synth, pan, instrumentControls) {
     const container = document.createElement('div');
     container.className = 'channel-control';
 
@@ -128,18 +139,26 @@ function createChannelControl(channel, synth, pan) {
     if (channel === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel].isDrum = true; }
     if (!synth.channelProperties[channel].isDrum) { // do not show instrument drop-down menu when the channel is used for percussion.
         const instrumentSelect = document.createElement('select');
+        const option = document.createElement('option');
+        option.value = ""
+        option.textContent = "Default"
+        option.selected = true;
+        instrumentSelect.appendChild(option);
+
         for (const [instrument, preset] of INSTRUMENTS) {
             const option = document.createElement('option');
-            option.value = instrument;
+            option.value = preset;
             option.textContent = instrument;
-            if (instrument === 'Clarinet') {
-                option.selected = true;
-                synth.programChange(channel, preset);
-            }
             instrumentSelect.appendChild(option);
         }
-        instrumentSelect.addEventListener('change', function(event) {synth.programChange(channel, INSTRUMENTS.get(event.target.value));});
+        instrumentSelect.addEventListener('change', function(event) {
+            let data = event.target.value.split(":");
+            synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
+            synth.programChange(channel, data[1]);
+            synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
+        });
         container.appendChild(instrumentSelect);
+        instrumentControls[channel]=instrumentSelect;
     }
 
     //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
@@ -154,3 +173,6 @@ function createChannelControl(channel, synth, pan) {
 
     return container;
 }
+
+
+
