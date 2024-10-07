@@ -75,12 +75,12 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
 
             synth.eventHandler.removeEvent("programchange","program-change-event");
             synth.eventHandler.addEvent("programchange","program-change-event", e => {
-                const options = instrumentControls[e.channel].options;
+                const options = instrumentControls[e.channel];
                 if (e.bank === 0) {
                     for (let i=0; i<options.length; i++) {
                         if (options[i].textContent === "Default") {
                             options[i].value = `${e.bank}:${e.program}`;
-                            log.console(`preset ${e.bank}:${e.program}`);
+                            console.log(`preset ${e.bank}:${e.program}`);
                             break;
                         }
                     }
