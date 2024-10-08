@@ -17,7 +17,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     let secondarySoundFontBuffer;
     fetch("./soundfonts/KBH-Real-Choir-V2.5.sf2").then(async response => {
         secondarySoundFontBuffer = await response.arrayBuffer();
-    }
+    });
     document.getElementById("message").innerText = "SoundFont has been loaded!";
 
     // create the context and add audio worklet
