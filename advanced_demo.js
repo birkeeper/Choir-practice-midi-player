@@ -8,7 +8,7 @@ import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/src/
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
-const instruments; // map of midi instruments to soundfont preset numbers
+let instruments; // map of midi instruments to soundfont preset numbers
 
 // load the soundfont
 fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
