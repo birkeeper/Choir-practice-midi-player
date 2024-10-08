@@ -8,18 +8,29 @@ import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/src/
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
+const instruments; // map of midi instruments to soundfont preset numbers
+
 // load the soundfont
 fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     // load the soundfont into an array buffer
-    let soundFontBuffer = await response.arrayBuffer();
+    let primarySoundFontBuffer = await response.arrayBuffer();
+    let secondarySoundFontBuffer;
+    fetch("./soundfonts/KBH-Real-Choir-V2.5.sf2").then(async response => {
+        secondarySoundFontBuffer = await response.arrayBuffer();
+    }
     document.getElementById("message").innerText = "SoundFont has been loaded!";
 
     // create the context and add audio worklet
     const context = new AudioContext({latencyHint: "playback"});
     await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/src/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
-    const synth = new Synthetizer(context.destination, soundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
-    let seq;
+    const synth = new Synthetizer(context.destination, primarySoundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
+    await synth.soundfontManager.addNewSoundFont(secondarySoundFontBuffer,"secondary",1);
+    synth.eventHandler.addEvent("presetlistchange","preset-list-change", e => {
+        instruments = e;
+    });
 
+
+    let seq;
     // add an event listener for the file inout
     document.getElementById("midi_input").addEventListener("change", async event => {
         // check if any files are added
@@ -81,7 +92,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
                         for (let i=0; i<options.length; i++) {
                             if (options[i].textContent === "Default") {
                                 options[i].value = `${e.bank}:${e.program}`;
-                                console.log(`preset ${e.bank}:${e.program}`);
+                                console.log(`preset ${e.channel}:${e.bank}:${e.program}`);
                                 break;
                             }
                         }
@@ -111,7 +122,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     });
 });
 
-const INSTRUMENTS = new Map([['Piano', "0:0"], ['Clarinet', "0:71"]]); // map of midi instruments to soundfont preset numbers
+
 
 function createChannelControl(channel, synth, pan, instrumentControls) {
     const container = document.createElement('div');
@@ -147,17 +158,20 @@ function createChannelControl(channel, synth, pan, instrumentControls) {
         option.selected = true;
         instrumentSelect.appendChild(option);
 
-        for (const [instrument, preset] of INSTRUMENTS) {
-            const option = document.createElement('option');
-            option.value = preset;
-            option.textContent = instrument;
-            instrumentSelect.appendChild(option);
+        for (const instrument of instruments) {
+            if (instrument.bank ===1) {
+                const option = document.createElement('option');
+                option.value = `${instrument.bank}:${instrument.program}`;
+                option.textContent = instrument.presetName;
+                instrumentSelect.appendChild(option);
+            }
         }
         instrumentSelect.addEventListener('change', function(event) {
             let data = event.target.value.split(":");
             synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
             synth.programChange(channel, data[1]);
             synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
+            console.log(`changing channel ${channel} to instrument ${event.target.value}`)
         });
         container.appendChild(instrumentSelect);
         instrumentControls.set(channel,instrumentSelect);
