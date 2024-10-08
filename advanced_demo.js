@@ -66,7 +66,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             let nrOfTracks = e.tracksAmount;
             const channelsPerTrack = e.usedChannelsOnTrack;
             const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
-            const instrumentControls = []; // array of instrument controls to be able to control them
+            const instrumentControls = new Map(); // array of instrument controls to be able to control them
             for (const channel of channels) {
                 let pan = Math.round((127*channel)/(channels.size-1)); // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable.
                 const channelControl = createChannelControl(channel, synth, pan, instrumentControls);
@@ -75,13 +75,15 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
 
             synth.eventHandler.removeEvent("programchange","program-change-event");
             synth.eventHandler.addEvent("programchange","program-change-event", e => {
-                const options = instrumentControls[e.channel];
-                if (e.bank === 0) {
-                    for (let i=0; i<options.length; i++) {
-                        if (options[i].textContent === "Default") {
-                            options[i].value = `${e.bank}:${e.program}`;
-                            console.log(`preset ${e.bank}:${e.program}`);
-                            break;
+                if (instrumentControls.has(e.channel)) {
+                    const options = instrumentControls.get(e.channel);
+                    if (e.bank === 0) {
+                        for (let i=0; i<options.length; i++) {
+                            if (options[i].textContent === "Default") {
+                                options[i].value = `${e.bank}:${e.program}`;
+                                console.log(`preset ${e.bank}:${e.program}`);
+                                break;
+                            }
                         }
                     }
                 }
@@ -158,7 +160,7 @@ function createChannelControl(channel, synth, pan, instrumentControls) {
             synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
         });
         container.appendChild(instrumentSelect);
-        instrumentControls[channel]=instrumentSelect;
+        instrumentControls.set(channel,instrumentSelect);
     }
 
     //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
