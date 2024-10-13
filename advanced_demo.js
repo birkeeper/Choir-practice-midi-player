@@ -93,15 +93,15 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             const currentBank = new Map();
             synth.eventHandler.removeEvent("controllerchange","controller-change-event");
             synth.eventHandler.addEvent("controllerchange","controller-change-event", e => {
-                console.log(`controller change to ${e.channel}:${e.controllerNumber}:${e.controllerValue}`);
                 if (e.controllerNumber === 0) { // bank select
+                    console.log(`controller change to ${e.channel}:${e.controllerNumber}:${e.controllerValue}`);
                     currentBank.set(e.channel, e.controllerValue);
                 }
             });
 
             synth.eventHandler.removeEvent("programchange","program-change-event");
             synth.eventHandler.addEvent("programchange","program-change-event", e => {
-                let bank = currentBank.get(e.channel);
+                let bank = currentBank.get(e.channel) === undefined ? 0 : currentBank.get(e.channel);
                 console.log(`program change to preset ${e.channel}:${bank}:${e.program}`);
                 if (instrumentControls.has(e.channel)) {
                     const options = instrumentControls.get(e.channel);
