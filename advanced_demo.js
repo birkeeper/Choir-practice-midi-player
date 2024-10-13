@@ -112,11 +112,81 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
                                 options[i].value = `${bank}:${e.program}`;
                                 console.log(`default option set to preset ${e.channel}:${bank}:${e.program}`);
                                 break;
+                    
                             }
                         }
                     }
                 }
             });
+            
+            function createChannelControl(channel, synth, pan, instrumentControls) {
+                const container = document.createElement('div');
+                container.className = 'channel-control';
+            
+                const nameLabel = document.createElement('span');
+                nameLabel.className = 'channel-name';
+                nameLabel.textContent = channel;
+                container.appendChild(nameLabel);
+            
+                const volumeSlider = document.createElement('input');
+                volumeSlider.type = 'range';
+                volumeSlider.className = 'volume-slider';
+                volumeSlider.min = 0;
+                volumeSlider.max = 127;
+                volumeSlider.value = 127;
+                synth.lockController(channel, midiControllers.mainVolume, false);
+                synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
+                synth.lockController(channel, midiControllers.mainVolume, true);
+                volumeSlider.onchange = () => {
+                    synth.lockController(channel, midiControllers.mainVolume, false);
+                    synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
+                    synth.lockController(channel, midiControllers.mainVolume, true);
+                }
+                container.appendChild(volumeSlider);
+            
+                const instrumentSelect = document.createElement('select');
+                const option = document.createElement('option');
+                option.value = ""
+                option.textContent = "Default"
+                option.selected = true;
+                instrumentSelect.appendChild(option);
+                
+                if (channel === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel].isDrum = true; }
+                if (!synth.channelProperties[channel].isDrum) { // do not show instrument drop-down menu when the channel is used for percussion.
+                    for (const instrument of instruments) {
+                        const option = document.createElement('option');
+                        option.value = `${instrument.bank}:${instrument.program}`;
+                        option.textContent = instrument.presetName;
+                        instrumentSelect.appendChild(option);
+                    }
+                    instrumentSelect.addEventListener('change', function(event) {
+                        let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
+                        synth.lockController(channel, midiControllers.bankSelect, false)
+                        synth.controllerChange (channel, midiControllers.bankSelect, data[0]);
+                        synth.lockController(channel, midiControllers.bankSelect, true);
+                        currentBank.set(channel, data[0]);
+                        synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
+                        synth.programChange(channel, data[1]);
+                        synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
+                        console.log(`changing channel ${channel} to instrument ${event.target.value}`)
+                    });
+                    container.appendChild(instrumentSelect);
+                    instrumentControls.set(channel,instrumentSelect);
+                }
+            
+                //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
+                synth.lockController(channel, midiControllers.modulationWheel, false);
+                synth.controllerChange (channel, midiControllers.modulationWheel, 0);
+                synth.lockController(channel, midiControllers.modulationWheel, true);
+            
+                //set and lock the pan of the channel
+                synth.lockController(channel, midiControllers.pan, false);
+                synth.controllerChange (channel, midiControllers.pan, pan);
+                synth.lockController(channel, midiControllers.pan, true);
+            
+                return container;
+            }
+            
         }, "example-time-change"); // make sure to add a unique id!
 
         // add time adjustment
@@ -142,72 +212,6 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
 
 
 
-function createChannelControl(channel, synth, pan, instrumentControls) {
-    const container = document.createElement('div');
-    container.className = 'channel-control';
-
-    const nameLabel = document.createElement('span');
-    nameLabel.className = 'channel-name';
-    nameLabel.textContent = channel;
-    container.appendChild(nameLabel);
-
-    const volumeSlider = document.createElement('input');
-    volumeSlider.type = 'range';
-    volumeSlider.className = 'volume-slider';
-    volumeSlider.min = 0;
-    volumeSlider.max = 127;
-    volumeSlider.value = 127;
-    synth.lockController(channel, midiControllers.mainVolume, false);
-    synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
-    synth.lockController(channel, midiControllers.mainVolume, true);
-    volumeSlider.onchange = () => {
-        synth.lockController(channel, midiControllers.mainVolume, false);
-        synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
-        synth.lockController(channel, midiControllers.mainVolume, true);
-    }
-    container.appendChild(volumeSlider);
-
-    const instrumentSelect = document.createElement('select');
-    const option = document.createElement('option');
-    option.value = ""
-    option.textContent = "Default"
-    option.selected = true;
-    instrumentSelect.appendChild(option);
-    
-    if (channel === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel].isDrum = true; }
-    if (!synth.channelProperties[channel].isDrum) { // do not show instrument drop-down menu when the channel is used for percussion.
-        for (const instrument of instruments) {
-            const option = document.createElement('option');
-            option.value = `${instrument.bank}:${instrument.program}`;
-            option.textContent = instrument.presetName;
-            instrumentSelect.appendChild(option);
-        }
-        instrumentSelect.addEventListener('change', function(event) {
-            let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
-            synth.lockController(channel, midiControllers.bankSelect, false)
-            synth.controllerChange (channel, midiControllers.bankSelect, data[0]);
-            synth.lockController(channel, midiControllers.bankSelect, true);
-            synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
-            synth.programChange(channel, data[1]);
-            synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
-            console.log(`changing channel ${channel} to instrument ${event.target.value}`)
-        });
-        container.appendChild(instrumentSelect);
-        instrumentControls.set(channel,instrumentSelect);
-    }
-
-    //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
-    synth.lockController(channel, midiControllers.modulationWheel, false);
-    synth.controllerChange (channel, midiControllers.modulationWheel, 0);
-    synth.lockController(channel, midiControllers.modulationWheel, true);
-
-    //set and lock the pan of the channel
-    synth.lockController(channel, midiControllers.pan, false);
-    synth.controllerChange (channel, midiControllers.pan, pan);
-    synth.lockController(channel, midiControllers.pan, true);
-
-    return container;
-}
 
 
 
