@@ -89,17 +89,28 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
                 const channelControl = createChannelControl(channel, synth, pan, instrumentControls);
                 channelControlsContainer.appendChild(channelControl);
             }
+            
+            const currentBank = new Map();
+            synth.eventHandler.removeEvent("controllerchange","controller-change-event");
+            synth.eventHandler.addEvent("controllerchange","controller-change-event", e => {
+                console.log(`controller change to ${e.channel}:${e.controllerNumber}:${e.controllerValue}`);
+                if (e.controllerNumber === 0) { // bank select
+                    currentBank.set(e.channel, e.controllerValue);
+                }
+            });
 
             synth.eventHandler.removeEvent("programchange","program-change-event");
             synth.eventHandler.addEvent("programchange","program-change-event", e => {
-                console.log(`program change to preset ${e.channel}:${e.bank}:${e.program}`);
+                let bank = currentBank.get(e.channel);
+                console.log(`program change to preset ${e.channel}:${bank}:${e.program}`);
                 if (instrumentControls.has(e.channel)) {
                     const options = instrumentControls.get(e.channel);
-                    if (e.bank === 0) {
+                    if ( bank === 0) { // change the default setting to the latest instrument that is to bank 0 for the indicated channel
                         for (let i=0; i<options.length; i++) {
                             if (options[i].textContent === "Default") {
-                                options[i].value = `${e.bank}:${e.program}`;
-                                console.log(`default option set to preset ${e.channel}:${e.bank}:${e.program}`);
+                                let data = options[i].value.split(":").map(value => parseInt(value, 10)); // bank:program
+                                options[i].value = `${bank}:${e.program}`;
+                                console.log(`default option set to preset ${e.channel}:${bank}:${e.program}`);
                                 break;
                             }
                         }
@@ -172,7 +183,7 @@ function createChannelControl(channel, synth, pan, instrumentControls) {
             instrumentSelect.appendChild(option);
         }
         instrumentSelect.addEventListener('change', function(event) {
-            let data = event.target.value.split(":").map(value => parseInt(value, 10));
+            let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
             synth.lockController(channel, midiControllers.bankSelect, false)
             synth.controllerChange (channel, midiControllers.bankSelect, data[0]);
             synth.lockController(channel, midiControllers.bankSelect, true);
