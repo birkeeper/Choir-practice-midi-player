@@ -5,10 +5,12 @@ import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/seque
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
 import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
 import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/worklet_system/message_protocol/worklet_message.js'
+import { loadSoundFont } from "./libraries/spessasynth_lib/src/spessasynth_lib/soundfont/load_soundfont.js";
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
-let instruments; // map of midi instruments to soundfont preset numbers
+let instruments; // map of midi instruments to secondary soundfont preset numbers
+const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
 
 // load the soundfont
 fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
@@ -24,10 +26,14 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     const context = new AudioContext({latencyHint: "playback"});
     await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/src/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
     const synth = new Synthetizer(context.destination, primarySoundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
-    await synth.soundfontManager.addNewSoundFont(secondarySoundFontBuffer,"secondary",1);
-    synth.eventHandler.addEvent("presetlistchange","preset-list-change", e => {
-        instruments = e;
-    });
+    await synth.isReady;
+    await synth.soundfontManager.addNewSoundFont(secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
+    const soundFont = loadSoundFont(secondarySoundFontBuffer);
+    instruments = soundFont.presets;
+    for (const instrument of instruments) { //adjust soundfont presets to new bank
+        instrument.bank = SOUNDFONTBANK;
+    }
+
 
 
     let seq;
@@ -86,13 +92,14 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
 
             synth.eventHandler.removeEvent("programchange","program-change-event");
             synth.eventHandler.addEvent("programchange","program-change-event", e => {
+                console.log(`program change to preset ${e.channel}:${e.bank}:${e.program}`);
                 if (instrumentControls.has(e.channel)) {
                     const options = instrumentControls.get(e.channel);
                     if (e.bank === 0) {
                         for (let i=0; i<options.length; i++) {
                             if (options[i].textContent === "Default") {
                                 options[i].value = `${e.bank}:${e.program}`;
-                                console.log(`preset ${e.channel}:${e.bank}:${e.program}`);
+                                console.log(`default option set to preset ${e.channel}:${e.bank}:${e.program}`);
                                 break;
                             }
                         }
@@ -149,25 +156,26 @@ function createChannelControl(channel, synth, pan, instrumentControls) {
     }
     container.appendChild(volumeSlider);
 
+    const instrumentSelect = document.createElement('select');
+    const option = document.createElement('option');
+    option.value = ""
+    option.textContent = "Default"
+    option.selected = true;
+    instrumentSelect.appendChild(option);
+    
     if (channel === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel].isDrum = true; }
     if (!synth.channelProperties[channel].isDrum) { // do not show instrument drop-down menu when the channel is used for percussion.
-        const instrumentSelect = document.createElement('select');
-        const option = document.createElement('option');
-        option.value = ""
-        option.textContent = "Default"
-        option.selected = true;
-        instrumentSelect.appendChild(option);
-
         for (const instrument of instruments) {
-            if (instrument.bank ===1) {
-                const option = document.createElement('option');
-                option.value = `${instrument.bank}:${instrument.program}`;
-                option.textContent = instrument.presetName;
-                instrumentSelect.appendChild(option);
-            }
+            const option = document.createElement('option');
+            option.value = `${instrument.bank}:${instrument.program}`;
+            option.textContent = instrument.presetName;
+            instrumentSelect.appendChild(option);
         }
         instrumentSelect.addEventListener('change', function(event) {
-            let data = event.target.value.split(":");
+            let data = event.target.value.split(":").map(value => parseInt(value, 10));
+            synth.lockController(channel, midiControllers.bankSelect, false)
+            synth.controllerChange (channel, midiControllers.bankSelect, data[0]);
+            synth.lockController(channel, midiControllers.bankSelect, true);
             synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
             synth.programChange(channel, data[1]);
             synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
