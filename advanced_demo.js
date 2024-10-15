@@ -28,8 +28,10 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     const synth = new Synthetizer(context.destination, primarySoundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
     await synth.isReady;
     await synth.soundfontManager.addNewSoundFont(secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
-    const soundFont = loadSoundFont(secondarySoundFontBuffer);
-    instruments = soundFont.presets;
+    {
+        const soundFont = loadSoundFont(secondarySoundFontBuffer);
+        instruments = {...soundFont.presets};
+    }
     for (const instrument of instruments) { //adjust soundfont presets to new bank
         instrument.bank = SOUNDFONTBANK;
     }
@@ -56,13 +58,11 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         }
         if(seq === undefined)
         {
-            seq = new Sequencer(parsedSongs, synth);                          // create the sequencer with the parsed midis
-            seq.pause();                                                      
+            seq = new Sequencer(parsedSongs, synth, {autoPlay: false});                          // create the sequencer with the parsed midis
         }
         else
         {
-            seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
-            seq.pause();
+            seq.loadNewSongList(parsedSongs, autoPlay = false); // the sequencer is already created, no need to create a new one.
         }
         seq.loop = false;                                                       // the sequencer loops a single song by default
 
@@ -79,6 +79,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
+            synth.resetControllers();
                         
             let nrOfTracks = e.tracksAmount;
             const channelsPerTrack = e.usedChannelsOnTrack;
@@ -152,7 +153,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
                 instrumentSelect.appendChild(option);
                 
                 if (channel === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel].isDrum = true; }
-                if (!synth.channelProperties[channel].isDrum) { // do not show instrument drop-down menu when the channel is used for percussion.
+                if (!synth.channelProperties[channel].isDrum) { // do not have interactive drop-down menu when the channel is used for percussion.
                     for (const instrument of instruments) {
                         const option = document.createElement('option');
                         option.value = `${instrument.bank}:${instrument.program}`;
@@ -170,9 +171,9 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
                         synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
                         console.log(`changing channel ${channel} to instrument ${event.target.value}`)
                     });
-                    container.appendChild(instrumentSelect);
                     instrumentControls.set(channel,instrumentSelect);
                 }
+                container.appendChild(instrumentSelect);
             
                 //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
                 synth.lockController(channel, midiControllers.modulationWheel, false);
