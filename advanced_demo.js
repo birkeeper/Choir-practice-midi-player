@@ -39,6 +39,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
 
 
     let seq;
+    let channels;
     // add an event listener for the file inout
     document.getElementById("midi_input").addEventListener("change", async event => {
         // check if any files are added
@@ -62,6 +63,10 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         }
         else
         {
+            for (const channel of channels) {// unlock all channel controllers of the previous song, so it can be overwritten.
+                synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
+                synth.lockController(channel, midiControllers.bankSelect, false);
+            }
             seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
         }
         seq.loop = false;                                                       // the sequencer loops a single song by default
@@ -82,11 +87,9 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
                         
             let nrOfTracks = e.tracksAmount;
             const channelsPerTrack = e.usedChannelsOnTrack;
-            const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
+            channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
             const instrumentControls = new Map(); // array of instrument controls to be able to control them
             for (const channel of channels) {
-                synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
-                synth.lockController(channel, midiControllers.bankSelect, false);
                 let pan = Math.round((127*channel)/(channels.size-1)); // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable.
                 const channelControl = createChannelControl(channel, synth, pan, instrumentControls);
                 channelControlsContainer.appendChild(channelControl);
