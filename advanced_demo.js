@@ -17,7 +17,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     // load the soundfont into an array buffer
     let primarySoundFontBuffer = await response.arrayBuffer();
     let secondarySoundFontBuffer;
-    fetch("./soundfonts/KBH-Real-Choir-V2.5.sf2").then(async response => {
+    await fetch("./soundfonts/KBH-Real-Choir-V2.5.sf2").then(async response => {
         secondarySoundFontBuffer = await response.arrayBuffer();
     });
     document.getElementById("message").innerText = "SoundFont has been loaded!";
@@ -79,13 +79,14 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
-            synth.resetControllers();
                         
             let nrOfTracks = e.tracksAmount;
             const channelsPerTrack = e.usedChannelsOnTrack;
             const channels = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
             const instrumentControls = new Map(); // array of instrument controls to be able to control them
             for (const channel of channels) {
+                synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
+                synth.lockController(channel, midiControllers.bankSelect, false);
                 let pan = Math.round((127*channel)/(channels.size-1)); // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable.
                 const channelControl = createChannelControl(channel, synth, pan, instrumentControls);
                 channelControlsContainer.appendChild(channelControl);
