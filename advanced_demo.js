@@ -32,7 +32,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         const soundFont = loadSoundFont(secondarySoundFontBuffer);
         instruments = {...soundFont.presets};
     }
-    for (const instrument of instruments) { //adjust soundfont presets to new bank
+    for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
         instrument.bank = SOUNDFONTBANK;
     }
 
