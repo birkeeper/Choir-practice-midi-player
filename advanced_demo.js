@@ -58,7 +58,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         }
         if(seq === undefined)
         {
-            seq = new Sequencer(parsedSongs, synth);                          // create the sequencer with the parsed midis
+            seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,});                          // create the sequencer with the parsed midis
         }
         else
         {
