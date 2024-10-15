@@ -154,7 +154,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
                 
                 if (channel === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel].isDrum = true; }
                 if (!synth.channelProperties[channel].isDrum) { // do not have interactive drop-down menu when the channel is used for percussion.
-                    for (const instrument of instruments) {
+                    for (const instrument of Object.values(instruments)) {
                         const option = document.createElement('option');
                         option.value = `${instrument.bank}:${instrument.program}`;
                         option.textContent = instrument.presetName;
