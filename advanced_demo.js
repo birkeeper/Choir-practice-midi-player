@@ -58,11 +58,11 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         }
         if(seq === undefined)
         {
-            seq = new Sequencer(parsedSongs, synth, {autoPlay: false});                          // create the sequencer with the parsed midis
+            seq = new Sequencer(parsedSongs, synth);                          // create the sequencer with the parsed midis
         }
         else
         {
-            seq.loadNewSongList(parsedSongs, autoPlay = false); // the sequencer is already created, no need to create a new one.
+            seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
         }
         seq.loop = false;                                                       // the sequencer loops a single song by default
 
