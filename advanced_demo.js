@@ -76,16 +76,16 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         const currentTimeDisplay = document.getElementById('currentTime');
         const totalTimeDisplay = document.getElementById('totalTime');
         let isDragging = false;
-        slider.addEventListener('input', () => {
+        slider.oninput = () => {
             currentTimeDisplay.textContent = formatTime(Number(slider.value));
-        });
-        slider.addEventListener('mosusedown', () => {
+        };
+        slider.onmousedown = () => {
             isDragging = true;
-        });
-        slider.addEventListener('mouseup', () => {
+        };
+        slider.onmouseup = () => {
             isDragging = false;
             seq.currentTime = Number(slider.value);
-        });
+        };
         setInterval(() => {
             if(!isDragging) {
                 slider.value = Math.floor(seq.currentTime);
@@ -227,12 +227,6 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             }
             
         }, "example-time-change"); // make sure to add a unique id!
-
-        // add time adjustment
-        slider.onchange = () => {
-            // calculate the time
-            seq.currentTime = (slider.value / 1000) * seq.duration; // switch the time (the sequencer adjusts automatically)
-        }
 
         // on pause click
         document.getElementById("pause").onclick = () => {
