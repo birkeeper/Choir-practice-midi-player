@@ -76,8 +76,6 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         const currentTimeDisplay = document.getElementById('currentTime');
         const totalTimeDisplay = document.getElementById('totalTime');
         let isDragging = false;
-        slider.max = Math.floor(seq.duration);
-        totalTimeDisplay.textContent = formatTime(seq.duration);
         slider.addEventListener('input', () => {
             currentTimeDisplay.textContent = formatTime(Number(slider.value));
         });
@@ -112,7 +110,12 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
             document.getElementById("message").innerText = "Now playing: " + e.midiName;
+
+            //update progress slider
+            slider.max = Math.floor(seq.duration);
+            totalTimeDisplay.textContent = formatTime(seq.duration);
             
+            // create channel controls
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
                         
