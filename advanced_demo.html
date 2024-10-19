@@ -18,8 +18,8 @@
         <br><br>
         <input type="range" min="0" max="1000" value="0" id="progress">
         
-        <label for="playbackRate">Select the playback rate</label>
-        <input type="range" id="playbackRate" name="playbackRate" min="0.5" max="1.0" step="0.1" list="playbackRateTickmarks">
+        <hint for="playbackRate">Select the playback rate</hint>
+        <input type="range" id="playbackRate" name="playbackRate" min="0.5" max="1.0" step="0.1" value="1.0" list="playbackRateTickmarks">
         <datalist id="playbackRateTickmarks">
             <option value="0.5" label="0.5x"></option>
             <option value="0.6"></option>
@@ -28,6 +28,7 @@
             <option value="0.9"></option>
             <option value="1.0" label="1.0x"></option>
         </datalist>
+        <span id="playbackRateValue">"1.0x"</span>
         <br>
 
         <button id="pause">Pause</button>

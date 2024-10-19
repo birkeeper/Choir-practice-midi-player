@@ -80,8 +80,10 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
 
         // make a slider to set the playback rate
         const playbackRateInput = document.getElementById('playbackRate');
+        const playbackRateValue = document.getElementById('playbackRateValue');
         playbackRateInput.addEventListener('input', function() {
             seq.playbackRate = playbackRateInput.value;
+            playbackRateValue.textContent = `${playbackRateInput.value}x`;
         });
 
         // on song change, show the name
