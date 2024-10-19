@@ -71,12 +71,35 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         }
         seq.loop = false;                                                       // the sequencer loops a single song by default
 
-        // make the slider move with the song
+        // make the slider move with the song and define what happens when the user moves the slider
         const slider = document.getElementById("progress");
+        const currentTimeDisplay = document.getElementById('currentTime');
+        const totalTimeDisplay = document.getElementById('totalTime');
+        let isDragging = false;
+        slider.max = Math.floor(seq.duration);
+        totalTimeDisplay.textContent = formatTime(seq.duration);
+        slider.addEventListener('input', () => {
+            currentTimeDisplay.textContent = formatTime(Number(slider.value));
+        });
+        slider.addEventListener('mosusedown', () => {
+            isDragging = true;
+        });
+        slider.addEventListener('mouseup', () => {
+            isDragging = false;
+            seq.currentTime = Number(slider.value);
+        });
         setInterval(() => {
-            // slider ranges from 0 to 1000
-            slider.value = (seq.currentTime / seq.duration) * 1000;
-        }, 100);
+            if(!isDragging) {
+                slider.value = Math.floor(seq.currentTime);
+                currentTimeDisplay.textContent = formatTime(seq.currentTime);
+            }
+            
+        }, 500);
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
 
         // make a slider to set the playback rate
         const playbackRateInput = document.getElementById('playbackRate');
