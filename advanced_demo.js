@@ -72,11 +72,17 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         seq.loop = false;                                                       // the sequencer loops a single song by default
 
         // make the slider move with the song
-        let slider = document.getElementById("progress");
+        const slider = document.getElementById("progress");
         setInterval(() => {
             // slider ranges from 0 to 1000
             slider.value = (seq.currentTime / seq.duration) * 1000;
         }, 100);
+
+        // make a slider to set the playback rate
+        const playbackRateInput = document.getElementById('playbackRate');
+        playbackRateInput.addEventListener('input', function() {
+            seq.playbackRate = playbackRateInput.value;
+        });
 
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {

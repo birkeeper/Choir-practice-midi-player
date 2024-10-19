@@ -17,6 +17,17 @@
         <input type="file" id="midi_input" accept=".mid">
         <br><br>
         <input type="range" min="0" max="1000" value="0" id="progress">
+        
+        <label for="playbackRate">Select the playback rate</label>
+        <input type="range" id="playbackRate" name="playbackRate" min="0.5" max="1.0" step="0.1" list="playbackRateTickmarks">
+        <datalist id="playbackRateTickmarks">
+            <option value="0.5" label="0.5x"></option>
+            <option value="0.6"></option>
+            <option value="0.7"></option>
+            <option value="0.8"></option>
+            <option value="0.9"></option>
+            <option value="1.0" label="1.0x"></option>
+        </datalist>
         <br>
 
         <button id="pause">Pause</button>
