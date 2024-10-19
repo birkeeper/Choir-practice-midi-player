@@ -83,7 +83,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         const playbackRateValue = document.getElementById('playbackRateValue');
         playbackRateInput.addEventListener('input', function() {
             seq.playbackRate = playbackRateInput.value;
-            playbackRateValue.textContent = `${playbackRateInput.value}x`;
+            playbackRateValue.textContent = `${playbackRateInput.value.toFixed(1)}x`;
         });
 
         // on song change, show the name
