@@ -86,13 +86,13 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             isDragging = false;
             seq.currentTime = Number(slider.value);
         };
-        setInterval(() => {
-            if(!isDragging) {
+        setInterval((a) => {
+            if(!a) {
                 slider.value = Math.floor(seq.currentTime);
                 currentTimeDisplay.textContent = formatTime(seq.currentTime);
             }
             
-        }, 500);
+        }, 500, isDragging);
         function formatTime(seconds) {
             const minutes = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
