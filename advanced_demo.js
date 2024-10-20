@@ -173,7 +173,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
                 volumeSlider.className = 'volume-slider';
                 volumeSlider.min = 0;
                 volumeSlider.max = 127;
-                volumeSlider.value = 100;
+                volumeSlider.value = 85;
                 synth.lockController(channel, midiControllers.mainVolume, false);
                 synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
                 synth.lockController(channel, midiControllers.mainVolume, true);
