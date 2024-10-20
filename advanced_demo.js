@@ -79,10 +79,10 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         slider.oninput = () => {
             currentTimeDisplay.textContent = formatTime(Number(slider.value));
         };
-        slider.onmousedown = handleClickProgressSlider();
-        slider.onmouseup = handleReleaseProgressSlider();
-        slider.ontouchstart = handleClickProgressSlider();
-        slider.ontouchend = handleReleaseProgressSlider();
+        slider.onmousedown = handleClickProgressSlider;
+        slider.onmouseup = handleReleaseProgressSlider;
+        slider.ontouchstart = handleClickProgressSlider;
+        slider.ontouchend = handleReleaseProgressSlider;
         function handleClickProgressSlider() {
             clearInterval(timerID);
         }
