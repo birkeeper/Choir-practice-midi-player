@@ -75,24 +75,21 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         const slider = document.getElementById("progress");
         const currentTimeDisplay = document.getElementById('currentTime');
         const totalTimeDisplay = document.getElementById('totalTime');
-        let isDragging = false;
+        let timerID = setInterval(timerCallback, 500);
         slider.oninput = () => {
             currentTimeDisplay.textContent = formatTime(Number(slider.value));
         };
         slider.onmousedown = () => {
-            isDragging = true;
+            clearInterval(timerID);
         };
         slider.onmouseup = () => {
-            isDragging = false;
             seq.currentTime = Number(slider.value);
+            timerID = setInterval(timerCallback, 500);
         };
-        setInterval((a) => {
-            if(!a) {
-                slider.value = Math.floor(seq.currentTime);
-                currentTimeDisplay.textContent = formatTime(seq.currentTime);
-            }
-            
-        }, 500, isDragging);
+        function timerCallback() {
+            slider.value = Math.floor(seq.currentTime);
+            currentTimeDisplay.textContent = formatTime(seq.currentTime);            
+        }
         function formatTime(seconds) {
             const minutes = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
@@ -172,7 +169,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
                 volumeSlider.className = 'volume-slider';
                 volumeSlider.min = 0;
                 volumeSlider.max = 127;
-                volumeSlider.value = 127;
+                volumeSlider.value = 100;
                 synth.lockController(channel, midiControllers.mainVolume, false);
                 synth.controllerChange (channel, midiControllers.mainVolume, volumeSlider.value);
                 synth.lockController(channel, midiControllers.mainVolume, true);
