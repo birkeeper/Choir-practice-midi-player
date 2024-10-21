@@ -185,6 +185,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
                 container.appendChild(volumeSlider);
             
                 const instrumentSelect = document.createElement('select');
+                instrumentSelect.className = 'instrument-select'
                 const option = document.createElement('option');
                 option.value = ""
                 option.textContent = "Default"

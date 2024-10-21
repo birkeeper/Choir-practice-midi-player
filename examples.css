@@ -1,7 +1,7 @@
 * {
     font-family: "Noto Sans Light", "Open Sans Light", sans-serif;
     color: #ccc;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
 }
 
 button {
@@ -24,47 +24,59 @@ button:active{
 
 canvas{
     width: 100%;
+    max-width: 800px;
     min-height: 0;
     max-height: 40vh;
 }
 
-input[type='range']
+#progress
 {
-    width: 100%;
+    width: 90%;
+}
+
+#playbackRate
+{
+    width: 10rem
 }
 
 body {
     background: #111;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: start;
     max-height: 100vh;
 }
 
 .content_box{
-    width: 80%;
+    width: 90%;
     background: #333;
-    padding: 5em;
-    margin: 1rem;
+    padding: 2em;
+    margin: 0.5rem;
     border-radius: 1rem;
     box-shadow: black 0 0 15px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: start;
 }
 
 .channel-control {
-    margin: 10px 0;
+    margin: 0.5rem;
     display: flex;
-    align-items: center;
+    align-items: start;
 }
 
 .channel-name {
     display: inline-block;
-    width: 150px;
+    width: 5%;
 }
 
 .volume-slider {
-    width: 200px;
+    display: inline-block;
+    width: 80%;
     margin: 0 10px;
+}
+
+.instrument-select {
+    display: inline-block;
+    width: 5%;
 }
