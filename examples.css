@@ -42,8 +42,8 @@ canvas{
 body {
     background: #111;
     display: flex;
-    flex-direction: row;
-    align-items: start;
+    flex-direction: column;
+    align-items: center;
     max-height: 100vh;
 }
 
@@ -55,7 +55,7 @@ body {
     border-radius: 1rem;
     box-shadow: black 0 0 15px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: start;
 }
 
