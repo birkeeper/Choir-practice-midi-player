@@ -55,7 +55,7 @@ body {
     border-radius: 1rem;
     box-shadow: black 0 0 15px;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: start;
 }
 

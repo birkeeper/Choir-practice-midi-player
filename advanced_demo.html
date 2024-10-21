@@ -12,21 +12,24 @@
 <body>
     <h1>Midi Player</h1>
     <div class='content_box'>
-        <p id="message">Please wait for the soundFont to load.</p>
-        <input type="file" id="midi_input" accept=".mid">
-        <br><br>
-        <input type="range" min="0" max="0" value="0" step="1" id="progress"><span id="currentTime">--:--</span>/<span id="totalTime">--:--</span>
+        <div>
+            <p id="message">Please wait for the soundFont to load.</p>
+            <input type="file" id="midi_input" accept=".mid">
+        </div>
+        <div>
+            <input type="range" min="0" max="0" value="0" step="1" id="progress"><span id="currentTime">--:--</span>/<span id="totalTime">--:--</span>
+        </div>
+        <div>
+            <button id="pause">Pause</button>
+            <input type="range" id="playbackRate" name="playbackRate" min="0.7" max="1.0" step="0.1" value="1.0" list="playbackRateTickmarks"><span id="playbackRateValue">1.0x</span>
+            <datalist id="playbackRateTickmarks">
+                <option value="0.7" label="0.7x"></option>
+                <option value="0.8"></option>
+                <option value="0.9"></option>
+                <option value="1.0" label="1.0x"></option>
+            </datalist>
+        </div>
         
-        <input type="range" id="playbackRate" name="playbackRate" min="0.7" max="1.0" step="0.1" value="1.0" list="playbackRateTickmarks"><span id="playbackRateValue">1.0x</span>
-        <datalist id="playbackRateTickmarks">
-            <option value="0.7" label="0.7x"></option>
-            <option value="0.8"></option>
-            <option value="0.9"></option>
-            <option value="1.0" label="1.0x"></option>
-        </datalist>
-        <br>
-
-        <button id="pause">Pause</button>
 
         <!-- note the type="module" -->
         <script src='advanced_demo.js' type="module"></script>
