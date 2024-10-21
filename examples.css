@@ -42,7 +42,7 @@ canvas{
 body {
     background: #111;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: start;
     max-height: 100vh;
 }
