@@ -30,8 +30,8 @@ canvas{
 #file_box
 {
     display: flex;
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
+    align-items: start;
     width: 100%;
 }
 
@@ -59,11 +59,12 @@ span
 #progress
 {
     flex: 1 1 100%;
+    margin: 0 10px;
 }
 
 #playbackRate
 {
-    width: 10rem
+    width: 5rem
 }
 
 body {
@@ -104,5 +105,5 @@ body {
 }
 
 .instrument-select {
-    width: 1 1 10%;
+    width: 0 0 5rem;
 }
