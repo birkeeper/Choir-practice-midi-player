@@ -11,7 +11,6 @@ button {
     border-radius: 1rem;
     cursor: pointer;
     margin: 0.3rem;
-    display: inline-block;
 }
 
 button:hover{
@@ -24,10 +23,31 @@ button:active{
 
 canvas{
     width: 100%;
-    max-width: 800px;
     min-height: 0;
     max-height: 40vh;
 }
+
+#file_box
+{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#progress_box
+{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#playback_control_box
+{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
 
 #progress
 {
@@ -62,21 +82,19 @@ body {
 .channel-control {
     margin: 0.5rem;
     display: flex;
+    flex-direction: column;
     align-items: start;
 }
 
 .channel-name {
-    display: inline-block;
     width: 5%;
 }
 
 .volume-slider {
-    display: inline-block;
     width: 80%;
     margin: 0 10px;
 }
 
 .instrument-select {
-    display: inline-block;
     width: 5%;
 }
