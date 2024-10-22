@@ -105,5 +105,5 @@ body {
 }
 
 .instrument-select {
-    width: 0 0 5rem;
+    flex: 0 0 5rem;
 }
