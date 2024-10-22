@@ -51,10 +51,14 @@ canvas{
     width: 100%;
 }
 
+span
+{
+    flex: 0 0 auto
+}
 
 #progress
 {
-    width: 90%;
+    flex: 1 1 100%;
 }
 
 #playbackRate
@@ -91,14 +95,14 @@ body {
 }
 
 .channel-name {
-    width: 5%;
+    flex: 0 0 auto;
 }
 
 .volume-slider {
-    width: 80%;
+    flex: 1 1 90%;
     margin: 0 10px;
 }
 
 .instrument-select {
-    width: 5%;
+    width: 1 1 10%;
 }
