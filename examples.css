@@ -14,9 +14,10 @@ canvas{
     flex: 0 0 auto;
     align-items: center;
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0.2rem;
     border-radius: 1rem;
     background: #444;
+    margin-right: 8px;
 }
 
 #pause{
@@ -67,6 +68,8 @@ body {
     flex-direction: column;
     align-items: center;
     max-height: 100vh;
+    max-width: 1024px;
+    width: 100%
 }
 
 .content_box{

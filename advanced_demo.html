@@ -3,7 +3,7 @@
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport'
-          content='width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0'>
+          content='width=device-width, user-scalable=yes, initial-scale=1.0, maximum-scale=3.0, minimum-scale=1.0'>
     <meta http-equiv='X-UA-Compatible' content='ie=edge'>
     <title>Midi player</title>
     <link rel='stylesheet' href='examples.css'>
@@ -14,8 +14,8 @@
     <div class='content_box'>
         <div id="file_box">
             <input type="file" id="midi_input" accept=".mid">
-            <span id="message">Loading. Please wait...</span>
             <label id="midi_input-label"for="midi_input" class="button-label"></label>
+            <span id="message">Loading. Please wait...</span>
         </div>
         <div id="progress_box">
             <input type="range" min="0" max="0" value="0" step="1" id="progress">

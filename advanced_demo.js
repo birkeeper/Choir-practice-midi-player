@@ -6,16 +6,16 @@ import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/syn
 import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
 import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/worklet_system/message_protocol/worklet_message.js'
 import { loadSoundFont } from "./libraries/spessasynth_lib/src/spessasynth_lib/soundfont/load_soundfont.js";
-import { getPauseSvg, getPlaySvg, getLoopSvg } from './js/icons.js'
+import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
-const ICON_SIZE_PX = 32; // size of button icons
+const ICON_SIZE_PX = 16; // size of button icons
 
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
 
 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-document.getElementById("midi_input-label").innerHTML = getLoopSvg(ICON_SIZE_PX);
+document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
 
 // load the soundfont
 fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
@@ -75,7 +75,6 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
         }
         seq.loop = false; // the sequencer loops a single song by default
-        document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);       
 
         // make the slider move with the song and define what happens when the user moves the slider
         const slider = document.getElementById("progress");
@@ -95,6 +94,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         function handleReleaseProgressSlider() {
             seq.currentTime = Number(slider.value);
             timerID = setInterval(timerCallback, 500);
+            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will automatically play when currentTime is changed
         }
         function timerCallback() {
             slider.value = Math.floor(seq.currentTime);
@@ -112,11 +112,13 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         playbackRateInput.addEventListener('input', function() {
             seq.playbackRate = playbackRateInput.value;
             playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(1)}x`;
+            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will play automatically when playbackRate is changed
         });
 
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
             document.getElementById("message").innerText = e.midiName;
+            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will play automatically when song is changed.
 
             //update progress slider
             slider.max = Math.floor(seq.duration);
