@@ -17,9 +17,7 @@ canvas{
     padding: 4px;
     border-radius: 8px;
     background: #444;
-    margin-right: 8px;
-    margin-top: 8 px;
-    margin-bottom: 8 px;
+    margin-right: 10px;
 }
 
 #pause{
@@ -35,6 +33,7 @@ canvas{
     flex-direction: row;
     align-items: center;
     width: 100%;
+    margin-bottom: 8px;
 }
 
 #progress_box{
@@ -42,6 +41,7 @@ canvas{
     flex-direction: row;
     align-items: center;
     width: 100%;
+    margin-bottom: 8px;
 }
 
 #playback_control_box{
