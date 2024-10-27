@@ -4,66 +4,60 @@
     font-size: 0.9rem;
 }
 
-button {
-    background: #444;
-    border: solid #555;
-    padding: 0.5rem;
-    border-radius: 1rem;
-    cursor: pointer;
-    margin: 0.3rem;
-}
-
-button:hover{
-    filter: brightness(1.1);
-}
-
-button:active{
-    transform: scale(0.9);
-}
-
 canvas{
     width: 100%;
     min-height: 0;
     max-height: 40vh;
 }
 
-#file_box
-{
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    width: 100%;
+.button-label{
+    flex: 0 0 auto;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 1rem;
+    background: #444;
 }
 
-#progress_box
-{
+#pause{
+    display: none;
+}
+
+#midi_input{
+    display: none;
+}
+
+#file_box{
     display: flex;
     flex-direction: row;
     align-items: center;
     width: 100%;
 }
 
-#playback_control_box
-{
+#progress_box{
     display: flex;
     flex-direction: row;
     align-items: center;
     width: 100%;
 }
 
-span
-{
+#playback_control_box{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+}
+
+span{
     flex: 0 0 auto
 }
 
-#progress
-{
+#progress{
     flex: 1 1 100%;
     margin: 0 10px;
 }
 
-#playbackRate
-{
+#playbackRate{
     width: 5rem
 }
 

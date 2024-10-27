@@ -6,11 +6,16 @@ import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/syn
 import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
 import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/worklet_system/message_protocol/worklet_message.js'
 import { loadSoundFont } from "./libraries/spessasynth_lib/src/spessasynth_lib/soundfont/load_soundfont.js";
+import { getPauseSvg, getPlaySvg, getLoopSvg } from './js/icons.js'
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
+const ICON_SIZE_PX = 32; // size of button icons
 
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
+
+document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+document.getElementById("midi_input-label").innerHTML = getLoopSvg(ICON_SIZE_PX);
 
 // load the soundfont
 fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
@@ -20,8 +25,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
     await fetch("./soundfonts/KBH-Real-Choir-V2.5.sf2").then(async response => {
         secondarySoundFontBuffer = await response.arrayBuffer();
     });
-    document.getElementById("message").innerText = "SoundFont has been loaded!";
-
+    
     // create the context and add audio worklet
     const context = new AudioContext({latencyHint: "playback"});
     await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/src/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
@@ -32,6 +36,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         const soundFont = loadSoundFont(secondarySoundFontBuffer);
         instruments = {...soundFont.presets};
     }
+    document.getElementById("message").innerText = "Select a midi file.";
     for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
         instrument.bank = SOUNDFONTBANK;
     }
@@ -69,7 +74,8 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
             }
             seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
         }
-        seq.loop = false;                                                       // the sequencer loops a single song by default
+        seq.loop = false; // the sequencer loops a single song by default
+        document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);       
 
         // make the slider move with the song and define what happens when the user moves the slider
         const slider = document.getElementById("progress");
@@ -110,7 +116,7 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
 
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
-            document.getElementById("message").innerText = "Now playing: " + e.midiName;
+            document.getElementById("message").innerText = e.midiName;
 
             //update progress slider
             slider.max = Math.floor(seq.duration);
@@ -233,11 +239,11 @@ fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
         // on pause click
         document.getElementById("pause").onclick = () => {
             if (seq.paused) {
-                document.getElementById("pause").innerText = "Pause";
+                document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
                 seq.play(); // resume
             }
             else {
-                document.getElementById("pause").innerText = "Resume";
+                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                 seq.pause(); // pause
 
             }
