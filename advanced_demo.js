@@ -20,11 +20,11 @@ document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
 
 // load the soundfont
-fetch("SOUNDFONT_GM").then(async response => {
+fetch(SOUNDFONT_GM).then(async response => {
     // load the soundfont into an array buffer
     let primarySoundFontBuffer = await response.arrayBuffer();
     let secondarySoundFontBuffer;
-    await fetch("SOUNTFONT_SPECIAL").then(async response => {
+    await fetch(SOUNTFONT_SPECIAL).then(async response => {
         secondarySoundFontBuffer = await response.arrayBuffer();
     });
     
