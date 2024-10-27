@@ -9,7 +9,7 @@ import { loadSoundFont } from "./libraries/spessasynth_lib/src/spessasynth_lib/s
 import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
-const ICON_SIZE_PX = 16; // size of button icons
+const ICON_SIZE_PX = 24; // size of button icons
 
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded

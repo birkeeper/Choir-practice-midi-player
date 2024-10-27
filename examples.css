@@ -14,8 +14,8 @@ canvas{
     flex: 0 0 auto;
     align-items: center;
     cursor: pointer;
-    padding: 0.2rem;
-    border-radius: 1rem;
+    padding: 8px;
+    border-radius: 8px;
     background: #444;
     margin-right: 8px;
 }
@@ -69,7 +69,7 @@ body {
     align-items: center;
     max-height: 100vh;
     max-width: 1024px;
-    width: 100%
+    width: 100vw
 }
 
 .content_box{
@@ -103,4 +103,5 @@ body {
 
 .instrument-select {
     flex: 0 0 5rem;
+    field-sizing: fixed;
 }
