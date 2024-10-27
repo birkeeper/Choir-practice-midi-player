@@ -57,7 +57,7 @@ span{
 
 #progress{
     flex: 1 1 100%;
-    margin: 0 10px;
+    margin-right: 10px;
 }
 
 #playbackRate{
