@@ -13,16 +13,18 @@ const ICON_SIZE_PX = 24; // size of button icons
 
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
+const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
+const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
 
 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
 
 // load the soundfont
-fetch("./soundfonts/GeneralUserGS.sf3").then(async response => {
+fetch("SOUNDFONT_GM").then(async response => {
     // load the soundfont into an array buffer
     let primarySoundFontBuffer = await response.arrayBuffer();
     let secondarySoundFontBuffer;
-    await fetch("./soundfonts/KBH-Real-Choir-V2.5.sf2").then(async response => {
+    await fetch("SOUNTFONT_SPECIAL").then(async response => {
         secondarySoundFontBuffer = await response.arrayBuffer();
     });
     
