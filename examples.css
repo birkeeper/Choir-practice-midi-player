@@ -14,10 +14,12 @@ canvas{
     flex: 0 0 auto;
     align-items: center;
     cursor: pointer;
-    padding: 8px;
+    padding: 4px;
     border-radius: 8px;
     background: #444;
     margin-right: 8px;
+    margin-top: 8 px;
+    margin-bottom: 8 px;
 }
 
 #pause{
