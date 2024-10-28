@@ -1,0 +1,15 @@
+{
+    "name": "Midi Player",
+    "short_name": "Midi Player",
+    "description": "Web-based Midi player specifically targeted to target choir practice.",
+    "start_url": "/midi_player.html",
+    "display": "standalone",
+    "icons": [
+        {
+            "src": "/icons/midiplayer-icon.svg",
+            "sizes": "192x192 512x512",
+            "type": "image/svg+xml"
+        }
+    ],
+    "scope": "/",
+}
