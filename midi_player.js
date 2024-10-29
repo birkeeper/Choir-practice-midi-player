@@ -22,26 +22,26 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
 // load the soundfont
 fetch(SOUNDFONT_GM).then(async response => {
     // load the soundfont into an array buffer
-    let primarySoundFontBuffer = await response.arrayBuffer();
+    let primarySoundFontBuffer = response.arrayBuffer();
     let secondarySoundFontBuffer;
-    await fetch(SOUNTFONT_SPECIAL).then(async response => {
-        secondarySoundFontBuffer = await response.arrayBuffer();
+    fetch(SOUNTFONT_SPECIAL).then(async response => {
+        secondarySoundFontBuffer = response.arrayBuffer();
     });
     
     // create the context and add audio worklet
     const context = new AudioContext({latencyHint: "playback"});
     await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/src/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
-    const synth = new Synthetizer(context.destination, primarySoundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
-    await synth.isReady;
-    await synth.soundfontManager.addNewSoundFont(secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
+    const synth = new Synthetizer(context.destination, await primarySoundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
     {
-        const soundFont = loadSoundFont(secondarySoundFontBuffer);
+        const soundFont = loadSoundFont(await secondarySoundFontBuffer);
         instruments = {...soundFont.presets};
     }
     document.getElementById("message").innerText = "Select a midi file.";
     for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
         instrument.bank = SOUNDFONTBANK;
     }
+    await synth.isReady;
+    await synth.soundfontManager.addNewSoundFont(await secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
 
 
 
