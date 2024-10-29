@@ -2,21 +2,15 @@
     "name": "Midi Player",
     "short_name": "Midi Player",
     "description": "Web-based Midi player specifically targeted to target choir practice.",
-    "start_url": "/midi_player.html",
+    "start_url": "./midi_player.html",
     "display": "standalone",
     "icons": [
         {
-            "src": "/icons/midiplayer-icon_192px.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "maskable"
-        },
-        {
-            "src": "/icons/midiplayer-icon_512px.png",
-            "sizes": "512x512",
-            "type": "image/png",
+            "src": "./icons/midiplayer-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
             "purpose": "maskable"
         }
     ],
-    "scope": "/"
+    "scope": "./"
 }
