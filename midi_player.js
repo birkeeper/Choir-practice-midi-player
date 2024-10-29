@@ -25,7 +25,7 @@ fetch(SOUNDFONT_GM).then(async response => {
     let primarySoundFontBuffer = response.arrayBuffer();
     let secondarySoundFontBuffer;
     fetch(SOUNTFONT_SPECIAL).then(async response => {
-        secondarySoundFontBuffer = response.arrayBuffer();
+        secondarySoundFontBuffer = await response.arrayBuffer();
     });
     
     // create the context and add audio worklet
@@ -33,7 +33,7 @@ fetch(SOUNDFONT_GM).then(async response => {
     await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/src/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
     const synth = new Synthetizer(context.destination, await primarySoundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
     {
-        const soundFont = loadSoundFont(await secondarySoundFontBuffer);
+        const soundFont = loadSoundFont(secondarySoundFontBuffer);
         instruments = {...soundFont.presets};
     }
     document.getElementById("message").innerText = "Select a midi file.";
@@ -41,9 +41,7 @@ fetch(SOUNDFONT_GM).then(async response => {
         instrument.bank = SOUNDFONTBANK;
     }
     await synth.isReady;
-    await synth.soundfontManager.addNewSoundFont(await secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
-
-
+    await synth.soundfontManager.addNewSoundFont(secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
 
     let seq;
     let channels;
