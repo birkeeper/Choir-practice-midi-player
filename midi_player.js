@@ -58,6 +58,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     }
     await synth.isReady;
     await synth.soundfontManager.addNewSoundFont(await secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
+    document.getElementById("midi_input").disabled = false;
 
     let seq;
     let channels;

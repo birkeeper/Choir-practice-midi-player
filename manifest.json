@@ -10,6 +10,12 @@
             "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "maskable"
+        },
+        {
+            "src": "./icons/midiplayer-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
         }
     ],
     "scope": "./"
