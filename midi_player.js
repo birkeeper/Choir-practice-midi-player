@@ -8,6 +8,7 @@ import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/src/
 import { loadSoundFont } from "./libraries/spessasynth_lib/src/spessasynth_lib/soundfont/load_soundfont.js";
 import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 
+const VERSION = "v1.1.0"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 
@@ -39,7 +40,7 @@ if ("serviceWorker" in navigator) {
     console.error("Service workers are not supported.");
   }
 
-
+document.getElementById('title').textContent = 'Midi Player '+ VERSION;
 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
 
