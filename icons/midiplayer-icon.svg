@@ -12,35 +12,25 @@
   <defs
      id="defs2" />
   <rect
-     style="fill:#000000;stroke:#000000;stroke-width:0.51893;stroke-linejoin:round"
+     style="fill:#000000;stroke:#000000;stroke-width:0.553398;stroke-linejoin:round"
      id="rect2"
-     width="25.905783"
-     height="25.905781"
-     x="0.25946501"
-     y="0.25946501"
+     width="27.626463"
+     height="27.626459"
+     x="-0.60087466"
+     y="-0.6008746"
      ry="0" />
   <path
      d="m 14.727118,10.477278 a 0.5,0.5 0 0 1 0.52,0.038 l 3.5,2.5 a 0.5,0.5 0 0 1 0,0.814 l -3.5,2.5 a 0.5,0.5 0 0 1 -0.791,-0.407 v -5 a 0.5,0.5 0 0 1 0.271,-0.445"
      id="path2"
      style="fill:#ffffff;fill-opacity:1" />
-  <text
-     xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.01018px;line-height:1.25;font-family:'Berlin Sans FB';-inkscape-font-specification:'Berlin Sans FB';fill:#ffffff;fill-opacity:1;stroke-width:0.675765"
-     x="3.5894229"
-     y="16.475498"
-     id="text1"><tspan
-       id="tspan1"
-       x="3.5894229"
-       y="16.475498"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Bauhaus 93';-inkscape-font-specification:'Bauhaus 93, ';fill:#ffffff;fill-opacity:1;stroke-width:0.675765">MI</tspan></text>
-  <text
-     xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.01018px;line-height:1.25;font-family:'Berlin Sans FB';-inkscape-font-specification:'Berlin Sans FB';fill:#ffffff;fill-opacity:1;stroke-width:0.675765"
-     x="19.180037"
-     y="16.493095"
-     id="text2-9"><tspan
-       id="tspan2-9"
-       x="19.180037"
-       y="16.493095"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Bauhaus 93';-inkscape-font-specification:'Bauhaus 93, ';fill:#ffffff;fill-opacity:1;stroke-width:0.675765">I</tspan></text>
+  <path
+     style="font-size:9.01018px;line-height:1.25;font-family:'Bauhaus 93';-inkscape-font-specification:'Bauhaus 93, ';fill:#ffffff;stroke-width:0.675765"
+     d="m 4.0689687,16.475498 v -4.32911 q 0,-0.805109 0.4883447,-1.315451 0.4883448,-0.510342 1.2670567,-0.510342 0.9238954,0 1.4210392,0.849104 0.3035656,-0.457549 0.6511263,-0.651127 0.3475607,-0.197977 0.8579029,-0.197977 0.8095084,0 1.2406596,0.510342 0.4311509,0.510342 0.4311509,1.469434 v 4.175127 H 8.6400514 V 12.56874 q 0,-0.290367 -0.048395,-0.382756 -0.043995,-0.09679 -0.1847791,-0.09679 -0.2639701,0 -0.2639701,0.448749 v 3.937554 H 6.3567098 V 12.56874 q 0,-0.285967 -0.048394,-0.382756 -0.048395,-0.09679 -0.1891786,-0.09679 -0.2639701,0 -0.2639701,0.479545 v 3.906758 z m 9.2257563,-6.00532 v 6.00532 h -1.786198 v -6.00532 z"
+     id="text1"
+     aria-label="MI" />
+  <path
+     style="font-size:9.01018px;line-height:1.25;font-family:'Bauhaus 93';-inkscape-font-specification:'Bauhaus 93, ';fill:#ffffff;stroke-width:0.675765"
+     d="m 21.568966,10.487775 v 6.00532 h -1.786198 v -6.00532 z"
+     id="text2-9"
+     aria-label="I" />
 </svg>
