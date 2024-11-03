@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v0.4"; 
+const CACHE_NAME = "v0.5"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -43,7 +43,6 @@ const putInCache = async (request, response) => {
 
   self.addEventListener("install", (event) => {
     self.skipWaiting();
-    event.waitUntil(clients.claim());  
   });
   
   self.addEventListener("fetch", (event) => {
@@ -56,6 +55,7 @@ const putInCache = async (request, response) => {
   });
 
   self.addEventListener("activate", (event) => {
+    event.waitUntil(clients.claim());  
     const cacheWhitelist = [CACHE_NAME];
     event.waitUntil(
       caches.keys().then((cacheNames) => {
