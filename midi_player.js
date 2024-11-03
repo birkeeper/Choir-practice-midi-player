@@ -74,20 +74,26 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     // add an event listener for the file inout
     document.getElementById("midi_input").addEventListener("change", async event => {
         // check if any files are added
-        if (!event.target.files[0]) {
+        let file = event.target.files[0];
+        if (!file) {
             return;
         }
+
+        if (!(file.type === 'audio/midi' || file.type === 'audio/x-midi')) { //incorrect file type
+            document.getElementById("message").innerText = "Incorrect file type. Select a midi file.";
+            return;
+        }
+
         // resume the context if paused
         await context.resume();
         // parse all the files
         const parsedSongs = [];
-        for (let file of event.target.files) {
-            const buffer = await file.arrayBuffer();
-            parsedSongs.push({
-                binary: buffer,     // binary: the binary data of the file
-                altName: file.name  // altName: the fallback name if the MIDI doesn't have one. Here we set it to the file name
-            });
-        }
+        const buffer = await file.arrayBuffer();
+        parsedSongs.push({
+            binary: buffer,     // binary: the binary data of the file
+            altName: file.name  // altName: the fallback name if the MIDI doesn't have one. Here we set it to the file name
+        });
+        
         if(seq === undefined)
         {
             seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,});                          // create the sequencer with the parsed midis
