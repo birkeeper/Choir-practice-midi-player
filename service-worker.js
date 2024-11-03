@@ -55,18 +55,19 @@ const putInCache = async (request, response) => {
   });
 
   self.addEventListener("activate", (event) => {
-    event.waitUntil(clients.claim());  
-    const cacheWhitelist = [CACHE_NAME];
     event.waitUntil(
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (!cacheWhitelist.includes(cacheName)) {
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
+      (async () => {
+          await clients.claim();
+          const cacheWhitelist = [CACHE_NAME];
+          const cacheNames = await caches.keys();
+          await Promise.all(
+              cacheNames.map(cacheName => {
+                  if (!cacheWhitelist.includes(cacheName)) {
+                      return caches.delete(cacheName);
+                  }
+              })
+          );
+      })()
     );
   });
   
