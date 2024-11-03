@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v0.2"; 
+const CACHE_NAME = "v0.3"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -40,6 +40,11 @@ const putInCache = async (request, response) => {
       });
     }
   };
+
+  self.addEventListener("install", (event) => {
+    self.skipWaiting();
+    event.waitUntil(clients.claim());  
+  });
   
   self.addEventListener("fetch", (event) => {
     event.respondWith(
