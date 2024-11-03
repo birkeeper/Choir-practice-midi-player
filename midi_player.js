@@ -79,7 +79,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             return;
         }
 
-        if (!(file.type === 'audio/midi' || file.type === 'audio/x-midi')) { //incorrect file type
+        if (!(file.type === 'audio/midi' || file.type === 'audio/x-midi' || file.type === 'audio/mid')) { //incorrect file type
             document.getElementById("message").innerText = "Incorrect file type. Select a midi file.";
             return;
         }
