@@ -76,6 +76,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         // check if any files are added
         let file = event.target.files[0];
         if (!file) {
+            document.getElementById("message").innerText = "No midi files visible? Give your browser \"music and audio\" permisions.";
             return;
         }
 
