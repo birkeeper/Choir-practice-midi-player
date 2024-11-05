@@ -61,7 +61,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         const soundFont = loadSoundFont(await secondarySoundFontBuffer);
         instruments = {...soundFont.presets};
     }
-    document.getElementById("message").innerText = "Select a midi file.";
+    document.getElementById("message").innerText = "Select a midi file. Give your browser \"music and audio\" permisions.";
     for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
         instrument.bank = SOUNDFONTBANK;
     }
@@ -76,7 +76,6 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         // check if any files are added
         let file = event.target.files[0];
         if (!file) {
-            document.getElementById("message").innerText = "No midi files visible? Give your browser \"music and audio\" permisions.";
             return;
         }
 
