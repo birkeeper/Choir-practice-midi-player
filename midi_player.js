@@ -15,7 +15,7 @@ const ICON_SIZE_PX = 24; // size of button icons
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
-const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
+const SOUNTFONT_SPECIAL = "./soundfonts/test.sf2"; //special soundfont
 
 if ("serviceWorker" in navigator) {
     // Register a service worker hosted at the root of the
