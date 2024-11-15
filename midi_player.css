@@ -51,6 +51,10 @@ canvas{
     width: 100%;
 }
 
+#message{
+    overflow-wrap: break-word;
+}
+
 span{
     flex: 0 0 auto
 }

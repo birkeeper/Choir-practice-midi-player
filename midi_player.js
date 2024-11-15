@@ -8,7 +8,7 @@ import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/src/
 import { loadSoundFont } from "./libraries/spessasynth_lib/src/spessasynth_lib/soundfont/load_soundfont.js";
 import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 
-const VERSION = "v1.1.1"
+const VERSION = "v1.1.2"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 
@@ -61,7 +61,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         const soundFont = loadSoundFont(await secondarySoundFontBuffer);
         instruments = {...soundFont.presets};
     }
-    document.getElementById("message").innerText = "Select a midi file.";
+    document.getElementById("message").innerText = "Select a midi file. Give your browser \"music and audio\" permisions.";
     for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
         instrument.bank = SOUNDFONTBANK;
     }
