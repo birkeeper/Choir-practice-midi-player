@@ -70,4 +70,23 @@ const putInCache = async (request, response) => {
       })()
     );
   });
+
+// Function to store settings in cache
+async function storeSettings(hash, settings) {
+  const response = new Response(JSON.stringify(settings), {
+      headers: { 'Content-Type': 'application/json' }
+  });
+  putInCache(`/settings/${hash}`, response);
+}
+
+// Function to retrieve settings from cache
+async function retrieveSettings(hash) {
+  const cache = await caches.open(CACHE_NAME);
+  const response = await cache.match(`/settings/${hash}`);
+  if (response) {
+      return await response.json();
+  } else {
+      return null; // No settings found for this file
+  }
+}
   
