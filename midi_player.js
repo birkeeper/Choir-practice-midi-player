@@ -44,9 +44,49 @@ if ("serviceWorker" in navigator) {
         console.error(`Service worker registration failed: ${error}`);
       },
     );
-  } else {
+} else {
     console.error("Service workers are not supported.");
-  }
+}
+
+// Function to store settings
+async function storeSettings(hash, settings) {
+    if (navigator.serviceWorker.controller) {
+        console.log(`storing settings (hash: ${hash}`);
+        navigator.serviceWorker.controller.postMessage({
+            type: 'storeSettings',
+            hash: hash,
+            settings: settings
+        });
+    }
+}
+
+// Function to retrieve settings
+async function retrieveSettings(hash) {
+    if (navigator.serviceWorker.controller) {
+        return new Promise((resolve) => {
+            const messageChannel = new MessageChannel();
+            messageChannel.port1.onmessage = (event) => {
+                resolve(event.data.settings);
+                if (settings === null) {
+                    console.log("settings not found");
+                }
+                else {
+                    console.log("settings retrieved");
+                }
+            };
+            console.log(`retrieving settings (hash: ${hash})`);
+            navigator.serviceWorker.controller.postMessage({
+                type: 'retrieveSettings',
+                hash: hash
+            }, [messageChannel.port2]);
+        });
+    }
+    return null;
+}
+
+await storeSettings("test1","test1");
+await retrieveSettings("test1");
+await retrieveSettings("test2");
 
 document.getElementById('title').textContent = 'Midi Player '+ VERSION;
 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);

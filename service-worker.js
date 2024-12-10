@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v3.0"; 
+const CACHE_NAME = "v3.1"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -63,30 +63,38 @@ const putInCache = async (request, response) => {
           await Promise.all(
               cacheNames.map(cacheName => {
                   if (!cacheWhitelist.includes(cacheName)) {
+                      console.log(`old cache ${cacheName} deleted.`);
                       return caches.delete(cacheName);
                   }
+                  console.log(`active cache is ${CACHE_NAME}`);
               })
           );
       })()
     );
   });
 
-// Function to store settings in cache
-async function storeSettings(hash, settings) {
-  const response = new Response(JSON.stringify(settings), {
-      headers: { 'Content-Type': 'application/json' }
-  });
-  putInCache(`/settings/${hash}`, response);
-}
+self.addEventListener('message', async (event) => {
+  const { type, hash, settings } = event.data;
 
-// Function to retrieve settings from cache
-async function retrieveSettings(hash) {
-  const cache = await caches.open(CACHE_NAME);
-  const response = await cache.match(`/settings/${hash}`);
-  if (response) {
-      return await response.json();
-  } else {
-      return null; // No settings found for this file
+    
+  if (type === 'storeSettings') {
+      const cache = await caches.open('midi-settings-cache');
+      const response = new Response(JSON.stringify(settings), {
+          headers: { 'Content-Type': 'application/json' }     
+      });
+      await cache.put(`/settings/${hash}`, response);
+      console.log(`settings (hash: ${hash}) saved to cache ${CACHE_NAME}`);
+  } else if (type === 'retrieveSettings') {
+      const cache = await caches.open('midi-settings-cache');
+      const response = await cache.match(`/settings/${hash}`);
+      if (response) {
+          const settings = await response.json();
+          event.ports[0].postMessage({ settings });
+          console.log(`settings (hash: ${hash}) retrieved from cache ${CACHE_NAME}`);
+      } else {
+          event.ports[0].postMessage({ settings: null });
+          console.log(`settings (hash: ${hash}) not found in cache ${CACHE_NAME}`);
+      }
   }
-}
+});
   
