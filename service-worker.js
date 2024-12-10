@@ -78,14 +78,14 @@ self.addEventListener('message', async (event) => {
 
     
   if (type === 'storeSettings') {
-      const cache = await caches.open('midi-settings-cache');
+      const cache = await caches.open(CACHE_NAME);
       const response = new Response(JSON.stringify(settings), {
           headers: { 'Content-Type': 'application/json' }     
       });
       await cache.put(`/settings/${hash}`, response);
       console.log(`settings (hash: ${hash}) saved to cache ${CACHE_NAME}`);
   } else if (type === 'retrieveSettings') {
-      const cache = await caches.open('midi-settings-cache');
+      const cache = await caches.open(CACHE_NAME);
       const response = await cache.match(`/settings/${hash}`);
       if (response) {
           const settings = await response.json();
