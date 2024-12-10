@@ -67,7 +67,7 @@ async function retrieveSettings(hash) {
             const messageChannel = new MessageChannel();
             messageChannel.port1.onmessage = (event) => {
                 resolve(event.data.settings);
-                if (settings === null) {
+                if (event.data.settings === null) {
                     console.log("settings not found");
                 }
                 else {
