@@ -84,9 +84,11 @@ async function retrieveSettings(hash) {
     return null;
 }
 
-await storeSettings("test1","test1");
-await retrieveSettings("test1");
-await retrieveSettings("test2");
+(async () => {
+    await storeSettings("test1","test1");
+    await retrieveSettings("test1");
+    await retrieveSettings("test2");
+})();
 
 document.getElementById('title').textContent = 'Midi Player '+ VERSION;
 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);

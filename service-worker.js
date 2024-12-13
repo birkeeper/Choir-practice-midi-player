@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v3.2"; 
+const CACHE_NAME = "v3.4"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -9,7 +9,8 @@ const putInCache = async (request, response) => {
   
   const cacheFirst = async ({ request, fallbackUrl }) => {
     // First try to get the resource from the cache.
-    const responseFromCache = await caches.match(request);
+    const cache = await caches.open(CACHE_NAME);
+    const responseFromCache = await cache.match(request);
     if (responseFromCache) {
       return responseFromCache;
     }
