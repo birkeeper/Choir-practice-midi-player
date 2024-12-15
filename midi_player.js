@@ -198,24 +198,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
 
         // read channel settings from cache if available
         channels = await retrieveSettings(await generateHash(buffer));
-        if (channels === null) { // no channel settings found in the cache
-            channels = [];
-            let nrOfTracks = e.tracksAmount;
-            const channelsPerTrack = e.usedChannelsOnTrack;
-            const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
-            channelNumbers.forEach(channelNumber => {
-                const channelSettings = {
-                    name: `${channelNumber}`,
-                    number: channelNumber,
-                    pan: Math.round((127*channel)/(channels.size-1)), // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable., // Example default panning value (center)
-                    volume: 85, // Example default volume value
-                    instruments: [] // Initialize with an empty array or populate with available instruments
-                };
-                channels.push(channelSettings);
-            });
-        }    
-        console.log(channels);
-
+        
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
             document.getElementById("message").innerText = e.midiName;
@@ -228,6 +211,24 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             // create channel controls
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
+
+            if (channels === null) { // no channel settings found in the cache
+                channels = [];
+                let nrOfTracks = e.tracksAmount;
+                const channelsPerTrack = e.usedChannelsOnTrack;
+                const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
+                channelNumbers.forEach(channelNumber => {
+                    const channelSettings = {
+                        name: `${channelNumber}`,
+                        number: channelNumber,
+                        pan: Math.round((127*channel)/(channels.size-1)), // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable., // Example default panning value (center)
+                        volume: 85, // Example default volume value
+                        instruments: [] // Initialize with an empty array or populate with available instruments
+                    };
+                    channels.push(channelSettings);
+                });
+            }    
+            console.log(channels);
 
             const instrumentControls = new Map(); // array of instrument controls to be able to control them
             for (const channel of channels) {
