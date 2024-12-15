@@ -196,11 +196,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will play automatically when playbackRate is changed
         });
 
-        // read channel settings from cache if available
-        channels = await retrieveSettings(await generateHash(buffer));
-        
         // on song change, show the name
-        seq.addOnSongChangeEvent(e => {
+        seq.addOnSongChangeEvent(async e => {
             document.getElementById("message").innerText = e.midiName;
             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will play automatically when song is changed.
 
@@ -212,6 +209,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
 
+            // read channel settings from cache if available
+            channels = await retrieveSettings(await generateHash(buffer));
             if (channels === null) { // no channel settings found in the cache
                 channels = [];
                 let nrOfTracks = e.tracksAmount;
