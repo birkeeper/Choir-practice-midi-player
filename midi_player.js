@@ -17,9 +17,8 @@ const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loade
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
 
-async function generateHash(file) {
-    const arrayBuffer = await file.arrayBuffer();
-    const hashBuffer = await crypto.subtle.digest('SHA-1', arrayBuffer);
+async function generateHash(fileBuffer) {
+    const hashBuffer = await crypto.subtle.digest('SHA-1', fileBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return hashHex;
