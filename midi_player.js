@@ -220,7 +220,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     const channelSettings = {
                         name: `${channelNumber}`,
                         number: channelNumber,
-                        pan: Math.round((127*channel)/(channels.size-1)), // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable., // Example default panning value (center)
+                        pan: Math.round((127*channelNumber)/(channelNumbers.size-1)), // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable., // Example default panning value (center)
                         volume: 85, // Example default volume value
                         instruments: [] // Initialize with an empty array or populate with available instruments
                     };
