@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v3.9"; 
+const CACHE_NAME = "v3.10"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
