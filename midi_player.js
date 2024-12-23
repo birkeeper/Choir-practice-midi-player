@@ -298,7 +298,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 } else {option.selected = false;}
                 instrumentSelect.appendChild(option);
                 
-                if (channel.number === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel].isDrum = true; }
+                if (channel.number === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel.number].isDrum = true; }
                 if (!synth.channelProperties[channel.number].isDrum) { // do not have interactive drop-down menu when the channel is used for percussion.
                     for (const instrument of Object.values(instruments)) {
                         const option = document.createElement('option');
