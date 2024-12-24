@@ -193,7 +193,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         });
 
         // on song change, show the name
-        seq.addOnSongChangeEvent(async e => {
+        seq.addOnSongChangeEvent(e => {
             document.getElementById("message").innerText = e.midiName;
             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will play automatically when song is changed.
 
@@ -211,26 +211,32 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             }
 
             // read channel settings from cache if available
-            midiFileHash = await generateHash(buffer);
-            channels = await retrieveSettings(midiFileHash);
-            if (channels === null) { // no channel settings found in the cache
-                channels = [];
-                let nrOfTracks = e.tracksAmount;
-                const channelsPerTrack = e.usedChannelsOnTrack;
-                const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
-                channelNumbers.forEach(channelNumber => {
-                    const channelSettings = {
-                        name: `${channelNumber}`,
-                        number: channelNumber,
-                        pan: Math.round((127*channelNumber)/(channelNumbers.size-1)), // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable., // Example default panning value (center)
-                        volume: 85, // Example default volume value
-                        selectedInstrument: "Default"
-                    };
-                    channels.push(channelSettings);
-                });
-            }    
-            console.log(channels);
-
+            generateHash(buffer)
+            .then((data) => {
+                midiFileHash = data;
+                retrieveSettings(midiFileHash);
+            })
+            .then ((data) => {
+                channels = data;
+                if (channels === null) { // no channel settings found in the cache
+                    channels = [];
+                    let nrOfTracks = e.tracksAmount;
+                    const channelsPerTrack = e.usedChannelsOnTrack;
+                    const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
+                    channelNumbers.forEach(channelNumber => {
+                        const channelSettings = {
+                            name: `${channelNumber}`,
+                            number: channelNumber,
+                            pan: Math.round((127*channelNumber)/(channelNumbers.size-1)), // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable., // Example default panning value (center)
+                            volume: 85, // Example default volume value
+                            selectedInstrument: "Default"
+                        };
+                        channels.push(channelSettings);
+                    });
+                }    
+                console.log(channels);
+            });
+        
             const instrumentControls = new Map(); // array of instrument controls to be able to control them
             for (const channel of channels) {
                 const channelControl = createChannelControl(channel, synth, instrumentControls);
@@ -289,11 +295,13 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     synth.lockController(channel.number, midiControllers.mainVolume, true);
                 }
                 volumeSlider.onmouseup = () => {
+                    channel.volume = volumeSlider.value;
                     if (midiFileHash !== undefined && channels !== undefined) {
                         storeSettings(midiFileHash, channels);
                     }
                 }
                 volumeSlider.ontouchend = () => {
+                    channel.volume = volumeSlider.value;
                     if (midiFileHash !== undefined && channels !== undefined) {
                         storeSettings(midiFileHash, channels);
                     }
@@ -323,8 +331,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     }
                     instrumentSelect.addEventListener('change', function(event) {
                         let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
-                        channel.selectedInstrument(event.target.textContent)
-                        synth.lockController(channel.number, midiControllers.bankSelect, false)
+                        channel.selectedInstrumen = event.target.textContent;
+                        synth.lockController(channel.number, midiControllers.bankSelect, false);
                         synth.controllerChange (channel.number, midiControllers.bankSelect, data[0]);
                         synth.lockController(channel.number, midiControllers.bankSelect, true);
                         currentBank.set(channel.number, data[0]);
