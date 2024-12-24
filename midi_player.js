@@ -238,7 +238,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
 
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
                 for (const channel of channels) {
-                    const channelControl = createChannelControl(channel.number, synth, instrumentControls);
+                    const channelControl = createChannelControl(channel, synth, instrumentControls);
                     channelControlsContainer.appendChild(channelControl);
                 }
 
