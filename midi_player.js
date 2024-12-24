@@ -146,8 +146,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         else
         {
             for (const channel of channels) {// unlock all channel controllers of the previous song, so it can be overwritten.
-                synth.lockController(channel, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
-                synth.lockController(channel, midiControllers.bankSelect, false);
+                synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
+                synth.lockController(channel.number, midiControllers.bankSelect, false);
             }
             seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
         }
@@ -238,7 +238,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
 
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
                 for (const channel of channels) {
-                    const channelControl = createChannelControl(channel, synth, instrumentControls);
+                    const channelControl = createChannelControl(channel.number, synth, instrumentControls);
                     channelControlsContainer.appendChild(channelControl);
                 }
 
@@ -330,7 +330,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     }
                     instrumentSelect.addEventListener('change', function(event) {
                         let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
-                        channel.selectedInstrumen = event.target.textContent;
+                        channel.selectedInstrument = event.target.textContent;
                         synth.lockController(channel.number, midiControllers.bankSelect, false);
                         synth.controllerChange (channel.number, midiControllers.bankSelect, data[0]);
                         synth.lockController(channel.number, midiControllers.bankSelect, true);
@@ -343,7 +343,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                             storeSettings(midiFileHash, channels);
                         }
                     });
-                    instrumentControls.set(channel,instrumentSelect);
+                    instrumentControls.set(channel.number,instrumentSelect);
                 }
                 container.appendChild(instrumentSelect);
             
