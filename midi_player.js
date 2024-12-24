@@ -214,7 +214,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             generateHash(buffer)
             .then((data) => {
                 midiFileHash = data;
-                retrieveSettings(midiFileHash);
+                return retrieveSettings(midiFileHash);
             })
             .then ((data) => {
                 channels = data;
@@ -241,6 +241,24 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     const channelControl = createChannelControl(channel, synth, instrumentControls);
                     channelControlsContainer.appendChild(channelControl);
                 }
+
+                synth.eventHandler.removeEvent("programchange","program-change-event");
+                synth.eventHandler.addEvent("programchange","program-change-event", e => {
+                    let bank = currentBank.get(e.channel) === undefined ? 0 : currentBank.get(e.channel);
+                    console.log(`program change to preset ${e.channel}:${bank}:${e.program}`);
+                    if (instrumentControls.has(e.channel)) {
+                        const options = instrumentControls.get(e.channel);
+                        if ( bank === 0) { // change the default setting to the latest instrument that is to bank 0 for the indicated channel
+                            for (let i=0; i<options.length; i++) {
+                                if (options[i].textContent === "Default") {
+                                    options[i].value = `${bank}:${e.program}`;
+                                    console.log(`default option set to preset ${e.channel}:${bank}:${e.program}`);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
             });
         
             const currentBank = new Map();
@@ -249,25 +267,6 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 if (e.controllerNumber === 0) { // bank select
                     console.log(`controller change to ${e.channel}:${e.controllerNumber}:${e.controllerValue}`);
                     currentBank.set(e.channel, e.controllerValue);
-                }
-            });
-
-            synth.eventHandler.removeEvent("programchange","program-change-event");
-            synth.eventHandler.addEvent("programchange","program-change-event", e => {
-                let bank = currentBank.get(e.channel) === undefined ? 0 : currentBank.get(e.channel);
-                console.log(`program change to preset ${e.channel}:${bank}:${e.program}`);
-                if (instrumentControls.has(e.channel)) {
-                    const options = instrumentControls.get(e.channel);
-                    if ( bank === 0) { // change the default setting to the latest instrument that is to bank 0 for the indicated channel
-                        for (let i=0; i<options.length; i++) {
-                            if (options[i].textContent === "Default") {
-                                options[i].value = `${bank}:${e.program}`;
-                                console.log(`default option set to preset ${e.channel}:${bank}:${e.program}`);
-                                break;
-                    
-                            }
-                        }
-                    }
                 }
             });
             
