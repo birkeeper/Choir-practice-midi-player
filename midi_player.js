@@ -35,7 +35,8 @@ if ("serviceWorker" in navigator) {
         } else if (registration.waiting) {
             console.log("Service worker installed");
         } else if (registration.active) {
-            console.log("Service worker active");
+            console.log("Service worker active. Reloading page.");
+            window.location.reload();
         }
         registration.update(); // Check for updates immediately
       },
@@ -235,14 +236,14 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     });
                 }    
                 console.log(channels);
+
+                const instrumentControls = new Map(); // array of instrument controls to be able to control them
+                for (const channel of channels) {
+                    const channelControl = createChannelControl(channel, synth, instrumentControls);
+                    channelControlsContainer.appendChild(channelControl);
+                }
             });
         
-            const instrumentControls = new Map(); // array of instrument controls to be able to control them
-            for (const channel of channels) {
-                const channelControl = createChannelControl(channel, synth, instrumentControls);
-                channelControlsContainer.appendChild(channelControl);
-            }
-            
             const currentBank = new Map();
             synth.eventHandler.removeEvent("controllerchange","controller-change-event");
             synth.eventHandler.addEvent("controllerchange","controller-change-event", e => {
