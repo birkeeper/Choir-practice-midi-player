@@ -294,13 +294,13 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     synth.lockController(channel.number, midiControllers.mainVolume, true);
                 }
                 volumeSlider.onmouseup = () => {
-                    channel.volume = volumeSlider.value;
+                    channel.volume = parseInt(volumeSlider.value);
                     if (midiFileHash !== undefined && channels !== undefined) {
                         storeSettings(midiFileHash, channels);
                     }
                 }
                 volumeSlider.ontouchend = () => {
-                    channel.volume = volumeSlider.value;
+                    channel.volume = parseInt(volumeSlider.value);
                     if (midiFileHash !== undefined && channels !== undefined) {
                         storeSettings(midiFileHash, channels);
                     }
@@ -323,14 +323,18 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         const option = document.createElement('option');
                         option.value = `${instrument.bank}:${instrument.program}`;
                         option.textContent = instrument.presetName;
-                        if (channel.selectedInstrument === "instrument.presetName") {
+                        if (channel.selectedInstrument === instrument.presetName) {
                             option.selected = true;
                         } else {option.selected = false;}
                         instrumentSelect.appendChild(option);
                     }
                     instrumentSelect.addEventListener('change', function(event) {
                         let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
-                        channel.selectedInstrument = event.target.textContent;
+                        for (const option of event.target.options){
+                            if (option.selected == true) {
+                                channel.selectedInstrument = option.textContent;
+                            }
+                        }
                         synth.lockController(channel.number, midiControllers.bankSelect, false);
                         synth.controllerChange (channel.number, midiControllers.bankSelect, data[0]);
                         synth.lockController(channel.number, midiControllers.bankSelect, true);
