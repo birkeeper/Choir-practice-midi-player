@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v3.13"; 
+const CACHE_NAME = "v3.14"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -76,8 +76,6 @@ const putInCache = async (request, response) => {
 
 self.addEventListener('message', async (event) => {
   const { type, hash, settings } = event.data;
-
-    
   if (type === 'storeSettings') {
       const cache = await caches.open(CACHE_NAME);
       const response = new Response(JSON.stringify(settings), {

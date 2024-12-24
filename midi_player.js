@@ -114,6 +114,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
 
     let seq;
     let channels;
+    let midiFileHash;
     // add an event listener for the file inout
     document.getElementById("midi_input").addEventListener("change", async event => {
         // check if any files are added
@@ -129,11 +130,6 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
 
         // resume the context if paused
         await context.resume();
-
-        // store settings if a song has been loaded before
-        if (channels !== undefined) {
-            storeSettings(await generateHash(buffer), channels);
-        }
 
         // parse all the files
         const parsedSongs = [];
@@ -209,8 +205,14 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
 
+            // store settings of the previous song if available
+            if (midiFileHash !== undefined && channels !== undefined) {
+                storeSettings(midiFileHash, channels);
+            }
+
             // read channel settings from cache if available
-            channels = await retrieveSettings(await generateHash(buffer));
+            midiFileHash = await generateHash(buffer);
+            channels = await retrieveSettings(midiFileHash);
             if (channels === null) { // no channel settings found in the cache
                 channels = [];
                 let nrOfTracks = e.tracksAmount;
@@ -286,6 +288,16 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     synth.controllerChange (channel.number, midiControllers.mainVolume, volumeSlider.value);
                     synth.lockController(channel.number, midiControllers.mainVolume, true);
                 }
+                volumeSlider.onmouseup = () => {
+                    if (midiFileHash !== undefined && channels !== undefined) {
+                        storeSettings(midiFileHash, channels);
+                    }
+                }
+                volumeSlider.ontouchend = () => {
+                    if (midiFileHash !== undefined && channels !== undefined) {
+                        storeSettings(midiFileHash, channels);
+                    }
+                }
                 container.appendChild(volumeSlider);
             
                 const instrumentSelect = document.createElement('select');
@@ -311,6 +323,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     }
                     instrumentSelect.addEventListener('change', function(event) {
                         let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
+                        channel.selectedInstrument(event.target.textContent)
                         synth.lockController(channel.number, midiControllers.bankSelect, false)
                         synth.controllerChange (channel.number, midiControllers.bankSelect, data[0]);
                         synth.lockController(channel.number, midiControllers.bankSelect, true);
@@ -318,7 +331,10 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
                         synth.programChange(channel.number, data[1]);
                         synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
-                        console.log(`changing channel ${channel.number} to instrument ${event.target.value}`)
+                        console.log(`changing channel ${channel.number} to instrument ${event.target.value}`);
+                        if (midiFileHash !== undefined && channels !== undefined) {
+                            storeSettings(midiFileHash, channels);
+                        }
                     });
                     instrumentControls.set(channel,instrumentSelect);
                 }
