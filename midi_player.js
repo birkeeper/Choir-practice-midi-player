@@ -127,6 +127,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             document.getElementById("message").innerText = "Incorrect file type. Select a midi file.";
             return;
         }
+        console.log("file opened");
 
         // resume the context if paused
         await context.resume();
@@ -194,6 +195,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
 
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
+            console.log("song changed");
             document.getElementById("message").innerText = e.midiName;
             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will play automatically when song is changed.
 
@@ -205,10 +207,6 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
 
-            // store settings of the previous song if available
-            if (midiFileHash !== undefined && channels !== undefined) {
-                storeSettings(midiFileHash, channels);
-            }
 
             // read channel settings from cache if available
             generateHash(buffer)
