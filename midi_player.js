@@ -162,10 +162,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         slider.oninput = () => {
             currentTimeDisplay.textContent = formatTime(Number(slider.value));
         };
-        slider.onmousedown = handleClickProgressSlider;
-        slider.onmouseup = handleReleaseProgressSlider;
-        slider.ontouchstart = handleClickProgressSlider;
-        slider.ontouchend = handleReleaseProgressSlider;
+        slider.onpointerdown = handleClickProgressSlider;
+        slider.onpointerup = handleReleaseProgressSlider;
         function handleClickProgressSlider() {
             clearInterval(timerID);
             console.log("progress slider clicked");
@@ -348,9 +346,12 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                             storeSettings(midiFileHash, channels);
                         }
                     });
-                    const event = new Event("change");
-                    instrumentSelect.dispatchEvent(event);
                     instrumentControls.set(channel.number,instrumentSelect);
+                    setTimeout(() => {
+                        const event = new Event("change");
+                        instrumentSelect.dispatchEvent(event);
+                        console.log(`activate instrument ${instrumentSelect.value} for channel ${channel.number}`);
+                    }, 500);   
                 }
                 container.appendChild(instrumentSelect);
             
