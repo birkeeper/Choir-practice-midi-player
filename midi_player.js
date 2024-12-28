@@ -162,10 +162,11 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         slider.oninput = () => {
             currentTimeDisplay.textContent = formatTime(Number(slider.value));
         };
-        slider.onpointerdown = handleClickProgressSlider;
-        slider.onpointerup = handleReleaseProgressSlider;
+        slider.addEventListener("pointerdown", handleClickProgressSlider, true);
+        slider.addEventListener("pointerup", handleReleaseProgressSlider, false);
         function handleClickProgressSlider() {
             clearInterval(timerID);
+            timerID = null;
             console.log("progress slider clicked");
         }
         function handleReleaseProgressSlider() {
@@ -292,13 +293,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     synth.controllerChange (channel.number, midiControllers.mainVolume, volumeSlider.value);
                     synth.lockController(channel.number, midiControllers.mainVolume, true);
                 }
-                volumeSlider.onmouseup = () => {
-                    channel.volume = parseInt(volumeSlider.value);
-                    if (midiFileHash !== undefined && channels !== undefined) {
-                        storeSettings(midiFileHash, channels);
-                    }
-                }
-                volumeSlider.ontouchend = () => {
+                volumeSlider.pointerup = () => {
                     channel.volume = parseInt(volumeSlider.value);
                     if (midiFileHash !== undefined && channels !== undefined) {
                         storeSettings(midiFileHash, channels);
