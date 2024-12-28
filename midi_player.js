@@ -293,7 +293,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     synth.controllerChange (channel.number, midiControllers.mainVolume, volumeSlider.value);
                     synth.lockController(channel.number, midiControllers.mainVolume, true);
                 }
-                volumeSlider.pointerup = () => {
+                volumeSlider.onpointerup = () => {
                     channel.volume = parseInt(volumeSlider.value);
                     if (midiFileHash !== undefined && channels !== undefined) {
                         storeSettings(midiFileHash, channels);
@@ -346,7 +346,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         const event = new Event("change");
                         instrumentSelect.dispatchEvent(event);
                         console.log(`activate instrument ${instrumentSelect.value} for channel ${channel.number}`);
-                    }, 500);   
+                    }, 100);   
                 }
                 container.appendChild(instrumentSelect);
             
