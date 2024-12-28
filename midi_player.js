@@ -168,11 +168,13 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         slider.ontouchend = handleReleaseProgressSlider;
         function handleClickProgressSlider() {
             clearInterval(timerID);
+            console.log("progress slider clicked");
         }
         function handleReleaseProgressSlider() {
             seq.currentTime = Number(slider.value);
             timerID = setInterval(timerCallback, 500);
             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will automatically play when currentTime is changed
+            console.log("progress slider released");
         }
         function timerCallback() {
             slider.value = Math.floor(seq.currentTime);
@@ -187,11 +189,12 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         // make a slider to set the playback rate
         const playbackRateInput = document.getElementById('playbackRate');
         const playbackRateValue = document.getElementById('playbackRateValue');
-        playbackRateInput.addEventListener('input', function() {
+        playbackRateInput.addEventListener('input',playbackRateCallback);
+        function playbackRateCallback() {
             seq.playbackRate = playbackRateInput.value;
             playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(1)}x`;
             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will play automatically when playbackRate is changed
-        });
+        }
 
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
@@ -345,6 +348,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                             storeSettings(midiFileHash, channels);
                         }
                     });
+                    const event = new Event("change");
+                    instrumentSelect.dispatchEvent(event);
                     instrumentControls.set(channel.number,instrumentSelect);
                 }
                 container.appendChild(instrumentSelect);
