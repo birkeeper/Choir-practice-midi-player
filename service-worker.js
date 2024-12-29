@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v3.27"; 
+const CACHE_NAME = "v3.28"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -75,24 +75,24 @@ const putInCache = async (request, response) => {
   });
 
 self.addEventListener('message', async (event) => {
-  const { type, hash, settings } = event.data;
+  const { type, key, settings } = event.data;
   if (type === 'storeSettings') {
       const cache = await caches.open(CACHE_NAME);
       const response = new Response(JSON.stringify(settings), {
           headers: { 'Content-Type': 'application/json' }     
       });
-      await cache.put(`/settings/${hash}`, response);
-      console.log(`settings (hash: ${hash}) saved to cache ${CACHE_NAME}`);
+      await cache.put(`/settings/${key}`, response);
+      console.log(`settings (key: ${key}) saved to cache ${CACHE_NAME}`);
   } else if (type === 'retrieveSettings') {
       const cache = await caches.open(CACHE_NAME);
-      const response = await cache.match(`/settings/${hash}`);
+      const response = await cache.match(`/settings/${key}`);
       if (response) {
           const settings = await response.json();
           event.ports[0].postMessage({ settings });
-          console.log(`settings (hash: ${hash}) retrieved from cache ${CACHE_NAME}`);
+          console.log(`settings (key: ${key}) retrieved from cache ${CACHE_NAME}`);
       } else {
           event.ports[0].postMessage({ settings: null });
-          console.log(`settings (hash: ${hash}) not found in cache ${CACHE_NAME}`);
+          console.log(`settings (key: ${key}) not found in cache ${CACHE_NAME}`);
       }
   }
 });

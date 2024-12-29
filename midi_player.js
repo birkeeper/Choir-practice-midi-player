@@ -48,19 +48,19 @@ if ("serviceWorker" in navigator) {
 }
 
 // Function to store settings
-async function storeSettings(hash, settings) {
+async function storeSettings(key, settings) {
     if (navigator.serviceWorker.controller) {
-        console.log(`storing settings (hash: ${hash}`);
+        console.log(`storing settings (key: ${key}`);
         navigator.serviceWorker.controller.postMessage({
             type: 'storeSettings',
-            hash: hash,
+            key: key,
             settings: settings
         });
     }
 }
 
 // Function to retrieve settings
-async function retrieveSettings(hash) {
+async function retrieveSettings(key) {
     if (navigator.serviceWorker.controller) {
         return new Promise((resolve) => {
             const messageChannel = new MessageChannel();
@@ -73,10 +73,10 @@ async function retrieveSettings(hash) {
                     console.log("settings retrieved");
                 }
             };
-            console.log(`retrieving settings (hash: ${hash})`);
+            console.log(`retrieving settings (key: ${key})`);
             navigator.serviceWorker.controller.postMessage({
                 type: 'retrieveSettings',
-                hash: hash
+                key: key
             }, [messageChannel.port2]);
         });
     }
@@ -115,6 +115,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     let seq;
     let channels;
     let midiFileHash;
+    let currentFile = await retrieveSettings("current_file");
     // add an event listener for the file inout
     document.getElementById("midi_input").addEventListener("change", async event => {
         // check if any files are added
@@ -128,6 +129,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             return;
         }
         console.log("file opened");
+        storeSettings("current_file", file);
 
         // resume the context if paused
         await context.resume();
@@ -292,7 +294,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     synth.controllerChange (channel.number, midiControllers.mainVolume, volumeSlider.value);
                     synth.lockController(channel.number, midiControllers.mainVolume, true);
                 }
-                volumeSlider.pointerup = () => {
+                volumeSlider.onpointerup = () => {
                     channel.volume = parseInt(volumeSlider.value);
                     if (midiFileHash !== undefined && channels !== undefined) {
                         storeSettings(midiFileHash, channels);
@@ -381,6 +383,11 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             }
         }
     });
+    if (currentFile != null) {
+        document.getElementById("midi_input").files[0] = currentFile;
+        const event = new Event("change");
+        document.getElementById("midi_input").dispatchEvent(event);
+    }
 });
 
 
