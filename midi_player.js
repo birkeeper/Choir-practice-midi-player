@@ -8,7 +8,7 @@ import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/src/
 import { loadSoundFont } from "./libraries/spessasynth_lib/src/spessasynth_lib/soundfont/load_soundfont.js";
 import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 
-const VERSION = "v1.1.2.1"
+const VERSION = "v1.1.3"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 
