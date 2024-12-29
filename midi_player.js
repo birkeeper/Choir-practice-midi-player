@@ -11,6 +11,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 const VERSION = "v1.1.3"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
+const MAINVOLUME = 1.5;
 
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
@@ -116,7 +117,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     await synth.isReady;
     await synth.soundfontManager.addNewSoundFont(await secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
     document.getElementById("midi_input").disabled = false;
-    synth.setMainVolume(1.0);
+    synth.setMainVolume(MAINVOLUME);
 
     let seq;
     let channels;
