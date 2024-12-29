@@ -234,8 +234,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         channels.push(channelSettings);
                     });
                 }    
-                console.log(channels);
-
+                
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
                 for (const channel of channels) {
                     const channelControl = createChannelControl(channel, synth, instrumentControls);
@@ -313,12 +312,14 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 
                 if (channel.number === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel.number].isDrum = true; }
                 if (!synth.channelProperties[channel.number].isDrum) { // do not have interactive drop-down menu when the channel is used for percussion.
+                    let defaultInstrumentSelected = true;
                     for (const instrument of Object.values(instruments)) {
                         const option = document.createElement('option');
                         option.value = `${instrument.bank}:${instrument.program}`;
                         option.textContent = instrument.presetName;
                         if (channel.selectedInstrument === instrument.presetName) {
                             option.selected = true;
+                            defaultInstrumentSelected = false;
                         } else {option.selected = false;}
                         instrumentSelect.appendChild(option);
                     }
@@ -342,11 +343,13 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         }
                     });
                     instrumentControls.set(channel.number,instrumentSelect);
-                    setTimeout(() => {
-                        const event = new Event("change");
-                        instrumentSelect.dispatchEvent(event);
-                        console.log(`activate instrument ${instrumentSelect.value} for channel ${channel.number}`);
-                    }, 500);   
+                    if (!defaultInstrumentSelected) {
+                        setTimeout(() => {
+                            const event = new Event("change");
+                            instrumentSelect.dispatchEvent(event);
+                            console.log(`activate instrument ${instrumentSelect.value} for channel ${channel.number}`);
+                        }, 100); 
+                    }                      
                 }
                 container.appendChild(instrumentSelect);
             
