@@ -47,6 +47,11 @@ if ("serviceWorker" in navigator) {
     console.error("Service workers are not supported.");
 }
 
+navigator.serviceWorker.addEventListener("controllerchange", () => {
+    console.log("The controller of current browsing context has changed. Reloading the page");
+    window.location.reload();
+});
+
 // Function to store settings
 async function storeSettings(key, settings) {
     if (navigator.serviceWorker.controller) {
