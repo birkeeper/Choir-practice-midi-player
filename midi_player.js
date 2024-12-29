@@ -111,11 +111,11 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     await synth.isReady;
     await synth.soundfontManager.addNewSoundFont(await secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
     document.getElementById("midi_input").disabled = false;
+    synth.setMainVolume(1.0);
 
     let seq;
     let channels;
     let midiFileHash;
-    let currentFile = await retrieveSettings("current_file");
     // add an event listener for the file inout
     document.getElementById("midi_input").addEventListener("change", async event => {
         // check if any files are added
@@ -129,8 +129,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             return;
         }
         console.log("file opened");
-        storeSettings("current_file", file);
-
+        
         // resume the context if paused
         await context.resume();
 
@@ -383,11 +382,6 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             }
         }
     });
-    if (currentFile != null) {
-        document.getElementById("midi_input").files[0] = currentFile;
-        const event = new Event("change");
-        document.getElementById("midi_input").dispatchEvent(event);
-    }
 });
 
 
