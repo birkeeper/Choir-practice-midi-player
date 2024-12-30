@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2024 birkeeper
+Copyright (c) 2024-2025 birkeeper
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+The software uses the spessasynth_lib [(C) 2024 Spessasus], licensed under the MIT license.
+
+The software uses two soundfonts:
+- "General User GS 2.0.1" (GeneralUserGS.sf3) [(C) 1997-2024 S. Christian Collins], licensed under a custom license. Please check the GeneralUserGS.sf3 file
+- "Choir practice soundfont V1.1" (Choir_practice.sf2) [(C) 2024-2025 Birkeeper], licensed under a combined license:
+"The solo voice presets, instruments and samples [(C) 2024-2025 Vocal Group Jammin'] are licensed under CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/). You can share non-commercially, with attribution, but no adaptations allowed.
+The compiled soundfont is licensed under CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/). You can share and adapt non-commercially, with attribution and share alike."
