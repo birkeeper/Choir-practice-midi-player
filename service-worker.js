@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v3.3"; 
+const CACHE_NAME = "v3.1"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -9,7 +9,8 @@ const putInCache = async (request, response) => {
   
   const cacheFirst = async ({ request, fallbackUrl }) => {
     // First try to get the resource from the cache.
-    const responseFromCache = await caches.match(request);
+    const cache = await caches.open(CACHE_NAME);
+    const responseFromCache = await cache.match(request);
     if (responseFromCache) {
       return responseFromCache;
     }
@@ -63,11 +64,36 @@ const putInCache = async (request, response) => {
           await Promise.all(
               cacheNames.map(cacheName => {
                   if (!cacheWhitelist.includes(cacheName)) {
+                      console.log(`old cache ${cacheName} deleted.`);
                       return caches.delete(cacheName);
                   }
+                  console.log(`active cache is ${CACHE_NAME}`);
               })
           );
       })()
     );
   });
+
+self.addEventListener('message', async (event) => {
+  const { type, key, settings } = event.data;
+  if (type === 'storeSettings') {
+      const cache = await caches.open(CACHE_NAME);
+      const response = new Response(JSON.stringify(settings), {
+          headers: { 'Content-Type': 'application/json' }     
+      });
+      await cache.put(`/settings/${key}`, response);
+      console.log(`settings (key: ${key}) saved to cache ${CACHE_NAME}`);
+  } else if (type === 'retrieveSettings') {
+      const cache = await caches.open(CACHE_NAME);
+      const response = await cache.match(`/settings/${key}`);
+      if (response) {
+          const settings = await response.json();
+          event.ports[0].postMessage({ settings });
+          console.log(`settings (key: ${key}) retrieved from cache ${CACHE_NAME}`);
+      } else {
+          event.ports[0].postMessage({ settings: null });
+          console.log(`settings (key: ${key}) not found in cache ${CACHE_NAME}`);
+      }
+  }
+});
   
