@@ -16,7 +16,7 @@ const MAINVOLUME = 1.5;
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
-const SOUNTFONT_SPECIAL = "./soundfonts/test.sf2"; //special soundfont
+const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
 
 async function generateHash(fileBuffer) {
     const hashBuffer = await crypto.subtle.digest('SHA-1', fileBuffer);
