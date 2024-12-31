@@ -400,9 +400,12 @@ function getTrackNames(arrayBuffer) { // returns the tracknames from the midifil
     const tracks = parsedMIDI.tracks; //array of tracks. Each track contains an array of midi messages (MidiMessages)
     const trackNames = [];
     for (const track of tracks) {
-        const index = track.find(getTrackName);
-        const trackName = getTrackName(track[index]);
-        trackNames.push(trackName);
+        const trackName = track.find(getTrackName);
+        if (trackName === undefined) { // message not found in track
+            trackNames.push("");
+        } else {
+            trackNames.push(trackName);
+        }
     }
 }
 
