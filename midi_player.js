@@ -3,10 +3,12 @@
 import { WORKLET_URL_ABSOLUTE } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/worklet_url.js'
 import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/sequencer/sequencer.js'
 import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
-import { midiControllers } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
+import { midiControllers, MidiMessage } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
 import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/worklet_system/message_protocol/worklet_message.js'
 import { loadSoundFont } from "./libraries/spessasynth_lib/src/spessasynth_lib/soundfont/load_soundfont.js";
 import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
+import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
+
 
 const VERSION = "v1.2.0"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
@@ -242,6 +244,9 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     });
                 }    
                 
+                const trackNames = getTrackNames(buffer);
+                console.log(trackNames);
+
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
                 for (const channel of channels) {
                     const channelControl = createChannelControl(channel, synth, instrumentControls);
@@ -389,6 +394,28 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         }
     });
 });
+
+function getTrackNames(arrayBuffer) { // returns the tracknames from the midifiles represented in the arrayBuffer
+    const parsedMIDI = new MIDI(arrayBuffer);
+    const tracks = parsedMIDI.tracks; //array of tracks. Each track contains an array of midi messages (MidiMessages)
+    const trackNames = [];
+    for (const track of tracks) {
+        trackNames.push(track.find(trackName));
+    }
+
+
+}
+
+function trackName(element) {// element should be of type MidiMessage
+    if (element.messageStatusByte === 0xFF) { // meta message found
+        if (element.messageData[0] === 0x03) { // track name message found
+            const indexedByteArray = element.messageData.slice(2); // skip message type and length
+            const trackName = String.fromCharCode(...indexedByteArray);
+            return trackName;
+        }
+    }
+    return "";
+}
 
 
 
