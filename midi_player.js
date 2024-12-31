@@ -400,20 +400,18 @@ function getTrackNames(arrayBuffer) { // returns the tracknames from the midifil
     const tracks = parsedMIDI.tracks; //array of tracks. Each track contains an array of midi messages (MidiMessages)
     const trackNames = [];
     for (const track of tracks) {
-        trackNames.push(track.find(trackName));
+        const index = track.find(getTrackName);
+        const trackName = getTrackName(track[index]);
+        trackNames.push(trackName);
     }
-
-
 }
 
-function trackName(element) {// element should be of type MidiMessage
-    if (element.messageStatusByte === 0xFF) { // meta message found
-        if (element.messageData[0] === 0x03) { // track name message found
-            const indexedByteArray = element.messageData.slice(2); // skip message type and length
-            const trackName = String.fromCharCode(...indexedByteArray);
-            return trackName;
+function getTrackName(element) {// element should be of type MidiMessage
+    if (element.messageStatusByte === 0x03) { // track name message found
+        const indexedByteArray = element.messageData.slice(2); // skip message type and length
+        const trackName = String.fromCharCode(...indexedByteArray);
+        return trackName;
         }
-    }
     return "";
 }
 
