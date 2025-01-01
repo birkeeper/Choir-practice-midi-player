@@ -407,6 +407,7 @@ function getTrackNames(arrayBuffer) { // returns the tracknames from the midifil
             trackNames.push(getTrackName(trackNameMessage));
         }
     }
+    return trackNames;
 }
 
 function getTrackName(element) {// element should be of type MidiMessage
