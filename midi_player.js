@@ -326,6 +326,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     let defaultInstrumentSelected = true;
                     for (const instrument of Object.values(instruments)) {
                         const option = document.createElement('option');
+                        option.className = 'instrument-option';
                         option.value = `${instrument.bank}:${instrument.program}`;
                         option.textContent = instrument.presetName;
                         if (channel.selectedInstrument === instrument.presetName) {

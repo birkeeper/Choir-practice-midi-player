@@ -99,17 +99,22 @@ body {
 }
 
 .channel-name {
-    flex: 0 0 2em;
+    flex: 0 0 2rem;
     field-sizing: fixed;
     overflow-wrap: anywhere;
 }
 
 .volume-slider {
-    flex: 1 1 90%;
+    flex: 1 1 auto;
     margin: 0 10px;
 }
 
 .instrument-select {
-    flex: 0 0 5em;
+    flex: 0 0 5rem;
     field-sizing: fixed;
+}
+
+.instrument-option { 
+    width: 5rem;
+    overflow-wrap: anywhere;
 }
