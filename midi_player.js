@@ -232,9 +232,11 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     let nrOfTracks = e.tracksAmount;
                     const channelsPerTrack = e.usedChannelsOnTrack;
                     const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
+                    const trackNames = getTrackNames(buffer); // track names in the midi file. Track contents is not available in e.
                     channelNumbers.forEach(channelNumber => {
+                        const trackNumber = channelsPerTrack.findIndex(set => set.has(channelNumber));
                         const channelSettings = {
-                            name: `${channelNumber}`,
+                            name: `${channelNumber}:${trackNames[trackNumber]}`,
                             number: channelNumber,
                             pan: Math.round((127*channelNumber)/(channelNumbers.size-1)), // automatically pans the channels from left to right range [0,127], 64 represents middle. This makes the channels more discernable., // Example default panning value (center)
                             volume: 85, // Example default volume value
@@ -244,9 +246,6 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     });
                 }    
                 
-                const trackNames = getTrackNames(buffer);
-                console.log(trackNames);
-
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
                 for (const channel of channels) {
                     const channelControl = createChannelControl(channel, synth, instrumentControls);
@@ -285,9 +284,9 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 const container = document.createElement('div');
                 container.className = 'channel-control';
             
-                const nameLabel = document.createElement('span');
+                const nameLabel = document.createElement('div');
                 nameLabel.className = 'channel-name';
-                nameLabel.textContent = channel.name;
+                nameLabel.innerText = channel.name;
                 container.appendChild(nameLabel);
             
                 const volumeSlider = document.createElement('input');
