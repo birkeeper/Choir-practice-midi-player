@@ -395,7 +395,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     });
 });
 
-function getTrackNames(arrayBuffer) { // returns the tracknames from the midifiles represented in the arrayBuffer
+function getTrackNames(arrayBuffer) { // returns the tracknames from the midifile represented in the arrayBuffer
     const parsedMIDI = new MIDI(arrayBuffer);
     const tracks = parsedMIDI.tracks; //array of tracks. Each track contains an array of midi messages (MidiMessages)
     const trackNames = [];
@@ -411,8 +411,7 @@ function getTrackNames(arrayBuffer) { // returns the tracknames from the midifil
 
 function getTrackName(element) {// element should be of type MidiMessage
     if (element.messageStatusByte === 0x03) { // track name message found
-        const indexedByteArray = element.messageData.slice(2); // skip message type and length
-        const trackName = String.fromCharCode(...indexedByteArray);
+        const trackName = String.fromCharCode(...element.messageData);
         return trackName;
         }
     return "";
