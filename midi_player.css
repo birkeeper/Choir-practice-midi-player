@@ -99,9 +99,9 @@ body {
 }
 
 .channel-name {
-    flex: 0 0 2rem;
+    flex: 0 0 2em;
     field-sizing: fixed;
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
 }
 
 .volume-slider {
@@ -110,6 +110,6 @@ body {
 }
 
 .instrument-select {
-    flex: 0 0 5rem;
+    flex: 0 0 5em;
     field-sizing: fixed;
 }
