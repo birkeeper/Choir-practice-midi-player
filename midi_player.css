@@ -99,7 +99,7 @@ body {
 }
 
 .channel-name {
-    flex: 0 0 2rem;
+    flex: 0 0 3rem;
     field-sizing: fixed;
     overflow-wrap: anywhere;
 }
@@ -110,11 +110,11 @@ body {
 }
 
 .instrument-select {
-    flex: 0 0 5rem;
+    flex: 0 0 3rem;
     field-sizing: fixed;
 }
 
 .instrument-option { 
-    width: 5rem;
+    width: 3rem;
     overflow-wrap: anywhere;
 }

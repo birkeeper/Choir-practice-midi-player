@@ -314,6 +314,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 const instrumentSelect = document.createElement('select');
                 instrumentSelect.className = 'instrument-select'
                 const option = document.createElement('option');
+                option.className = 'instrument-option';
                 option.value = ""
                 option.textContent = "Default"
                 if (channel.selectedInstrument === "Default") {
