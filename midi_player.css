@@ -102,6 +102,7 @@ body {
     flex: 0 0 3rem;
     field-sizing: fixed;
     overflow-wrap: anywhere;
+    width: 3rem;
 }
 
 .volume-slider {
@@ -110,11 +111,12 @@ body {
 }
 
 .instrument-select {
-    flex: 0 0 3rem;
+    flex: 0 0 4rem;
     field-sizing: fixed;
+    width: 4rem;
 }
 
 .instrument-option { 
-    width: 3rem;
+    width: 4rem;
     overflow-wrap: anywhere;
 }
