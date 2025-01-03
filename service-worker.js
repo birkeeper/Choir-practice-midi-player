@@ -96,9 +96,9 @@ self.addEventListener('message', async (event) => {
       if (response) {
         let settings;
           if (response instanceof Blob) {
-            settings = response.blob();
+            settings = await response.blob();
           } else {
-            settings = response.json();
+            settings = await response.json();
           }
           event.ports[0].postMessage({ settings });
           console.log(`settings (key: ${key}) retrieved from cache ${CACHE_NAME}`);
