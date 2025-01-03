@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v5.0"; 
+const CACHE_NAME = "v5.1"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -78,16 +78,28 @@ self.addEventListener('message', async (event) => {
   const { type, key, settings } = event.data;
   if (type === 'storeSettings') {
       const cache = await caches.open(CACHE_NAME);
-      const response = new Response(JSON.stringify(settings), {
+      let response;
+      if (settings instanceof Blob) {
+        response = new Response(settings, {
+          headers: { 'Content-Type': settings.type }     
+        });
+      } else {
+        response = new Response(JSON.stringify(settings), {
           headers: { 'Content-Type': 'application/json' }     
-      });
+        });
+      }
       await cache.put(`/settings/${key}`, response);
       console.log(`settings (key: ${key}) saved to cache ${CACHE_NAME}`);
   } else if (type === 'retrieveSettings') {
       const cache = await caches.open(CACHE_NAME);
       const response = await cache.match(`/settings/${key}`);
       if (response) {
-          const settings = await response.json();
+        let settings;
+          if (response instanceof Blob) {
+            settings = response.blob();
+          } else {
+            settings = response.json();
+          }
           event.ports[0].postMessage({ settings });
           console.log(`settings (key: ${key}) retrieved from cache ${CACHE_NAME}`);
       } else {

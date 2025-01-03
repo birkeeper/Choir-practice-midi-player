@@ -137,6 +137,9 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             return;
         }
         console.log("file opened");
+        await storeSettings("current_midi_file",file);
+        const fileRetrieved = await retrieveSettings("current_midi_file");
+        console.log(fileRetrieved);
         
         // resume the context if paused
         await context.resume();
