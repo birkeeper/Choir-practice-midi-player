@@ -73,6 +73,14 @@ async function storeSettings(key, settings) {
 // Function to retrieve settings
 async function retrieveSettings(key) {
     if (navigator.serviceWorker.controller) {
+        if (key ==="current_midi_file") {
+            const response = await fetch(`/settings/${key}`);
+            if (response.ok) {
+                return await response.blob();
+            } else {
+                return null;
+            }
+        }
         return new Promise((resolve) => {
             const messageChannel = new MessageChannel();
             messageChannel.port1.onmessage = (event) => {
@@ -141,8 +149,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         }
         console.log("file opened");
         await storeSettings("current_midi_file",file);
-        //const fileRetrieved = await retrieveSettings("current_midi_file");
-        //console.log(fileRetrieved);
+        const fileRetrieved = await retrieveSettings("current_midi_file");
+        console.log(fileRetrieved);
         
         // resume the context if paused
         await context.resume();
