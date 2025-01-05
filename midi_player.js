@@ -59,6 +59,9 @@ navigator.serviceWorker.addEventListener("controllerchange", () => {
 async function storeSettings(key, settings) {
     if (navigator.serviceWorker.controller) {
         console.log(`storing settings (key: ${key}`);
+        if (key === "current_midi_file") {
+            settings = URL.createObjectURL(settings); // URL revoked in service worker
+        }
         navigator.serviceWorker.controller.postMessage({
             type: 'storeSettings',
             key: key,
