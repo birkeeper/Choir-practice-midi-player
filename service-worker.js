@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v5.3"; 
+const CACHE_NAME = "v5.4"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -85,7 +85,6 @@ self.addEventListener('message', async (event) => {
         response = new Response(await fileURL.blob(), {
           headers: { 'Content-Type': settings.type }     
         });
-        URL.revokeObjectURL(settings);
       } else {
         response = new Response(JSON.stringify(settings), {
           headers: { 'Content-Type': 'application/json' }     
