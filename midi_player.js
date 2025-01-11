@@ -60,13 +60,20 @@ async function storeSettings(key, settings) {
     if (navigator.serviceWorker.controller) {
         console.log(`storing settings (key: ${key}`);
         if (key === "current_midi_file") {
-            settings = URL.createObjectURL(settings); // URL revoked in service worker
+            const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
+            postStoreSettingsMessage(key, fileURL);
+            postStoreSettingsMessage("current_midi_file_info", settings); // file info is not stored in objectURL, only the blob info.
+
+        } else {
+            postStoreSettingsMessage(key, settings);
         }
-        navigator.serviceWorker.controller.postMessage({
-            type: 'storeSettings',
-            key: key,
-            settings: settings
-        });
+        async function postStoreSettingsMessage(key, settings) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'storeSettings',
+                key: key,
+                settings: settings
+            });
+        }
     }
 }
 
@@ -74,9 +81,13 @@ async function storeSettings(key, settings) {
 async function retrieveSettings(key) {
     if (navigator.serviceWorker.controller) {
         if (key ==="current_midi_file") {
-            const response = await fetch(`./settings/${key}`);
-            if (response.ok) {
-                return await response.blob();
+            const response1 = await fetch(`./settings/${key}`);
+            const response2 = await fetch(`./settings/current_midi_file_info`);
+            if (response1.ok && response2.ok) {
+                const fileInfo = await response2.json();
+                const fileBlob = await response1.blob();
+                const file = new File([fileBlob], fileInfo.name, {type: `${fileBlob.type}`}); 
+                return file;
             } else {
                 return null;
             }
