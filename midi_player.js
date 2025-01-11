@@ -74,7 +74,7 @@ async function storeSettings(key, settings) {
 async function retrieveSettings(key) {
     if (navigator.serviceWorker.controller) {
         if (key ==="current_midi_file") {
-            const response = await fetch(`/settings/${key}`);
+            const response = await fetch(`./settings/${key}`);
             if (response.ok) {
                 return await response.blob();
             } else {
@@ -135,23 +135,13 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     let seq;
     let channels;
     let midiFileHash;
-    // add an event listener for the file inout
-    document.getElementById("midi_input").addEventListener("change", async event => {
-        // check if any files are added
-        let file = event.target.files[0];
-        if (!file) {
-            return;
-        }
 
-        if (!(file.type === 'audio/midi' || file.type === 'audio/x-midi' || file.type === 'audio/mid')) { //incorrect file type
-            document.getElementById("message").innerText = "Incorrect file type. Select a midi file.";
-            return;
-        }
-        console.log("file opened");
-        await storeSettings("current_midi_file",file);
-        const fileRetrieved = await retrieveSettings("current_midi_file");
-        console.log(fileRetrieved);
-        
+    const file = await retrieveSettings("current_midi_file");
+    if (file) {
+        setupApplication(file);
+    }
+
+    async function setupApplication(file) {
         // resume the context if paused
         await context.resume();
 
@@ -407,6 +397,23 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
 
             }
         }
+    }
+
+    // add an event listener for the file input
+    document.getElementById("midi_input").addEventListener("change", async event => {
+        // check if any files are added
+        let file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        if (!(file.type === 'audio/midi' || file.type === 'audio/x-midi' || file.type === 'audio/mid')) { //incorrect file type
+            document.getElementById("message").innerText = "Incorrect file type. Select a midi file.";
+            return;
+        }
+        console.log("file opened");
+        storeSettings("current_midi_file",file);
+        setupApplication(file);
     });
 });
 

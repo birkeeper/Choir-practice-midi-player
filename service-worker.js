@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v5.8"; 
+const CACHE_NAME = "v5.9"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -86,12 +86,12 @@ self.addEventListener('message', async (event) => {
           headers: { 'Content-Type': 'application/json' }     
         });
       }
-      await cache.put(`/settings/${key}`, response);
+      await cache.put(`./settings/${key}`, response);
       console.log(`settings (key: ${key}) saved to cache ${CACHE_NAME}`);
       
   } else if (type === 'retrieveSettings') {
       const cache = await caches.open(CACHE_NAME);
-      const response = await cache.match(`/settings/${key}`);
+      const response = await cache.match(`./settings/${key}`);
       if (response) {
         let settings;
           if (key === "current_midi_file") {
