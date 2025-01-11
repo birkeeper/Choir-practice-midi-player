@@ -79,32 +79,16 @@ self.addEventListener('message', async (event) => {
   if (type === 'storeSettings') {
       const cache = await caches.open(CACHE_NAME);
       let response;
-      if (key === "current_midi_file") {
+      if (key === "./settings/current_midi_file") {
         response = await fetch(settings);
       } else {
         response = new Response(JSON.stringify(settings), {
           headers: { 'Content-Type': 'application/json' }     
         });
       }
-      await cache.put(`./settings/${key}`, response);
+      await cache.put(key, response);
       console.log(`settings (key: ${key}) saved to cache ${CACHE_NAME}`);
       
-  } else if (type === 'retrieveSettings') {
-      const cache = await caches.open(CACHE_NAME);
-      const response = await cache.match(`./settings/${key}`);
-      if (response) {
-        let settings;
-          if (key === "current_midi_file") {
-            settings = await response.blob();
-          } else {
-            settings = await response.json();
-          }
-          event.ports[0].postMessage({ settings });
-          console.log(`settings (key: ${key}) retrieved from cache ${CACHE_NAME}`);
-      } else {
-          event.ports[0].postMessage({ settings: null });
-          console.log(`settings (key: ${key}) not found in cache ${CACHE_NAME}`);
-      }
-  }
+  } 
 });
   

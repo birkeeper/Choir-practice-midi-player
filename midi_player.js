@@ -62,7 +62,7 @@ async function storeSettings(key, settings) {
         if (key === "current_midi_file") {
             const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
             postStoreSettingsMessage(key, fileURL);
-            postStoreSettingsMessage("current_midi_file_info", settings); // file info is not stored in objectURL, only the blob info.
+            postStoreSettingsMessage("current_midi_file_name", settings.name); // file info is not stored in objectURL, only the blob info.
 
         } else {
             postStoreSettingsMessage(key, settings);
@@ -70,7 +70,7 @@ async function storeSettings(key, settings) {
         async function postStoreSettingsMessage(key, settings) {
             navigator.serviceWorker.controller.postMessage({
                 type: 'storeSettings',
-                key: key,
+                key: `./settings/${key}`,
                 settings: settings
             });
         }
@@ -80,35 +80,20 @@ async function storeSettings(key, settings) {
 // Function to retrieve settings
 async function retrieveSettings(key) {
     if (navigator.serviceWorker.controller) {
+        const response1 = await fetch(`./settings/${key}`);
         if (key ==="current_midi_file") {
-            const response1 = await fetch(`./settings/${key}`);
-            const response2 = await fetch(`./settings/current_midi_file_info`);
+            const response2 = await fetch(`./settings/current_midi_file_name`);
             if (response1.ok && response2.ok) {
-                const fileInfo = await response2.json();
+                const fileName = await response2.json();
                 const fileBlob = await response1.blob();
-                const file = new File([fileBlob], fileInfo.name, {type: `${fileBlob.type}`}); 
+                const file = new File([fileBlob], fileName, {type: `${fileBlob.type}`}); 
                 return file;
-            } else {
-                return null;
+            }
+        } else {
+            if (response1.ok) {
+                return await response1.json();
             }
         }
-        return new Promise((resolve) => {
-            const messageChannel = new MessageChannel();
-            messageChannel.port1.onmessage = (event) => {
-                resolve(event.data.settings);
-                if (event.data.settings === null) {
-                    console.log("settings not found");
-                }
-                else {
-                    console.log("settings retrieved");
-                }
-            };
-            console.log(`retrieving settings (key: ${key})`);
-            navigator.serviceWorker.controller.postMessage({
-                type: 'retrieveSettings',
-                key: key
-            }, [messageChannel.port2]);
-        });
     }
     return null;
 }
