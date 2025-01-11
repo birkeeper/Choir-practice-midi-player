@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v5.13"; 
+const CACHE_NAME = "v5.14"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -58,7 +58,6 @@ const putInCache = async (request, response) => {
   self.addEventListener("activate", (event) => {
     event.waitUntil(
       (async () => {
-          await clients.claim();
           const cacheWhitelist = [CACHE_NAME];
           const cacheNames = await caches.keys();
           await Promise.all(
@@ -70,6 +69,7 @@ const putInCache = async (request, response) => {
                   console.log(`active cache is ${CACHE_NAME}`);
               })
           );
+          await clients.claim();
       })()
     );
   });
