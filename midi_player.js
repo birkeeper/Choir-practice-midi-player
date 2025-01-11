@@ -86,7 +86,8 @@ async function retrieveSettings(key) {
             if (response1.ok && response2.ok) {
                 const fileName = await response2.json();
                 const fileBlob = await response1.blob();
-                const file = new File([fileBlob], fileName, {type: `${fileBlob.type}`}); 
+                const file = new File([fileBlob], fileName, {type: `${fileBlob.type}`});
+                URL.revokeObjectURL(response1.url);
                 return file;
             }
         } else {
