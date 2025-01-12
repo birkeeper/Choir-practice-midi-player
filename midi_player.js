@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.1j"
+const VERSION = "v1.2.1k"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -136,14 +136,11 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     async function setupApplication() {
         // parse all the files
         const parsedSongs = [];
-        document.getElementById("message").innerText = "get file info...";
         const buffer = await file.arrayBuffer();
-        document.getElementById("message").innerText = "file buffer obtained";
         parsedSongs.push({
             binary: buffer,     // binary: the binary data of the file
             altName: file.name  // altName: the fallback name if the MIDI doesn't have one. Here we set it to the file name
         });
-        document.getElementById("message").innerText = "file name obtained";
         
         if(seq === undefined)
         {
@@ -158,6 +155,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
         }
         seq.loop = false; // the sequencer loops a single song by default
+        seq.preservePlaybackState = true;
 
         // make the slider move with the song and define what happens when the user moves the slider
         const slider = document.getElementById("progress");
@@ -177,7 +175,11 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         function handleReleaseProgressSlider() {
             seq.currentTime = Number(slider.value);
             timerID = setInterval(timerCallback, 500);
-            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will automatically play when currentTime is changed
+            if (seq.paused) {
+                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+            } else {
+                document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+            }
             console.log("progress slider released");
         }
         function timerCallback() {
@@ -197,14 +199,22 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         function playbackRateCallback() {
             seq.playbackRate = playbackRateInput.value;
             playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(1)}x`;
-            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will play automatically when playbackRate is changed
+            if (seq.paused) {
+                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+            } else {
+                document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+            }
         }
 
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
             console.log("song changed");
             document.getElementById("message").innerText = e.midiName;
-            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);   // song will play automatically when song is changed.
+            if (seq.paused) {
+                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+            } else {
+                document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+            }
 
             //update progress slider
             slider.max = Math.floor(seq.duration);
