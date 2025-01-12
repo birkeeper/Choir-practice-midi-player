@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.1i"
+const VERSION = "v1.2.1j"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -381,10 +381,12 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         document.getElementById("pause").onclick = () => {
             if (seq.paused) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+                context.resume();
                 seq.play(); // resume
             }
             else {
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                context.suspend();
                 seq.pause(); // pause
 
             }
