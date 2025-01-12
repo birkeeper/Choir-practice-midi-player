@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.1l"
+const VERSION = "v1.2.1m"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -157,7 +157,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         seq.loop = false; // the sequencer loops a single song by default
         seq.preservePlaybackState = true;
         context.suspend();
-        seq.pause;
+        seq.pause();
         document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
         // make the slider move with the song and define what happens when the user moves the slider
@@ -214,7 +214,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             console.log("song changed");
             document.getElementById("message").innerText = e.midiName;
             context.suspend();
-            seq.pause;
+            seq.pause();
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
             //update progress slider
