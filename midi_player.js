@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.1h"
+const VERSION = "v1.2.1i"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -134,9 +134,6 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     let midiFileHash;
 
     async function setupApplication() {
-        // resume the context if paused
-        await context.resume();
-
         // parse all the files
         const parsedSongs = [];
         document.getElementById("message").innerText = "get file info...";
