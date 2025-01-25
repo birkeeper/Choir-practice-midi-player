@@ -390,7 +390,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
 
         // on pause click
         document.getElementById("pause").onclick = () => {
-            if (seq.paused) {
+            if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
                 context.resume();
                 seq.play(); // resume
