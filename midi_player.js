@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3"
+const VERSION = "v1.2.3 a"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -178,10 +178,15 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         function handleReleaseProgressSlider() {
             seq.currentTime = Number(slider.value);
             timerID = setInterval(timerCallback, 500);
-            if (seq.paused) {
-                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-            } else {
+            if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+                context.resume();
+                seq.play(); // resume
+            }
+            else {
+                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                context.suspend();
+                seq.pause(); // pause
             }
             console.log("progress slider released");
         }
@@ -202,10 +207,15 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         function playbackRateCallback() {
             seq.playbackRate = playbackRateInput.value;
             playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(1)}x`;
-            if (seq.paused) {
-                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-            } else {
+            if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+                context.resume();
+                seq.play(); // resume
+            }
+            else {
+                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                context.suspend();
+                seq.pause(); // pause
             }
         }
 
@@ -399,7 +409,6 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                 context.suspend();
                 seq.pause(); // pause
-
             }
         }
     }
