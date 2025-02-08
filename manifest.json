@@ -9,13 +9,49 @@
             "src": "./icons/midiplayer-icon.svg",
             "sizes": "any",
             "type": "image/svg+xml",
-            "purpose": "maskable"
+            "purpose": "any maskable"
         },
         {
-            "src": "./icons/midiplayer-icon.svg",
-            "sizes": "any",
-            "type": "image/svg+xml",
-            "purpose": "any"
+            "src": "./icons/midiplayer-icon-1024.svg",
+            "sizes": "58x58 76x76 80x80 87x87 114x114 120x120 152x152 167x167 180x180 1024x1024",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "./icons/midiplayer-icon-512.svg",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "./icons/midiplayer-icon-256.svg",
+            "sizes": "256x256",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "./icons/midiplayer-icon-128.svg",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "./icons/midiplayer-icon-64.svg",
+            "sizes": "64x64",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "./icons/midiplayer-icon-32.svg",
+            "sizes": "32x32",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "./icons/midiplayer-icon-16.svg",
+            "sizes": "16x16",
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ],
     "scope": "./"
