@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3g"
+const VERSION = "v1.2.3m"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -130,7 +130,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     synth.setMainVolume(MAINVOLUME);
 
     let seq;
-    let channels;
+    let settings;
     let midiFileHash;
 
     async function setupApplication() {
@@ -148,7 +148,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         }
         else
         {
-            for (const channel of channels) {// unlock all channel controllers of the previous song, so it can be overwritten.
+            for (const channel of settings.channels) {// unlock all channel controllers of the previous song, so it can be overwritten.
                 synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
                 synth.lockController(channel.number, midiControllers.bankSelect, false);
             }
@@ -201,6 +201,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         // make a slider to set the playback rate
         const playbackRateInput = document.getElementById('playbackRate');
         const playbackRateValue = document.getElementById('playbackRateValue');
+
         playbackRateInput.addEventListener('input',playbackRateCallback);
         function playbackRateCallback() {
             seq.playbackRate = playbackRateInput.value;
@@ -212,6 +213,10 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             else {
                 context.suspend();
                 seq.pause(); // pause
+            }
+            if (midiFileHash !== undefined && settings !== undefined) {
+                settings.playbackRate = playbackRateInput.value;
+                storeSettings(midiFileHash, settings);
             }
         }
 
@@ -232,16 +237,19 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             channelControlsContainer.innerHTML = ''; // Clear existing controls
 
 
-            // read channel settings from cache if available
+            // read settings from cache if available
             generateHash(buffer)
             .then((data) => {
                 midiFileHash = data;
                 return retrieveSettings(midiFileHash);
             })
             .then ((data) => {
-                channels = data;
-                if (channels === null) { // no channel settings found in the cache
-                    channels = [];
+                settings = data;
+                if (settings === null) { // no settings found in the cache
+                    settings = {
+                        playbackRate: 1.0,
+                        channels: [],
+                    };
                     let nrOfTracks = e.tracksAmount;
                     const channelsPerTrack = e.usedChannelsOnTrack;
                     const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
@@ -255,12 +263,27 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                             volume: 85, // Example default volume value
                             selectedInstrument: "Default"
                         };
-                        channels.push(channelSettings);
+                        settings.channels.push(channelSettings);
                     });
-                }    
+                } 
+                
+                //set up playback rate control based on settings
+                const playbackRateInput = document.getElementById('playbackRate');
+                const playbackRateValue = document.getElementById('playbackRateValue');
+                playbackRateInput.value = settings.playbackRate;
+                seq.playbackRate = settings.playbackRate;
+                playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(1)}x`;
+                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
+                    context.resume();
+                    seq.play(); // resume
+                }
+                else {
+                    context.suspend();
+                    seq.pause(); // pause
+                }
                 
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
-                for (const channel of channels) {
+                for (const channel of settings.channels) {
                     const channelControl = createChannelControl(channel, synth, instrumentControls);
                     channelControlsContainer.appendChild(channelControl);
                 }
@@ -318,8 +341,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 }
                 volumeSlider.onpointerup = () => {
                     channel.volume = parseInt(volumeSlider.value);
-                    if (midiFileHash !== undefined && channels !== undefined) {
-                        storeSettings(midiFileHash, channels);
+                    if (midiFileHash !== undefined && settings !== undefined) {
+                        storeSettings(midiFileHash, settings);
                     }
                 }
                 container.appendChild(volumeSlider);
@@ -364,8 +387,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         synth.programChange(channel.number, data[1]);
                         synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
                         console.log(`changing channel ${channel.number} to instrument ${event.target.value}`);
-                        if (midiFileHash !== undefined && channels !== undefined) {
-                            storeSettings(midiFileHash, channels);
+                        if (midiFileHash !== undefined && settings !== undefined) {
+                            storeSettings(midiFileHash, settings);
                         }
                     });
                     instrumentControls.set(channel.number,instrumentSelect);
