@@ -68,15 +68,15 @@ span{
     width: 5rem
 }
 
-body {
+/*body {
     background: #111;
     display: flex;
     flex-direction: column;
     align-items: center;
-    /*max-height: 100vh;
+    max-height: 100vh;
     max-width: 1024px;
-    width: 100vw*/
-}
+    width: 100vw
+}*/
 
 .content_box{
     width: 90%;
