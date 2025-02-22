@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3h"
+const VERSION = "v1.2.3i"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -241,7 +241,9 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             .then ((data) => {
                 settings = data;
                 if (settings === null) { // no settings found in the cache
-                    settings.channels = [];
+                    setings = {
+                        channels: [],
+                    };
                     let nrOfTracks = e.tracksAmount;
                     const channelsPerTrack = e.usedChannelsOnTrack;
                     const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
