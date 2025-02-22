@@ -130,7 +130,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
     synth.setMainVolume(MAINVOLUME);
 
     let seq;
-    let channels;
+    let settings;
     let midiFileHash;
 
     async function setupApplication() {
@@ -148,7 +148,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         }
         else
         {
-            for (const channel of channels) {// unlock all channel controllers of the previous song, so it can be overwritten.
+            for (const channel of settings.channels) {// unlock all channel controllers of the previous song, so it can be overwritten.
                 synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
                 synth.lockController(channel.number, midiControllers.bankSelect, false);
             }
@@ -239,9 +239,9 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 return retrieveSettings(midiFileHash);
             })
             .then ((data) => {
-                channels = data;
-                if (channels === null) { // no channel settings found in the cache
-                    channels = [];
+                settings = data;
+                if (settings === null) { // no settings found in the cache
+                    settings.channels = [];
                     let nrOfTracks = e.tracksAmount;
                     const channelsPerTrack = e.usedChannelsOnTrack;
                     const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
@@ -255,12 +255,12 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                             volume: 85, // Example default volume value
                             selectedInstrument: "Default"
                         };
-                        channels.push(channelSettings);
+                        settings.channels.push(channelSettings);
                     });
                 }    
                 
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
-                for (const channel of channels) {
+                for (const channel of settings.channels) {
                     const channelControl = createChannelControl(channel, synth, instrumentControls);
                     channelControlsContainer.appendChild(channelControl);
                 }
@@ -318,8 +318,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 }
                 volumeSlider.onpointerup = () => {
                     channel.volume = parseInt(volumeSlider.value);
-                    if (midiFileHash !== undefined && channels !== undefined) {
-                        storeSettings(midiFileHash, channels);
+                    if (midiFileHash !== undefined && settings !== undefined) {
+                        storeSettings(midiFileHash, settings);
                     }
                 }
                 container.appendChild(volumeSlider);
@@ -364,8 +364,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         synth.programChange(channel.number, data[1]);
                         synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
                         console.log(`changing channel ${channel.number} to instrument ${event.target.value}`);
-                        if (midiFileHash !== undefined && channels !== undefined) {
-                            storeSettings(midiFileHash, channels);
+                        if (midiFileHash !== undefined && settings !== undefined) {
+                            storeSettings(midiFileHash, settings);
                         }
                     });
                     instrumentControls.set(channel.number,instrumentSelect);
