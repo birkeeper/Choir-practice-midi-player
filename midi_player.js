@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3l"
+const VERSION = "v1.2.3m"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -267,10 +267,20 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     });
                 } 
                 
+                //set up playback rate control based on settings
                 const playbackRateInput = document.getElementById('playbackRate');
                 const playbackRateValue = document.getElementById('playbackRateValue');
                 playbackRateInput.value = settings.playbackRate;
+                seq.playbackRate = settings.playbackRate;
                 playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(1)}x`;
+                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
+                    context.resume();
+                    seq.play(); // resume
+                }
+                else {
+                    context.suspend();
+                    seq.pause(); // pause
+                }
                 
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
                 for (const channel of settings.channels) {
