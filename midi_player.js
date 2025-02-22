@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3k"
+const VERSION = "v1.2.3l"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -201,18 +201,11 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         // make a slider to set the playback rate
         const playbackRateInput = document.getElementById('playbackRate');
         const playbackRateValue = document.getElementById('playbackRateValue');
-        if (settings !== undefined) {
-            playbackRateInput.value = settings.playbackRate;
-            playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(1)}x`;
-        } else {
-            playbackRateInput.value = 1.0;
-            playbackRateValue.textContent = `${Number(1.0).toFixed(1)}x`;
-        }
+
         playbackRateInput.addEventListener('input',playbackRateCallback);
         function playbackRateCallback() {
             seq.playbackRate = playbackRateInput.value;
             playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(1)}x`;
-            settings.playbackRate = playbackRateInput.value;
             if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
                 context.resume();
                 seq.play(); // resume
@@ -220,6 +213,10 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             else {
                 context.suspend();
                 seq.pause(); // pause
+            }
+            if (midiFileHash !== undefined && settings !== undefined) {
+                settings.playbackRate = playbackRateInput.value;
+                storeSettings(midiFileHash, settings);
             }
         }
 
@@ -240,7 +237,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             channelControlsContainer.innerHTML = ''; // Clear existing controls
 
 
-            // read channel settings from cache if available
+            // read settings from cache if available
             generateHash(buffer)
             .then((data) => {
                 midiFileHash = data;
@@ -268,7 +265,12 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         };
                         settings.channels.push(channelSettings);
                     });
-                }    
+                } 
+                
+                const playbackRateInput = document.getElementById('playbackRate');
+                const playbackRateValue = document.getElementById('playbackRateValue');
+                playbackRateInput.value = settings.playbackRate;
+                playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(1)}x`;
                 
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
                 for (const channel of settings.channels) {
