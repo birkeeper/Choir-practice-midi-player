@@ -1,14 +1,14 @@
-* {
+/* * {
     font-family: "Noto Sans Light", "Open Sans Light", sans-serif;
     color: #ccc;
     font-size: 0.9rem;
-}
+}*/
 
-canvas{
+/* canvas{
     width: 100%;
     min-height: 0;
     max-height: 40vh;
-}
+}*/
 
 .button-label{
     flex: 0 0 auto;
@@ -73,9 +73,9 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    max-height: 100vh;
+    /*max-height: 100vh;
     max-width: 1024px;
-    width: 100vw
+    width: 100vw*/
 }
 
 .content_box{
