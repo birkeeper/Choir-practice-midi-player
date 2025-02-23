@@ -17,43 +17,43 @@
     padding: 4px;
     border-radius: 8px;
     background: #444;
-    margin-right: 10px;
+    /*margin-right: 10px;*/
 }
 
 #pause{
     display: none;
 }
 
-#midi_input{
+/*#midi_input{
     display: none;
-}
+}*/
 
-#file_box{
+/*#file_box{
     display: flex;
     flex-direction: row;
     align-items: center;
     width: 100%;
     margin-bottom: 8px;
-}
+}*/
 
-#progress_box{
+/*#progress_box{
     display: flex;
     flex-direction: row;
     align-items: center;
     width: 100%;
     margin-bottom: 8px;
-}
+}*/
 
-#playback_control_box{
+/*#playback_control_box{
     display: flex;
     flex-direction: row;
     align-items: center;
     width: 100%;
-}
+}*/
 
-#message{
+/*#message{
     overflow-wrap: break-word;
-}
+}*/
 
 span{
     flex: 0 0 auto
