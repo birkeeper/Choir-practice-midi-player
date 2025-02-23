@@ -78,7 +78,7 @@ span{
     width: 100vw
 }*/
 
-.content_box{
+/*.content_box{
     width: 90%;
     background: #333;
     padding: 2em;
@@ -88,7 +88,7 @@ span{
     display: flex;
     flex-direction: column;
     align-items: start;
-}
+}*/
 
 .channel-control {
     margin: 0.5rem;
