@@ -12,34 +12,34 @@
     <meta name="robots" content="noindex">
 </head>
 <body>
-    <div class="container-md d-flex align-items-center">
-        <div class="card mt-1">
+    <div class="container-md d-flex align-items-center w-100">
+        <div class="dflex p-2 border border-2 rounded-2">
             <h1 id="title" class="card-header text-center">Midi Player</h1>
-            <div class="card-body">
-                <div id="file_box">
-                    <input type="file" id="midi_input" accept=".mid,.midi,audio/midi,audio/x-midi" disabled>
-                    <label id="midi_input-label" for="midi_input" class="button-label"></label>
-                    <div id="message">Loading. Please wait...</div>
-                </div>
-                <div id="progress_box">
-                    <input type="range" class="form-range" min="0" max="0" value="0" step="1" id="progress">
-                    <span id="currentTime">--:--</span>/<span id="totalTime">--:--</span>
-                </div>
-                <div id="playback_control_box">
-                    <button id="pause">Pause</button>
-                    <label id="pause-label" for="pause" class="button-label"></label>
-                    <input type="range" class="form-range" id="playbackRate" name="playbackRate" min="0.7" max="1.0" step="0.1" value="1.0" list="playbackRateTickmarks">
-                    <span id="playbackRateValue">1.0x</span>
-                    <datalist id="playbackRateTickmarks">
-                        <option value="0.7" label="0.7x"></option>
-                        <option value="0.8"></option>
-                        <option value="0.9"></option>
-                        <option value="1.0" label="1.0x"></option>
-                    </datalist>
-                </div>
+        </div>
+        <div class="dflex p-2 border border-2 rounded-2 w-100">
+            <div id="file_box">
+                <input type="file" id="midi_input" accept=".mid,.midi,audio/midi,audio/x-midi" disabled>
+                <label id="midi_input-label" for="midi_input" class="button-label"></label>
+                <div id="message">Loading. Please wait...</div>
+            </div>
+            <div id="progress_box">
+                <input type="range" class="form-range" min="0" max="0" value="0" step="1" id="progress">
+                <span id="currentTime">--:--</span>/<span id="totalTime">--:--</span>
+            </div>
+            <div id="playback_control_box">
+                <button id="pause">Pause</button>
+                <label id="pause-label" for="pause" class="button-label"></label>
+                <input type="range" class="form-range" id="playbackRate" name="playbackRate" min="0.7" max="1.0" step="0.1" value="1.0" list="playbackRateTickmarks">
+                <span id="playbackRateValue">1.0x</span>
+                <datalist id="playbackRateTickmarks">
+                    <option value="0.7" label="0.7x"></option>
+                    <option value="0.8"></option>
+                    <option value="0.9"></option>
+                    <option value="1.0" label="1.0x"></option>
+                </datalist>
             </div>
         </div>
-        <div class="card mt-1">
+        <div class="dflex p-2 border border-2 rounded-2 w-100">
             <div class="card-body" id="channel-controls"></div>
                 <!-- created dynamically-->
             </div>
