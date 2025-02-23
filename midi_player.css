@@ -11,8 +11,8 @@
 }*/
 
 .button-label{
-    flex: 0 0 auto;
-    align-items: center;
+    /*flex: 0 0 auto;
+    align-items: center;*/
     cursor: pointer;
     padding: 4px;
     border-radius: 8px;
@@ -20,9 +20,9 @@
     /*margin-right: 10px;*/
 }
 
-#pause{
+/*#pause{
     display: none;
-}
+}*/
 
 /*#midi_input{
     display: none;
@@ -55,18 +55,18 @@
     overflow-wrap: break-word;
 }*/
 
-span{
+/*span{
     flex: 0 0 auto
-}
+}*/
 
 #progress{
     flex: 1 1 100%;
     margin-right: 10px;
 }
 
-#playbackRate{
+/*#playbackRate{
     width: 5rem
-}
+}*/
 
 /*body {
     background: #111;

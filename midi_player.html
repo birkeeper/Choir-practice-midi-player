@@ -19,7 +19,7 @@
         <div class="d-flex flex-column align-items-left mt-2 border border-2 rounded-2 w-100">
             <div class="d-flex flex-row align-items-center mt-2 w-100">
                 <input type="file" id="midi_input" accept=".mid,.midi,audio/midi,audio/x-midi" disabled class="d-none">
-                <label id="midi_input-label" for="midi_input" class="button-label flex-fill ms-2"></label>
+                <label id="midi_input-label" for="midi_input" class="button-label flex-grow-0 flex-shrink-0 align-items-center ms-2"></label>
                 <div id="message" class="flex-grow-1 mx-2">Loading. Please wait...</div>
             </div>
             <div class="d-flex flex-row align-items-center mt-2 w-100">
@@ -27,10 +27,10 @@
                 <span id="currentTime">--:--</span>/<span id="totalTime">--:--</span>
             </div>
             <div class="d-flex flex-row align-items-center mt-2">
-                <button id="pause">Pause</button>
-                <label id="pause-label" for="pause" class="button-label"></label>
-                <input type="range" class="form-range" id="playbackRate" name="playbackRate" min="0.7" max="1.0" step="0.1" value="1.0" list="playbackRateTickmarks">
-                <span id="playbackRateValue">1.0x</span>
+                <button id="pause" class="d-none">Pause</button>
+                <label id="pause-label" for="pause" class="button-label flex-grow-0 flex-shrink-0 align-items-center ms-2"></label>
+                <input type="range" class="form-range lex-grow-0 flex-shrink-0 ms-2" id="playbackRate" name="playbackRate" min="0.7" max="1.0" step="0.1" value="1.0" list="playbackRateTickmarks">
+                <span id="playbackRateValue" class="flex-grow-0 flex-shrink-0 mx-2">1.0x</span>
                 <datalist id="playbackRateTickmarks">
                     <option value="0.7" label="0.7x"></option>
                     <option value="0.8"></option>
