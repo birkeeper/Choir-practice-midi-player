@@ -13,20 +13,20 @@
 </head>
 <body>
     <div class="container-md d-flex flex-column align-items-center w-100">
-        <div class="dflex mt-2 flex-row border border-2 rounded-2 w-100">
+        <div class="d-flex mt-2 flex-row border border-2 rounded-2 w-100">
             <h1 id="title" class="text-center">Midi Player</h1>
         </div>
-        <div class="dflex flex-column align-items-left mt-2 border border-2 rounded-2 w-100">
-            <div class="dflex flex-row align-items-center mt-2 w-100">
+        <div class="d-flex flex-column align-items-left mt-2 border border-2 rounded-2 w-100">
+            <div class="d-flex flex-row align-items-center mt-2 w-100">
                 <input type="file" id="midi_input" accept=".mid,.midi,audio/midi,audio/x-midi" disabled>
                 <label id="midi_input-label" for="midi_input" class="button-label"></label>
                 <div id="message">Loading. Please wait...</div>
             </div>
-            <div class="dflex flex-row align-items-center mt-2 w-100">
+            <div class="d-flex flex-row align-items-center mt-2 w-100">
                 <input type="range" class="form-range" min="0" max="0" value="0" step="1" id="progress">
                 <span id="currentTime">--:--</span>/<span id="totalTime">--:--</span>
             </div>
-            <div class="dflex flex-row align-items-center mt-2">
+            <div class="d-flex flex-row align-items-center mt-2">
                 <button id="pause">Pause</button>
                 <label id="pause-label" for="pause" class="button-label"></label>
                 <input type="range" class="form-range" id="playbackRate" name="playbackRate" min="0.7" max="1.0" step="0.1" value="1.0" list="playbackRateTickmarks">
@@ -39,7 +39,7 @@
                 </datalist>
             </div>
         </div>
-        <div class="dflex mt-2 border border-2 rounded-2 w-100">
+        <div class="d-flex mt-2 border border-2 rounded-2 w-100">
             <div class="card-body" id="channel-controls"></div>
                 <!-- created dynamically-->
             </div>
