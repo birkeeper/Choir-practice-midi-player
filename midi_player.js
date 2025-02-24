@@ -236,7 +236,6 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             const channelControlsContainer = document.getElementById('channel-controls');
             channelControlsContainer.innerHTML = ''; // Clear existing controls
 
-
             // read settings from cache if available
             generateHash(buffer)
             .then((data) => {
@@ -318,15 +317,15 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             
             function createChannelControl(channel, synth, instrumentControls) {
                 const container = document.createElement('div');
-                container.className = 'channel-control';
+                container.className = 'row';
             
                 const nameLabel = document.createElement('div');
-                nameLabel.className = 'channel-name';
+                nameLabel.className = 'col-1';
                 nameLabel.innerText = channel.name;
                 container.appendChild(nameLabel);
             
                 const volumeSlider = document.createElement('input');
-                volumeSlider.type = 'range';
+                volumeSlider.type = 'form-range';
                 volumeSlider.className = 'volume-slider';
                 volumeSlider.min = 0;
                 volumeSlider.max = 127;
