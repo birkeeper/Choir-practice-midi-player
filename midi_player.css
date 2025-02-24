@@ -64,9 +64,9 @@
     margin-right: 10px;
 }*/
 
-/*playbackRate{
-    width: 5rem
-}*/
+playbackRate{
+    max-width: 5rem
+}
 
 /*body {
     background: #111;
