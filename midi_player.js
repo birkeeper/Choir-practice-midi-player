@@ -317,7 +317,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             
             function createChannelControl(channel, synth, instrumentControls) {
                 const container = document.createElement('div');
-                container.className = 'row mt-2';
+                container.className = 'row gap-2';
             
                 const nameLabel = document.createElement('div');
                 nameLabel.className = 'col-1';
@@ -347,9 +347,9 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 container.appendChild(volumeSlider);
             
                 const instrumentSelect = document.createElement('select');
-                instrumentSelect.className = 'instrument-select'
+                instrumentSelect.className = 'form-select'
                 const option = document.createElement('option');
-                option.className = 'instrument-option';
+                //option.className = 'instrument-option';
                 option.value = ""
                 option.textContent = "Default"
                 if (channel.selectedInstrument === "Default") {
