@@ -44,12 +44,13 @@
     margin-bottom: 8px;
 }*/
 
-/*#playback_control_box{
-    display: flex;
+#playback_control_box{
+    /*display: flex;
     flex-direction: row;
     align-items: center;
-    width: 100%;
-}*/
+    width: 100%;*/
+    max-width: 10rem;
+}
 
 /*#message{
     overflow-wrap: break-word;
@@ -64,9 +65,9 @@
     margin-right: 10px;
 }*/
 
-playbackRate{
+/*playbackRate{
     max-width: 5rem;
-}
+}*/
 
 /*body {
     background: #111;
