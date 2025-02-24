@@ -317,7 +317,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             
             function createChannelControl(channel, synth, instrumentControls) {
                 const container = document.createElement('div');
-                container.className = 'row';
+                container.className = 'row mt-2';
             
                 const nameLabel = document.createElement('div');
                 nameLabel.className = 'col-1';
