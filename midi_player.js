@@ -325,8 +325,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 container.appendChild(nameLabel);
             
                 const volumeSlider = document.createElement('input');
-                volumeSlider.type = 'form-range';
-                volumeSlider.className = 'volume-slider';
+                volumeSlider.type = 'range';
+                volumeSlider.className = 'form-range';
                 volumeSlider.min = 0;
                 volumeSlider.max = 127;
                 volumeSlider.value = channel.volume;
