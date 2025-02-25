@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3al"
+const VERSION = "v1.2.3am"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -317,16 +317,16 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             
             function createChannelControl(channel, synth, instrumentControls) {
                 const container = document.createElement('div');
-                container.className = 'row gap-2';
-            
+                container.className = 'd-flex flex-row align-items-center mt-2 w-100';
+                            
                 const nameLabel = document.createElement('div');
-                nameLabel.className = 'col-1';
+                nameLabel.className = 'w-10 ms-2';
                 nameLabel.innerText = channel.name;
                 container.appendChild(nameLabel);
                 
                 const volumeSlider = document.createElement('input');
                 volumeSlider.type = 'range';
-                volumeSlider.className = 'form-range';
+                volumeSlider.className = 'form-range w-70 ms-2';
                 volumeSlider.min = 0;
                 volumeSlider.max = 127;
                 volumeSlider.value = channel.volume;
@@ -345,12 +345,10 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     }
                 }
                 const column2 = document.createElement('div');
-                column2.className = 'col-10';
-                column2.appendChild(volumeSlider);
-                container.appendChild(column2);
+                container.appendChild(volumeSlider);
                 
                 const instrumentSelect = document.createElement('select');
-                instrumentSelect.className = 'form-select'
+                instrumentSelect.className = 'form-select mx-2 w-20';
                 const option = document.createElement('option');
                 //option.className = 'instrument-option';
                 option.value = ""
@@ -402,10 +400,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     }                      
                 }
                 const column3 = document.createElement('div');
-                column3.className = 'col-1';
-                column3.appendChild(instrumentSelect);
-                container.appendChild(column3);
-            
+                container.appendChild(instrumentSelect);
+                            
                 //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
                 synth.lockController(channel.number, midiControllers.modulationWheel, false);
                 synth.controllerChange (channel.number, midiControllers.modulationWheel, 0);
