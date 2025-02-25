@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3aj"
+const VERSION = "v1.2.3ak"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -323,7 +323,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 nameLabel.className = 'col-1';
                 nameLabel.innerText = channel.name;
                 container.appendChild(nameLabel);
-            
+                
                 const volumeSlider = document.createElement('input');
                 volumeSlider.type = 'range';
                 volumeSlider.className = 'form-range';
@@ -344,8 +344,11 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         storeSettings(midiFileHash, settings);
                     }
                 }
-                container.appendChild(volumeSlider);
-            
+                const column2 = document.createElement('div');
+                column2.className = 'col-10';
+                column2.appendChild(volumeSlider);
+                container.appendChild(column2);
+                
                 const instrumentSelect = document.createElement('select');
                 instrumentSelect.className = 'form-select'
                 const option = document.createElement('option');
@@ -362,7 +365,6 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     let defaultInstrumentSelected = true;
                     for (const instrument of Object.values(instruments)) {
                         const option = document.createElement('option');
-                        option.className = 'instrument-option';
                         option.value = `${instrument.bank}:${instrument.program}`;
                         option.textContent = instrument.presetName;
                         if (channel.selectedInstrument === instrument.presetName) {
@@ -399,7 +401,10 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         }, 100); 
                     }                      
                 }
-                container.appendChild(instrumentSelect);
+                const column3 = document.createElement('div');
+                column3.className = 'col-1';
+                column3.appendChild(instrumentSelect);
+                container.appendChild(column3);
             
                 //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
                 synth.lockController(channel.number, midiControllers.modulationWheel, false);

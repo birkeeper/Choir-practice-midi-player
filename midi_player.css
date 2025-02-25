@@ -91,7 +91,7 @@
     align-items: start;
 }*/
 
-.channel-control {
+/*.channel-control {
     margin: 0.5rem;
     display: flex;
     flex-direction: row;
@@ -120,4 +120,4 @@
 .instrument-option { 
     width: 4rem;
     overflow-wrap: anywhere;
-}
+}*/
