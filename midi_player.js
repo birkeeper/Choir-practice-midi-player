@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3ap"
+const VERSION = "v1.2.3aq"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -320,13 +320,13 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 container.className = 'd-flex flex-row align-items-center mt-2 w-100';
                             
                 const nameLabel = document.createElement('div');
-                nameLabel.className = 'flex-grow-0 flex-shrink-1 w-10 ms-2';
+                nameLabel.className = 'w-10 text-break ms-2';
                 nameLabel.innerText = channel.name;
                 container.appendChild(nameLabel);
                 
                 const volumeSlider = document.createElement('input');
                 volumeSlider.type = 'range';
-                volumeSlider.className = 'form-range flex-grow-0 flex-shrink-1 w-70 ms-2';
+                volumeSlider.className = 'form-range w-70 ms-2';
                 volumeSlider.min = 0;
                 volumeSlider.max = 127;
                 volumeSlider.value = channel.volume;
@@ -348,9 +348,9 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 container.appendChild(volumeSlider);
                 
                 const instrumentSelect = document.createElement('select');
-                instrumentSelect.className = 'form-select flex-grow-0 flex-shrink-1 mx-2 w-20';
+                instrumentSelect.className = 'form-select text-break mx-2 w-20';
                 const option = document.createElement('option');
-                //option.className = 'instrument-option';
+                option.className = 'text-break';
                 option.value = ""
                 option.textContent = "Default"
                 if (channel.selectedInstrument === "Default") {
