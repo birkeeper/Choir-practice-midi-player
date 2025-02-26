@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3aq"
+const VERSION = "v1.2.3ar"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -348,7 +348,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 container.appendChild(volumeSlider);
                 
                 const instrumentSelect = document.createElement('select');
-                instrumentSelect.className = 'form-select text-break mx-2 w-20';
+                instrumentSelect.className = 'form-select text-break';
                 const option = document.createElement('option');
                 option.className = 'text-break';
                 option.value = ""
@@ -399,8 +399,10 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         }, 100); 
                     }                      
                 }
-                const column3 = document.createElement('div');
-                container.appendChild(instrumentSelect);
+                const column = document.createElement('div');
+                column.class = 'mx-2 w-20';
+                column.appendChild(instrumentSelect)
+                container.appendChild(column);
                             
                 //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
                 synth.lockController(channel.number, midiControllers.modulationWheel, false);
