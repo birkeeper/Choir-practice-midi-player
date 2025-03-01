@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3aw"
+const VERSION = "v1.2.3ax"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -99,9 +99,23 @@ async function retrieveSettings(key) {
     return null;
 }
 
+const alertPlaceholder = document.getElementById('alertPlaceholder');
+const appendAlert = (message, type) => {
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = [
+    `<div class="alert alert-${type} alert-dismissible" role="alert">`,
+    `   <div>${message}</div>`,
+    '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+    '</div>'
+  ].join('');
+
+  alertPlaceholder.append(wrapper);
+}
+
 document.getElementById('title').textContent = 'Midi Player '+ VERSION;
 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
+
 
 // load the soundfont
 fetch(SOUNTFONT_SPECIAL).then(async response => {
@@ -452,7 +466,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         }
 
         if (!(file.type === 'audio/midi' || file.type === 'audio/x-midi' || file.type === 'audio/mid')) { //incorrect file type
-            document.getElementById("message").innerText = "Incorrect file type. Select a midi file.";
+            appendAlert( "Incorrect file type. Select a midi file.", 'warning')
             return;
         }
         console.log("file opened");
