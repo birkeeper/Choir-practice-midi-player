@@ -104,7 +104,7 @@
     field-sizing: fixed;
     overflow-wrap: anywhere;
     width: 20%;
-    min-width: 4rem;
+    min-width: 3rem;
 }
 
 /*.volume-slider {
@@ -117,7 +117,7 @@
     font-size: inherit;
     field-sizing: fixed;
     width: 30%;
-    min-width: 6rem;
+    min-width: 5rem;
 }
 
 .instrument-option { 
