@@ -37,6 +37,11 @@ if ("serviceWorker" in navigator) {
             console.log("Service worker installing");
         } else if (registration.waiting) {
             console.log("Service worker installed");
+            appendAlert(
+                `A new update of the app is available ${VERSION}. Dismiss this message or reload the page to install the update. Your song settings will be rest.`,
+                'warning', 
+                event => {
+            );
         } else if (registration.active) {
             console.log("Service worker active");
         }
