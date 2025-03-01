@@ -103,7 +103,7 @@
     /*flex: 0 0 3rem;*/
     field-sizing: fixed;
     overflow-wrap: anywhere;
-    width: 3rem;
+    width: 10%;
 }
 
 /*.volume-slider {
@@ -114,10 +114,10 @@
 .instrument-select {
     /*flex: 0 0 4rem;*/
     field-sizing: fixed;
-    width: 4rem;
+    width: 20%;
 }
 
 .instrument-option { 
-    width: 4rem;
+    width: 20%;
     overflow-wrap: anywhere;
 }

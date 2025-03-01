@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3at"
+const VERSION = "v1.2.3au"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -283,7 +283,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
                 for (const channel of settings.channels) {
-                    const channelControl = createChannelControl(channel, synth, instrumentControls);
+                    const channelControl = createChannelControl(channel, synth, instrumentControls, channel === settings.channels[settings.channels.length-1]);
                     channelControlsContainer.appendChild(channelControl);
                 }
 
@@ -315,9 +315,10 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 }
             });
             
-            function createChannelControl(channel, synth, instrumentControls) {
+            function createChannelControl(channel, synth, instrumentControls, lastChannel) {
                 const container = document.createElement('div');
-                container.className = 'd-flex flex-row align-items-center mt-2 w-100';
+                if (lastChannel){container.className = 'd-flex flex-row align-items-center mt-2 mb-2 w-100';} // added bottom margin
+                else {container.className = 'd-flex flex-row align-items-center mt-2 w-100';}
                             
                 const nameLabel = document.createElement('div');
                 nameLabel.className = 'd-flex ms-2 channel-name';
@@ -357,7 +358,10 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 } else {option.selected = false;}
                 instrumentSelect.appendChild(option);
                 
-                if (channel.number === DEFAULT_PERCUSSION_CHANNEL) { synth.channelProperties[channel.number].isDrum = true; }
+                if (channel.number === DEFAULT_PERCUSSION_CHANNEL) { 
+                    synth.channelProperties[channel.number].isDrum = true; 
+                    instrumentSelect.disabled = true;
+                }
                 if (!synth.channelProperties[channel.number].isDrum) { // do not have interactive drop-down menu when the channel is used for percussion.
                     let defaultInstrumentSelected = true;
                     for (const instrument of Object.values(instruments)) {
