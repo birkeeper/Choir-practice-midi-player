@@ -97,22 +97,22 @@
     flex-direction: row;
     align-items: center;
     width: 100%
-}
+}*/
 
 .channel-name {
-    flex: 0 0 3rem;
+    /*flex: 0 0 3rem;*/
     field-sizing: fixed;
     overflow-wrap: anywhere;
     width: 3rem;
 }
 
-.volume-slider {
+/*.volume-slider {
     flex: 1 1 auto;
     margin: 0 10px;
-}
+}*/
 
 .instrument-select {
-    flex: 0 0 4rem;
+    /*flex: 0 0 4rem;*/
     field-sizing: fixed;
     width: 4rem;
 }
@@ -120,4 +120,4 @@
 .instrument-option { 
     width: 4rem;
     overflow-wrap: anywhere;
-}*/
+}
