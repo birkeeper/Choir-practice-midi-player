@@ -103,7 +103,8 @@
     /*flex: 0 0 3rem;*/
     field-sizing: fixed;
     overflow-wrap: anywhere;
-    width: 10%;
+    width: 20%;
+    min-width: 4rem;
 }
 
 /*.volume-slider {
@@ -113,8 +114,10 @@
 
 .instrument-select {
     /*flex: 0 0 4rem;*/
+    font-size: inherit;
     field-sizing: fixed;
-    width: 20%;
+    width: 30%;
+    min-width: 6rem;
 }
 
 .instrument-option { 
