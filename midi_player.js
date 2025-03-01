@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3ar"
+const VERSION = "v1.2.3au"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -317,7 +317,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             
             function createChannelControl(channel, synth, instrumentControls) {
                 const container = document.createElement('div');
-                container.className = 'row align-items-center';
+                container.className = 'row row-cols-12 align-items-center';
                             
                 const nameLabel = document.createElement('div');
                 nameLabel.className = 'col-2 text-break';
