@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v7.50"; 
+const CACHE_NAME = "v7.51"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -91,6 +91,10 @@ self.addEventListener('message', async (event) => {
   } 
   if (type === 'skipWaiting') {
     self.skipWaiting();
+  }
+  if (type === 'deleteFromCache') {
+    const cache = await caches.open(CACHE_NAME);
+    cache.delete(key);
   }
 });
   
