@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3ba"
+const VERSION = "v1.2.3bb"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -37,9 +37,6 @@ if ("serviceWorker" in navigator) {
             console.log("Service worker installing");
         } else if (registration.waiting) {
             console.log("Service worker installed");
-            deleteFromCache("./midi_player.js");
-            deleteFromCache("./midi_player.html");
-            window.location.reload();
             appendAlert(
                 `A new update of the app is available ${VERSION}. Dismiss this message or reload the page to install the update. Your song settings will be rest.`,
                 'warning', 
