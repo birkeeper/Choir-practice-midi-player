@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = "v7.49"; 
+const CACHE_NAME = "v7.50"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -43,7 +43,6 @@ const putInCache = async (request, response) => {
   };
 
   self.addEventListener("install", (event) => {
-    self.skipWaiting();
   });
   
   self.addEventListener("fetch", (event) => {
@@ -90,5 +89,8 @@ self.addEventListener('message', async (event) => {
       console.log(`settings (key: ${key}) saved to cache ${CACHE_NAME}`);
       
   } 
+  if (type === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });
   

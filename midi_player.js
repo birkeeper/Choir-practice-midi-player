@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3ay"
+const VERSION = "v1.2.3az"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -40,7 +40,7 @@ if ("serviceWorker" in navigator) {
             appendAlert(
                 `A new update of the app is available ${VERSION}. Dismiss this message or reload the page to install the update. Your song settings will be rest.`,
                 'warning', 
-                event => {
+                () => { navigator.serviceWorker.controller.postMessage({ type: 'skipWaiting'}); }
             );
         } else if (registration.active) {
             console.log("Service worker active");
@@ -105,7 +105,7 @@ async function retrieveSettings(key) {
 }
 
 const alertPlaceholder = document.getElementById('alertPlaceholder');
-const appendAlert = (message, type) => {
+const appendAlert = (message, type, callback) => {
   const wrapper = document.createElement('div');
   wrapper.innerHTML = [
     `<div class="alert alert-${type} alert-dismissible" role="alert">`,
@@ -113,7 +113,9 @@ const appendAlert = (message, type) => {
     '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
     '</div>'
   ].join('');
-
+  if (callback !== undefined) {
+    wrapper.addEventListener('closed.bs.alert', callback);
+  }
   alertPlaceholder.append(wrapper);
 }
 
