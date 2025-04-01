@@ -31,28 +31,29 @@ if ("serviceWorker" in navigator) {
     // Register a service worker hosted at the root of the
     // site using the default scope.
     navigator.serviceWorker.register("./service-worker.js").then(
-      (registration) => {
-        console.log("Service worker registration succeeded:", registration);
-        if (registration.installing) {
-            console.log("Service worker installing");
-        } else if (registration.waiting) {
-            console.log("Service worker installed");
-            appendAlert(
-                `A new update of the app is available ${VERSION}. Dismiss this message or reload the page to install the update. Your song settings will be rest.`,
-                'warning', 
-                () => { 
-                    console.log("Posting skipWaiting to service worker.");
-                    navigator.serviceWorker.controller.postMessage({ type: 'skipWaiting'}); 
-                }
-            );
-        } else if (registration.active) {
-            console.log("Service worker active");
-        }
-        registration.update(); // Check for updates immediately
-      },
-      (error) => {
-        console.error(`Service worker registration failed: ${error}`);
-      },
+        (registration) => {
+            console.log("Service worker registration succeeded:", registration);
+            registration.addEventListener("updatefound", () => {
+                const installingWorker = registration.installing;
+                console.log(`A new service worker is being installed: ${installingWorker}`);
+                installingWorker.addEventListener("statechange", (e) => {
+                    if(e.target.state === "installed") {
+                        console.log("Service worker installed");
+                        appendAlert(
+                            `A new update of the app is available ${VERSION}. Dismiss this message or reload the page to install the update. Your song settings will be rest.`,
+                            'warning', 
+                            () => { 
+                                console.log("Posting skipWaiting to service worker.");
+                                navigator.serviceWorker.controller.postMessage({ type: 'skipWaiting'}); 
+                            });
+                    }
+                });
+            });
+            registration.update(); // Check for updates immediately
+        },
+        (error) => {
+            console.error(`Service worker registration failed: ${error}`);
+        },
     );
 } else {
     console.error("Service workers are not supported.");
