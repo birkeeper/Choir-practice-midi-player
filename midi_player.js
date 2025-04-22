@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3bl"
+const VERSION = "v1.2.3bm"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -40,7 +40,7 @@ if ("serviceWorker" in navigator) {
                     if(e.target.state === "installed") {
                         console.log("Service worker installed");
                         console.log("Posting skipWaiting to service worker.");
-                        navigator.serviceWorker.controller.postMessage({ type: 'skipWaiting'}); 
+                        installingWorker.postMessage({ type: 'skipWaiting'}); 
                     }
                 });
             });
@@ -55,11 +55,11 @@ if ("serviceWorker" in navigator) {
 }
 
 navigator.serviceWorker.addEventListener("controllerchange", () => {
-    appendAlert(
-        `A new update of the app is available (${VERSION}). Dismiss this message or reload the page to install the update. This may take a while. Your song settings will be reset.`,
-        'warning');
     console.log("The controller of current browsing context has changed. Reloading the page");
     window.location.reload();
+    appendAlert(
+        `A new update of the app has been installed (${VERSION}). It may take a while to load the page. It may take a while. Use Wi-Fi. Your song settings will be reset.`,
+        'warning');
 });
 
 // Function to store settings
