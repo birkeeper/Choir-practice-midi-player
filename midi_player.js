@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3bj"
+const VERSION = "v1.2.3bk"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -56,7 +56,7 @@ if ("serviceWorker" in navigator) {
 
 navigator.serviceWorker.addEventListener("controllerchange", () => {
     appendAlert(
-        `A new update of the app is available (${VERSION}). Dismiss this message or reload the page to install the update. Your song settings will be reset.`,
+        `A new update of the app is available (${VERSION}). Dismiss this message or reload the page to install the update. This may take a while. Your song settings will be reset.`,
         'warning');
     console.log("The controller of current browsing context has changed. Reloading the page");
     window.location.reload();
