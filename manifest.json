@@ -4,6 +4,11 @@
     "description": "Web-based Midi player specifically targeted to target choir practice.",
     "start_url": "./midi_player.html",
     "display": "standalone",
+    "background": {
+        "scripts": ["./service_worker.js"],
+        "service_worker": "./service_worker.js",
+        "type": "module"
+    },
     "icons": [
         {
             "src": "./icons/midiplayer-icon.svg",
