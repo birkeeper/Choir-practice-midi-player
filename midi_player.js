@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3bn"
+const VERSION = "v1.2.3bo"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -39,8 +39,13 @@ if ("serviceWorker" in navigator) {
                 installingWorker.addEventListener("statechange", (e) => {
                     if(e.target.state === "installed") {
                         console.log("Service worker installed");
-                        console.log("Posting skipWaiting to service worker.");
-                        installingWorker.postMessage({ type: 'skipWaiting'}); 
+                        appendAlert(
+                            `A new update of the app is available. When you dismiss this message or restart the app, the update is installed. Use a Wi-Fi connection to update. Your song settings will be reset.`,
+                            'warning', "update",
+                            () => {
+                                console.log("Posting skipWaiting to service worker.");
+                                installingWorker.postMessage({ type: 'skipWaiting'}); }
+                        );
                     }
                 });
             });
@@ -57,9 +62,6 @@ if ("serviceWorker" in navigator) {
 navigator.serviceWorker.addEventListener("controllerchange", () => {
     console.log("The controller of current browsing context has changed. Reloading the page");
     window.location.reload();
-    appendAlert(
-        `A new update of the app has been installed (${VERSION}). It may take a while to load the page. It may take a while. Use Wi-Fi. Your song settings will be reset.`,
-        'warning');
 });
 
 // Function to store settings
@@ -116,17 +118,18 @@ async function deleteFromCache(key) {
 }
 
 const alertPlaceholder = document.getElementById('alertPlaceholder');
-const appendAlert = (message, type, callback) => {
+const appendAlert = (message, type, id, callback) => {
   const wrapper = document.createElement('div');
   wrapper.innerHTML = [
-    `<div class="alert alert-${type} alert-dismissible" role="alert">`,
+    `<div id=${id} class="alert alert-${type} alert-dismissible" role="alert">`,
     `   <div>${message}</div>`,
     '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
     '</div>'
   ].join('');
   alertPlaceholder.append(wrapper);
   if (callback !== undefined) {
-    wrapper.addEventListener('closed.bs.alert', (event) => { callback(event);  });
+    const alert = getElementById(id);
+    alert.addEventListener('closed.bs.alert', (event) => { callback(event);  });
   }
 }
 
@@ -484,7 +487,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         }
 
         if (!(file.type === 'audio/midi' || file.type === 'audio/x-midi' || file.type === 'audio/mid')) { //incorrect file type
-            appendAlert( "Incorrect file type. Select a midi file.", 'warning')
+            appendAlert( "Incorrect file type. Select a midi file.", 'warning', 'fileError')
             return;
         }
         console.log("file opened");
