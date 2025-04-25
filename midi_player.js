@@ -10,7 +10,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
 import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
 
 
-const VERSION = "v1.2.3bp"
+const VERSION = "v1.2.3bq"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -128,7 +128,7 @@ const appendAlert = (message, type, id, callback) => {
   ].join('');
   alertPlaceholder.append(wrapper);
   if (callback !== undefined) {
-    const alert = getElementById(id);
+    const alert = document.getElementById(id);
     alert.addEventListener('closed.bs.alert', (event) => { callback(event);  });
   }
 }
