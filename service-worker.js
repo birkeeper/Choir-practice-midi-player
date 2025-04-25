@@ -1,7 +1,7 @@
 // service-worker.js
 
-importScripts('./constants.js');
-const CACHE_NAME = "v7.73"; 
+import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
+const CACHE_NAME = "v7.74"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
