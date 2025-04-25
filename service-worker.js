@@ -1,6 +1,7 @@
 // service-worker.js
 
-const CACHE_NAME = "v7.72"; 
+importScripts('./constants.js');
+const CACHE_NAME = "v7.73"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -43,6 +44,16 @@ const putInCache = async (request, response) => {
   };
 
   self.addEventListener("install", (event) => {
+    event.waitUntil(
+      caches
+        .open(CACHE_NAME)
+        .then((cache) =>
+          cache.addAll([
+            SOUNDFONT_GM,
+            SOUNTFONT_SPECIAL,
+          ]),
+        ),
+    );
   });
   
   self.addEventListener("fetch", (event) => {
