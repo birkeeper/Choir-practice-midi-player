@@ -46,6 +46,33 @@ const putInCache = async (request, response) => {
 
   self.addEventListener("install", (event) => {
     event.waitUntil(
+      caches.keys().then(cacheNames => {
+        // Filter out the new cache name
+        const oldCacheNames = cacheNames.filter(name => name !== NEW_CACHE_NAME);
+        // Get the latest cache name
+        const latestCacheName = oldCacheNames[oldCacheNames.length - 1];
+        
+        if (latestCacheName) {
+          return caches.open(NEW_CACHE_NAME).then(newCache => {
+            return caches.open(latestCacheName).then(oldCache => {
+              return oldCache.keys().then(requests => {
+                const settingsRequests = requests.filter(request => request.url.includes('./settings/'));
+                return Promise.all(
+                  settingsRequests.map(request => {
+                    return oldCache.match(request).then(response => {
+                      if (response) {
+                        return newCache.put(request, response);
+                      }
+                    });
+                  })
+                );
+              });
+            });
+          });
+        }
+      });
+      
+       
       caches
         .open(CACHE_NAME)
         .then((cache) =>
