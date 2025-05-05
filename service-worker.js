@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v7.76"; 
+const CACHE_NAME = "v7.77"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -48,40 +48,32 @@ const putInCache = async (request, response) => {
     event.waitUntil(
       caches.keys().then(cacheNames => {
         // Filter out the new cache name
-        const oldCacheNames = cacheNames.filter(name => name !== NEW_CACHE_NAME);
+        const oldCacheNames = cacheNames.filter(name => name !== CACHE_NAME);
         // Get the latest cache name
         const latestCacheName = oldCacheNames[oldCacheNames.length - 1];
         
         if (latestCacheName) {
-          return caches.open(NEW_CACHE_NAME).then(newCache => {
-            return caches.open(latestCacheName).then(oldCache => {
-              return oldCache.keys().then(requests => {
-                const settingsRequests = requests.filter(request => request.url.includes('./settings/'));
-                return Promise.all(
-                  settingsRequests.map(request => {
-                    return oldCache.match(request).then(response => {
-                      if (response) {
-                        return newCache.put(request, response);
-                      }
-                    });
-                  })
-                );
-              });
+          caches.open(latestCacheName).then(oldCache => {
+            oldCache.keys().then(requests => {
+              const settingsRequests = requests.filter(request => request.url.includes('/settings/'));
+              settingsRequests.map(request => {
+                oldCache.match(request).then(response => {
+                  if (response) {
+                    putInCache(request, response);
+                  }
+                });
+              })
             });
           });
         }
-      });
-      
-       
-      caches
-        .open(CACHE_NAME)
-        .then((cache) =>
+        return caches.open(CACHE_NAME).then((cache) =>
           cache.addAll([
             SOUNDFONT_GM,
             SOUNTFONT_SPECIAL,
           ]),
-        ),
-    );
+        )
+      })
+    );  
   });
   
   self.addEventListener("fetch", (event) => {
