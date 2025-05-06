@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v7.77"; 
+const CACHE_NAME = "v7.78"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -68,6 +68,8 @@ const putInCache = async (request, response) => {
         }
         return caches.open(CACHE_NAME).then((cache) =>
           cache.addAll([
+            "./midi_player.html",
+            "./midi_player.js",
             SOUNDFONT_GM,
             SOUNTFONT_SPECIAL,
           ]),

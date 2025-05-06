@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3bt"
+const VERSION = "v1.2.3bu"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -132,7 +132,7 @@ const appendAlert = (message, type, id, callback) => {
   }
 }
 
-document.getElementById('title').textContent = 'Midi Player '+ VERSION;
+document.getElementById('version').textContent = VERSION;
 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
 
