@@ -1,103 +1,17 @@
 * {
-    /*font-family: "Noto Sans Light", "Open Sans Light", sans-serif;
-    color: #ccc;*/
     font-size: 0.9rem;
 }
 
-/* canvas{
-    width: 100%;
-    min-height: 0;
-    max-height: 40vh;
-}*/
-
 .button-label{
-    /*flex: 0 0 auto;
-    align-items: center;*/
     cursor: pointer;
     padding: 4px;
     border-radius: 8px;
     background: #444;
-    /*margin-right: 10px;*/
 }
-
-/*#pause{
-    display: none;
-}*/
-
-/*#midi_input{
-    display: none;
-}*/
-
-/*#file_box{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 8px;
-}*/
-
-/*#progress_box{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 8px;
-}*/
 
 #playback_control_box{
-    /*display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;*/
     max-width: 10rem;
 }
-
-/*#message{
-    overflow-wrap: break-word;
-}*/
-
-/*span{
-    flex: 0 0 auto
-}*/
-
-/*#progress{
-    flex: 1 1 100%;
-    margin-right: 10px;
-}*/
-
-/*playbackRate{
-    max-width: 5rem;
-}*/
-
-/*body {
-    background: #111;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    max-height: 100vh;
-    max-width: 1024px;
-    width: 100vw
-}*/
-
-/*.content_box{
-    width: 90%;
-    background: #333;
-    padding: 2em;
-    margin: 0.5rem;
-    border-radius: 1rem;
-    box-shadow: black 0 0 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-}*/
-
-/*.channel-control {
-    margin: 0.5rem;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%
-}*/
 
 .channel-name {
     /*flex: 0 0 3rem;*/
@@ -107,13 +21,7 @@
     min-width: 3rem;
 }
 
-/*.volume-slider {
-    flex: 1 1 auto;
-    margin: 0 10px;
-}*/
-
 .instrument-select {
-    /*flex: 0 0 4rem;*/
     font-size: inherit;
     field-sizing: fixed;
     width: 30%;
