@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3ce"
+const VERSION = "v1.2.3cf"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -380,7 +380,10 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                         storeSettings(midiFileHash, settings);
                     }
                 }
-                container.appendChild(volumeSlider);
+                const column2 = document.createElement('div');
+                column2.className = 'd-flex volume-control ms-2 flex-grow-0 flex-shrink-1';
+                column2.appendChild(volumeSlider);
+                container.appendChild(column2);
                 
                 const instrumentSelect = document.createElement('select');
                 instrumentSelect.className = 'form-select';
@@ -438,7 +441,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                     }                      
                 }
                 const column = document.createElement('div');
-                column.className = 'instrument-select mx-2';
+                column.className = 'd-flex instrument-select mx-2';
                 column.appendChild(instrumentSelect);
                 container.appendChild(column);
 
