@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3cd"
+const VERSION = "v1.2.3ce"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -362,7 +362,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
                 
                 const volumeSlider = document.createElement('input');
                 volumeSlider.type = 'range';
-                volumeSlider.className = 'form-range flex-grow-1 flex-shrink-1 ms-2';
+                volumeSlider.className = 'form-range flex-grow-0 flex-shrink-1 ms-2 volume-control';
                 volumeSlider.min = 0;
                 volumeSlider.max = 127;
                 volumeSlider.value = channel.volume;

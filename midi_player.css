@@ -14,11 +14,15 @@
 }
 
 .channel-name {
-    /*flex: 0 0 3rem;*/
     field-sizing: fixed;
     overflow-wrap: anywhere;
     width: 20%;
     min-width: 3rem;
+}
+
+.volume-control {
+    field-sizing: fixed;
+    width: 50%;
 }
 
 .instrument-select {
