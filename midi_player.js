@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3cd"
+const VERSION = "v1.2.3ce"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -39,7 +39,7 @@ if ("serviceWorker" in navigator) {
                     if(e.target.state === "installed") {
                         console.log("Service worker installed");
                         appendAlert(
-                            `A new update of the app is available. When you dismiss this message or restart the app, the update is installed. Use a Wi-Fi connection to update. Your song settings will be reset.`,
+                            `A new update of the app is available. When you dismiss this message or restart the app, the update is installed.`,
                             'warning', "update",
                             () => {
                                 console.log("Posting skipWaiting to service worker.");
@@ -268,7 +268,8 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
             
             // create channel controls
             const channelControlsContainer = document.getElementById('channel-controls');
-            channelControlsContainer.innerHTML = ''; // Clear existing controls
+            const channelControlHeader = document.getElementById('channel-control-header');
+            channelControlsContainer.innerHTML = channelControlHeader.outerHTML; // Clear existing controls except for the header
 
             // read settings from cache if available
             generateHash(buffer)
