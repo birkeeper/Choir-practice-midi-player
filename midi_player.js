@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3ci"
+const VERSION = "v1.2.3cj"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -137,14 +137,12 @@ document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
 
 
-// load the soundfont
-fetch(SOUNTFONT_SPECIAL).then(async response => {
-    // load the soundfont into an array buffer
-    let secondarySoundFontBuffer = response.arrayBuffer();
-    let primarySoundFontBuffer;
-    await fetch(SOUNDFONT_GM).then(async response => {
-        primarySoundFontBuffer = await response.arrayBuffer();
-    });
+
+{
+    // load the soundfonts
+    const [responseSecondary, responsePrimary] = await Promise.all([fetch(SOUNTFONT_SPECIAL), fetch(SOUNDFONT_GM)]);
+    // load the soundfonts into array buffers
+    const [secondarySoundFontBuffer, primarySoundFontBuffer] = await Promise.all([responseSecondary.arrayBuffer(), responsePrimary.arrayBuffer()]);
     
     // create the context and add audio worklet
     const context = new AudioContext({latencyHint: "playback"});
@@ -498,7 +496,7 @@ fetch(SOUNTFONT_SPECIAL).then(async response => {
         storeSettings("current_midi_file",file);
         setupApplication();
     });
-});
+}
 
 function getTrackNames(arrayBuffer) { // returns the tracknames from the midifile represented in the arrayBuffer
     const parsedMIDI = new MIDI(arrayBuffer);
