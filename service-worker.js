@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v7.97"; 
+const CACHE_NAME = "v7.98"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -45,7 +45,7 @@ const putInCache = async (request, response) => {
   };
 
   self.addEventListener("install", (event) => {
-    event.waitUntil(
+    event.waitUntil( Promise.allSettled([
       caches.keys().then(cacheNames => {
         // Filter out the new cache name
         const oldCacheNames = cacheNames.filter(name => name !== CACHE_NAME);
@@ -66,14 +66,15 @@ const putInCache = async (request, response) => {
             });
           });
         }
-        return caches.open(CACHE_NAME).then((cache) =>
-          cache.addAll([
-            SOUNDFONT_GM,
-            SOUNTFONT_SPECIAL,
-          ]),
-        )
-      })
-    );  
+        return Promise.resolve(undefined);
+      }),
+      caches.open(CACHE_NAME)
+        .then((cache) => {return cache.add(SOUNDFONT_GM);})
+        .catch(() => {return Promise.resolve(undefined);}),
+      caches.open(CACHE_NAME)
+        .then((cache) => {return cache.add(SOUNTFONT_SPECIAL);})
+        .catch(() => {return Promise.resolve(undefined);}),
+    ]));  
   });
   
   self.addEventListener("fetch", (event) => {
