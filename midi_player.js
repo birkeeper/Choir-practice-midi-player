@@ -87,22 +87,26 @@ async function storeSettings(key, settings) {
 
 // Function to retrieve settings
 async function retrieveSettings(key) {
-    if (navigator.serviceWorker.controller) {
-        const response1 = await fetch(`./settings/${key}`);
-        if (key ==="current_midi_file") {
-            const response2 = await fetch(`./settings/current_midi_file_name`);
-            if (response1.ok && response2.ok) {
-                const fileName = await response2.json();
-                const fileBlob = await response1.blob();
-                const file = new File([fileBlob], fileName, {type: `${fileBlob.type}`});
-                URL.revokeObjectURL(response1.url);
-                return file;
-            }
-        } else {
-            if (response1.ok) {
-                return await response1.json();
+    try {
+        if (navigator.serviceWorker.controller) {
+            const response1 = await fetch(`./settings/${key}`);
+            if (key ==="current_midi_file") {
+                const response2 = await fetch(`./settings/current_midi_file_name`);
+                if (response1.ok && response2.ok) {
+                    const fileName = await response2.json();
+                    const fileBlob = await response1.blob();
+                    const file = new File([fileBlob], fileName, {type: `${fileBlob.type}`});
+                    URL.revokeObjectURL(response1.url);
+                    return file;
+                }
+            } else {
+                if (response1.ok) {
+                    return await response1.json();
+                }
             }
         }
+    } catch(error){
+        log
     }
     return Promise.resolve(null);
 }
