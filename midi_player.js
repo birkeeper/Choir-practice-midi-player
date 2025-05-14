@@ -106,7 +106,7 @@ async function retrieveSettings(key) {
             }
         }
     } catch(error){
-        log
+        console.error(error);
     }
     return Promise.resolve(null);
 }
