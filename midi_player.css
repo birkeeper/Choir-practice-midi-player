@@ -2,11 +2,15 @@
     font-size: 0.9rem;
 }
 
+:root {
+    background: #0000;
+  }
+
 .button-label{
     cursor: pointer;
     padding: 4px;
     border-radius: 8px;
-    background: #444;
+    background: var(--bs-body-color);
 }
 
 #playback_control_box{
