@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v7.101"; 
+const CACHE_NAME = "v7.102"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -15,6 +15,14 @@ const putInCache = async (request, response) => {
     const responseFromCache = await cache.match(request);
     if (responseFromCache) {
       return responseFromCache;
+    }
+
+    // when fetching settings, only search the cache
+    if (request.url.includes('/settings/')) {
+      return new Response("Not found", {
+        status: 404,
+        headers: { "Content-Type": "text/plain" },
+      });
     }
   
     // If the response was not found in the cache,
@@ -118,8 +126,7 @@ self.addEventListener('message', async (event) => {
         });
       }
       await cache.put(key, response);
-      console.log(`settings (key: ${key}) saved to cache ${CACHE_NAME}`);
-      
+      console.log(`settings (key: ${key}) saved to cache ${CACHE_NAME}`);   
   } 
   if (type === 'skipWaiting') {
     self.skipWaiting();
