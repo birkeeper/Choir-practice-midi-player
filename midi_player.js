@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3co"
+const VERSION = "v1.2.3cp"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -169,8 +169,10 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
     let settings;
     let midiFileHash;
     let timerID;
+    const controller = new AbortController();
 
     async function setupApplication() {
+        controller.abort(); // remove all event listeners created in an earlier call to this function
         // parse all the files
         const parsedSongs = [];
         const buffer = await file.arrayBuffer();
@@ -210,11 +212,9 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         slider.oninput = () => {
             currentTimeDisplay.textContent = formatTime(Number(slider.value));
         };
-        slider.addEventListener("pointerdown", handleClickProgressSlider, true);
-        slider.addEventListener("pointerup", handleReleaseProgressSlider, false);
-        slider.addEventListener("touchstart", handleClickProgressSlider, true);
-        slider.addEventListener("touchend", handleReleaseProgressSlider, false);
-
+        slider.addEventListener("pointerdown", handleClickProgressSlider, { capture: true, signal: controller.signal });
+        slider.addEventListener("pointerup", handleReleaseProgressSlider, { capture: true, signal: controller.signal });
+        
         function handleClickProgressSlider() {
             if (timerID) {
                 clearInterval(timerID);
@@ -256,7 +256,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         const playbackRateInput = document.getElementById('playbackRate');
         const playbackRateValue = document.getElementById('playbackRateValue');
 
-        playbackRateInput.addEventListener('input',playbackRateCallback);
+        playbackRateInput.addEventListener('input',playbackRateCallback, {signal: controller.signal });
         function playbackRateCallback() {
             seq.playbackRate = playbackRateInput.value;
             playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(1)}x`;
@@ -450,7 +450,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
                         if (midiFileHash !== undefined && settings !== undefined) {
                             storeSettings(midiFileHash, settings);
                         }
-                    });
+                    }, {signal: controller.signal });
                     instrumentControls.set(channel.number,instrumentSelect);
                     if (!defaultInstrumentSelected) {
                         setTimeout(() => {
