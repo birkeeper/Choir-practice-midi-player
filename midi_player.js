@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3cm"
+const VERSION = "v1.2.3cn"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -168,6 +168,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
     let seq;
     let settings;
     let midiFileHash;
+    let timerID;
 
     async function setupApplication() {
         // parse all the files
@@ -200,14 +201,16 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         const slider = document.getElementById("progress");
         const currentTimeDisplay = document.getElementById('currentTime');
         const totalTimeDisplay = document.getElementById('totalTime');
-        let timerID = setInterval(timerCallback, 500);
+        if (timerID) {
+            clearInterval(timerID);
+        }
+        timerID = setInterval(timerCallback, 500);
         slider.oninput = () => {
             currentTimeDisplay.textContent = formatTime(Number(slider.value));
         };
         slider.addEventListener("pointerdown", handleClickProgressSlider, true);
         slider.addEventListener("pointerup", handleReleaseProgressSlider, false);
-        slider.addEventListener("touchstart", handleClickProgressSlider, true);
-        slider.addEventListener("touchend", handleReleaseProgressSlider, false);
+
         function handleClickProgressSlider() {
             clearInterval(timerID);
             timerID = null;
