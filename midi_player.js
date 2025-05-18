@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3cn"
+const VERSION = "v1.2.3co"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -218,27 +218,30 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         function handleClickProgressSlider() {
             if (timerID) {
                 clearInterval(timerID);
-                timerID = undefined;
                 console.log(`progress slider timer cleared: ${timerID}`);
+                timerID = undefined;
             }
             console.log("progress slider clicked");
         }
+        
         function handleReleaseProgressSlider() {
             seq.currentTime = Number(slider.value);
             if (!timerID) {
                 timerID = setInterval(timerCallback, 500);
                 console.log(`progress slider timer started: ${timerID}`);
-            }
-            if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                context.resume();
-                seq.play(); // resume
-            }
-            else {
-                context.suspend();
-                seq.pause(); // pause
-            }
+
+                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
+                    context.resume();
+                    seq.play(); // resume
+                }
+                else {
+                    context.suspend();
+                    seq.pause(); // pause
+                }
+            }         
             console.log("progress slider released");
         }
+
         function timerCallback() {
             slider.value = Math.floor(seq.currentTime);
             currentTimeDisplay.textContent = formatTime(seq.currentTime);            
