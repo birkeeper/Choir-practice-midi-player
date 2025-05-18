@@ -203,22 +203,32 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         const totalTimeDisplay = document.getElementById('totalTime');
         if (timerID) {
             clearInterval(timerID);
+            console.log(`progress slider timer cleared: ${timerID}`);
         }
         timerID = setInterval(timerCallback, 500);
+        console.log(`progress slider timer started: ${timerID}`);
         slider.oninput = () => {
             currentTimeDisplay.textContent = formatTime(Number(slider.value));
         };
         slider.addEventListener("pointerdown", handleClickProgressSlider, true);
         slider.addEventListener("pointerup", handleReleaseProgressSlider, false);
+        slider.addEventListener("touchstart", handleClickProgressSlider, true);
+        slider.addEventListener("touchend", handleReleaseProgressSlider, false);
 
         function handleClickProgressSlider() {
-            clearInterval(timerID);
-            timerID = null;
+            if (timerID) {
+                clearInterval(timerID);
+                timerID = undefined;
+                console.log(`progress slider timer cleared: ${timerID}`);
+            }
             console.log("progress slider clicked");
         }
         function handleReleaseProgressSlider() {
             seq.currentTime = Number(slider.value);
-            timerID = setInterval(timerCallback, 500);
+            if (!timerID) {
+                timerID = setInterval(timerCallback, 500);
+                console.log(`progress slider timer started: ${timerID}`);
+            }
             if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
                 context.resume();
                 seq.play(); // resume
