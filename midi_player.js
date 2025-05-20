@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3cq"
+const VERSION = "v1.2.3cr"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -179,14 +179,17 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
             altName: file.name  // altName: the fallback name if the MIDI doesn't have one. Here we set it to the file name
         });
         
+        const slider = document.getElementById("progress");
+        const totalTimeDisplay = document.getElementById('totalTime');
+        const playbackRateInput = document.getElementById('playbackRate');
+        const playbackRateValue = document.getElementById('playbackRateValue');
+
         if(seq === undefined)
         { // setup main part of the application. This is only executed once after startup when the first song is loaded.
             seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,}); // create the sequencer with the parsed midis
             
             // make the slider move with the song and define what happens when the user moves the slider
-            const slider = document.getElementById("progress");
             const currentTimeDisplay = document.getElementById('currentTime');
-            const totalTimeDisplay = document.getElementById('totalTime');
             if (timerID) {
                 clearInterval(timerID);
                 console.log(`progress slider timer cleared: ${timerID}`);
@@ -239,9 +242,6 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
             }
 
             // make a slider to set the playback rate
-            const playbackRateInput = document.getElementById('playbackRate');
-            const playbackRateValue = document.getElementById('playbackRateValue');
-
             playbackRateInput.addEventListener('input',playbackRateCallback);
             function playbackRateCallback() {
                 seq.playbackRate = playbackRateInput.value;
@@ -321,8 +321,6 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
                 } 
                 
                 //set up playback rate control based on settings
-                const playbackRateInput = document.getElementById('playbackRate');
-                const playbackRateValue = document.getElementById('playbackRateValue');
                 playbackRateInput.value = settings.playbackRate;
                 seq.playbackRate = settings.playbackRate;
                 playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(1)}x`;
