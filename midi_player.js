@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3cr"
+const VERSION = "v1.2.3cs"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -184,6 +184,12 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         const playbackRateInput = document.getElementById('playbackRate');
         const playbackRateValue = document.getElementById('playbackRateValue');
 
+        function formatTime(seconds) {// for displaying song progress
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
         if(seq === undefined)
         { // setup main part of the application. This is only executed once after startup when the first song is loaded.
             seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,}); // create the sequencer with the parsed midis
@@ -234,11 +240,6 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
             function timerCallback() {
                 slider.value = Math.floor(seq.currentTime);
                 currentTimeDisplay.textContent = formatTime(seq.currentTime);            
-            }
-            function formatTime(seconds) {
-                const minutes = Math.floor(seconds / 60);
-                const secs = Math.floor(seconds % 60);
-                return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
             }
 
             // make a slider to set the playback rate
