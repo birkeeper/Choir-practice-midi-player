@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3cp"
+const VERSION = "v1.2.3cq"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -153,7 +153,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
     await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/src/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
     const synth = new Synthetizer(context.destination, primarySoundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
     {
-        const soundFont = loadSoundFont(await secondarySoundFontBuffer);
+        const soundFont = loadSoundFont(secondarySoundFontBuffer);
         instruments = {...soundFont.presets};
     }
     document.getElementById("message").innerText = "Select a midi file. Give your browser \"music and audio\" permisions.";
@@ -161,7 +161,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         instrument.bank = SOUNDFONTBANK;
     }
     await synth.isReady;
-    await synth.soundfontManager.addNewSoundFont(await secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
+    await synth.soundfontManager.addNewSoundFont(secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
     document.getElementById("midi_input").disabled = false;
     synth.setMainVolume(MAINVOLUME);
 
@@ -169,10 +169,8 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
     let settings;
     let midiFileHash;
     let timerID;
-    const controller = new AbortController();
-
+    
     async function setupApplication() {
-        controller.abort(); // remove all event listeners created in an earlier call to this function
         // parse all the files
         const parsedSongs = [];
         const buffer = await file.arrayBuffer();
@@ -182,11 +180,87 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         });
         
         if(seq === undefined)
-        {
-            seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,});                          // create the sequencer with the parsed midis
+        { // setup main part of the application. This is only executed once after startup when the first song is loaded.
+            seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,}); // create the sequencer with the parsed midis
+            
+            // make the slider move with the song and define what happens when the user moves the slider
+            const slider = document.getElementById("progress");
+            const currentTimeDisplay = document.getElementById('currentTime');
+            const totalTimeDisplay = document.getElementById('totalTime');
+            if (timerID) {
+                clearInterval(timerID);
+                console.log(`progress slider timer cleared: ${timerID}`);
+            }
+            timerID = setInterval(timerCallback, 500);
+            console.log(`progress slider timer started: ${timerID}`);
+            slider.oninput = () => {
+                currentTimeDisplay.textContent = formatTime(Number(slider.value));
+            };
+            slider.addEventListener("pointerdown", handleClickProgressSlider, { capture: true});
+            slider.addEventListener("pointerup", handleReleaseProgressSlider, { capture: false});
+            slider.addEventListener("touchstart", handleClickProgressSlider, { capture: true});
+            slider.addEventListener("touchend", handleReleaseProgressSlider, { capture: false});
+        
+            function handleClickProgressSlider() {
+                if (timerID) {
+                    clearInterval(timerID);
+                    console.log(`progress slider timer cleared: ${timerID}`);
+                    timerID = undefined;
+                }
+                console.log("progress slider clicked");
+            }
+        
+            function handleReleaseProgressSlider() {
+                seq.currentTime = Number(slider.value);
+                if (!timerID) {
+                    timerID = setInterval(timerCallback, 500);
+                    console.log(`progress slider timer started: ${timerID}`);
+
+                    if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
+                        context.resume();
+                        seq.play(); // resume
+                    }
+                    else {
+                        context.suspend();
+                        seq.pause(); // pause
+                    }
+                }         
+                console.log("progress slider released");
+            }
+
+            function timerCallback() {
+                slider.value = Math.floor(seq.currentTime);
+                currentTimeDisplay.textContent = formatTime(seq.currentTime);            
+            }
+            function formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+
+            // make a slider to set the playback rate
+            const playbackRateInput = document.getElementById('playbackRate');
+            const playbackRateValue = document.getElementById('playbackRateValue');
+
+            playbackRateInput.addEventListener('input',playbackRateCallback);
+            function playbackRateCallback() {
+                seq.playbackRate = playbackRateInput.value;
+                playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(1)}x`;
+                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
+                    context.resume();
+                    seq.play(); // resume
+                }
+                else {
+                    context.suspend();
+                    seq.pause(); // pause
+                }
+                if (midiFileHash !== undefined && settings !== undefined) {
+                    settings.playbackRate = playbackRateInput.value;
+                    storeSettings(midiFileHash, settings);
+                }
+            }
         }
-        else
-        {
+        else { //when seq is defined
             for (const channel of settings.channels) {// unlock all channel controllers of the previous song, so it can be overwritten.
                 synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
                 synth.lockController(channel.number, midiControllers.bankSelect, false);
@@ -198,81 +272,6 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         context.suspend();
         seq.pause();
         document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-
-        // make the slider move with the song and define what happens when the user moves the slider
-        const slider = document.getElementById("progress");
-        const currentTimeDisplay = document.getElementById('currentTime');
-        const totalTimeDisplay = document.getElementById('totalTime');
-        if (timerID) {
-            clearInterval(timerID);
-            console.log(`progress slider timer cleared: ${timerID}`);
-        }
-        timerID = setInterval(timerCallback, 500);
-        console.log(`progress slider timer started: ${timerID}`);
-        slider.oninput = () => {
-            currentTimeDisplay.textContent = formatTime(Number(slider.value));
-        };
-        slider.addEventListener("pointerdown", handleClickProgressSlider, { capture: true, signal: controller.signal });
-        slider.addEventListener("pointerup", handleReleaseProgressSlider, { capture: true, signal: controller.signal });
-        
-        function handleClickProgressSlider() {
-            if (timerID) {
-                clearInterval(timerID);
-                console.log(`progress slider timer cleared: ${timerID}`);
-                timerID = undefined;
-            }
-            console.log("progress slider clicked");
-        }
-        
-        function handleReleaseProgressSlider() {
-            seq.currentTime = Number(slider.value);
-            if (!timerID) {
-                timerID = setInterval(timerCallback, 500);
-                console.log(`progress slider timer started: ${timerID}`);
-
-                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                    context.resume();
-                    seq.play(); // resume
-                }
-                else {
-                    context.suspend();
-                    seq.pause(); // pause
-                }
-            }         
-            console.log("progress slider released");
-        }
-
-        function timerCallback() {
-            slider.value = Math.floor(seq.currentTime);
-            currentTimeDisplay.textContent = formatTime(seq.currentTime);            
-        }
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-        }
-
-        // make a slider to set the playback rate
-        const playbackRateInput = document.getElementById('playbackRate');
-        const playbackRateValue = document.getElementById('playbackRateValue');
-
-        playbackRateInput.addEventListener('input',playbackRateCallback, {signal: controller.signal });
-        function playbackRateCallback() {
-            seq.playbackRate = playbackRateInput.value;
-            playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(1)}x`;
-            if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                context.resume();
-                seq.play(); // resume
-            }
-            else {
-                context.suspend();
-                seq.pause(); // pause
-            }
-            if (midiFileHash !== undefined && settings !== undefined) {
-                settings.playbackRate = playbackRateInput.value;
-                storeSettings(midiFileHash, settings);
-            }
-        }
 
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
@@ -450,7 +449,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
                         if (midiFileHash !== undefined && settings !== undefined) {
                             storeSettings(midiFileHash, settings);
                         }
-                    }, {signal: controller.signal });
+                    });
                     instrumentControls.set(channel.number,instrumentSelect);
                     if (!defaultInstrumentSelected) {
                         setTimeout(() => {
