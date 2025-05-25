@@ -11,7 +11,7 @@ import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/
 import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
 
 
-const VERSION = "v1.2.3cl"
+const VERSION = "v1.2.3cm"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -156,7 +156,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         const soundFont = loadSoundFont(secondarySoundFontBuffer);
         instruments = {...soundFont.presets};
     }
-    document.getElementById("message").innerText = "Select a midi file. Give your browser \"music and audio\" permisions.";
+    document.getElementById("message").innerText = "Select a midi file.";
     for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
         instrument.bank = SOUNDFONTBANK;
     }
