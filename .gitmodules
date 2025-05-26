@@ -1,1 +1,4 @@
 
+[submodule "libraries/spessasynth_lib"]
+	path = libraries/spessasynth_lib
+	url = https://github.com/spessasus/spessasynth_lib
