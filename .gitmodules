@@ -2,3 +2,6 @@
 [submodule "libraries/spessasynth_lib"]
 	path = libraries/spessasynth_lib
 	url = https://github.com/spessasus/spessasynth_lib
+[submodule "libraries/spessasynth_core"]
+	path = libraries/spessasynth_core
+	url = https://github.com/spessasus/spessasynth_core

@@ -1,17 +1,12 @@
 // import the modules
 
-import { WORKLET_URL_ABSOLUTE } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/worklet_url.js'
-import { Sequencer } from './libraries/spessasynth_lib/src/spessasynth_lib/sequencer/sequencer.js'
-import { Synthetizer } from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/synthetizer.js'
-import { midiControllers, MidiMessage } from './libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_message.js'
-import {ALL_CHANNELS_OR_DIFFERENT_ACTION} from './libraries/spessasynth_lib/src/spessasynth_lib/synthetizer/worklet_system/message_protocol/worklet_message.js'
-import { loadSoundFont } from "./libraries/spessasynth_lib/src/spessasynth_lib/soundfont/load_soundfont.js";
-import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js'
-import {MIDI} from "./libraries/spessasynth_lib/src/spessasynth_lib/midi_parser/midi_loader.js";
-import {SOUNDFONT_GM, SOUNTFONT_SPECIAL} from "./constants.js";
+import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from './libraries/spessasynth_lib/index.js';
+import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI } from './libraries/spessasynth_core/index.js';
+import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js';
+import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v1.2.3cm"
+const VERSION = "v1.2.3cn"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
