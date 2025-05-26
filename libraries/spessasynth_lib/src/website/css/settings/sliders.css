@@ -1,0 +1,88 @@
+.settings_slider_wrapper{
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.5rem !important;
+    position: relative;
+    --track-height: 0.8rem;
+    --thumb-size: 1.5rem;
+    --active-brightness: 0.75;
+    --slider-border-thickness: 1px;
+}
+
+.settings_visual_wrapper{
+    --visual-width: 0%;
+    display: flex;
+    position: relative;
+    margin: 0 1rem 1rem 0;
+    flex-grow: 1;
+    height: var(--track-height);
+    transition: all 0.1s;
+    cursor: e-resize;
+    background: var(--track-color);
+    border: solid var(--slider-border-thickness) var(--track-border-color);
+    border-radius: var(--track-height);
+}
+
+.settings_visual_wrapper:has(.settings_slider:active){
+    filter: brightness(var(--active-brightness));
+}
+
+.settings_slider {
+    cursor: e-resize;
+    width: 100%;
+    opacity: 0;
+    -webkit-appearance: none;
+    top: calc((var(--thumb-size) / 4) * -1);
+    height: var(--thumb-size);
+    position: relative;
+}
+
+.settings_slider:hover{
+    filter: brightness(1.2);
+}
+
+.settings_slider:focus {
+    outline: none;
+}
+
+.settings_slider + span{
+    margin-bottom: 1rem;
+}
+
+.settings_slider + span {
+    min-width: 5em;
+    text-align: center;
+}
+
+.settings_slider_progress{
+    width: calc(var(--visual-width) + 2 * var(--slider-border-thickness));
+    position: absolute;
+    background: var(--primary-color);
+    border: solid var(--slider-border-thickness) var(--border-color);
+    height: calc(100% + 2 * var(--slider-border-thickness));
+    border-radius: var(--track-height);
+    top: calc(-1 * var(--slider-border-thickness));
+    left: calc(-1 * var(--slider-border-thickness));
+}
+
+.settings_slider_thumb{
+    border: solid var(--slider-border-thickness) var(--track-border-color);
+    background: var(--track-color);
+    height: var(--thumb-size);
+    width: var(--thumb-size);
+    border-radius: 50%;
+    position: absolute;
+    top: -0.4rem;
+    left: calc(var(--visual-width) - var(--thumb-size) / 2);
+}
+
+.settings_slider_wrapper:hover .settings_slider_thumb{
+    border-color: var(--primary-color);
+}
+
+.settings_slider_transition .settings_slider_thumb,
+.settings_slider_transition .settings_slider_progress{
+    transition: all 0.2s ease;
+}

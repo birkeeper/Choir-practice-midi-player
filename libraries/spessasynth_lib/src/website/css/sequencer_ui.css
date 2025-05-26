@@ -1,0 +1,153 @@
+#sequencer_controls
+{
+    width: 80%;
+    position: relative;
+    margin: auto auto 2px;
+
+    --progress-bar-height: 2rem;
+    --sequi-border-radius: var(--primary-border-radius);
+}
+
+#sequencer_controls #note_progress
+{
+    border-radius: var(--progress-bar-height);
+    background: linear-gradient(185deg, #306, var(--primary-color));
+    height: 100%;
+    transition: width 100ms linear;
+    position: absolute;
+    left: 0;
+}
+
+
+#sequencer_controls .note_progress_light{
+    filter: brightness(3);
+}
+
+#sequencer_controls #note_time
+{
+    position: relative;
+    font-size: calc(var(--progress-bar-height) * 0.8);
+    line-height: var(--progress-bar-height);
+    text-align: center;
+    color: var(--font-color);
+    margin: 0.5rem;
+    width: 100%;
+}
+
+#sequencer_controls #note_time:hover{
+    cursor: pointer;
+}
+
+#sequencer_controls .control_buttons
+{
+    position: relative;
+    display: inline-block;
+    transition: all 0.1s ease;
+}
+
+#sequencer_controls .control_buttons:active{
+    transform: scale(var(--active-scale));
+}
+
+#sequencer_controls .control_buttons:hover{
+    cursor: pointer;
+}
+
+#sequencer_controls #note_progress_background
+{
+    border-radius: var(--progress-bar-height);
+    background: linear-gradient(90deg, #454545, #343434);
+    height: var(--progress-bar-height);
+    position: absolute;
+    width: 100%;
+    overflow: hidden;
+}
+
+#sequencer_controls .note_progress_background_light
+{
+    background: linear-gradient(90deg, #ddd, #bbb) !important;
+}
+
+#sequencer_controls .lyrics{
+    position: fixed;
+    top:0;
+    right: 0;
+    width: 30em;
+    min-width: 30%;
+    max-width: 100%;
+    height: 75%;
+    z-index: 256;
+    display: flex;
+    flex-direction: column;
+    transform: scaleX(0);
+    background: var(--top-color);
+    transition: all 0.2s ease;
+    visibility: hidden;
+    border-radius: var(--sequi-border-radius);
+}
+
+.lyrics_title_wrapper{
+    background: transparent;
+    top: 0;
+    border-radius: var(--sequi-border-radius);
+}
+
+.lyrics_selector{
+    width: 100%;
+    border: none;
+    font-size: 1.3rem;
+    padding: 0.5em;
+    background: transparent;
+}
+
+.lyrics_selector option{
+    background: black;
+}
+
+.lyrics_show{
+    transform: scaleX(1) !important;
+    visibility: visible !important;
+}
+
+.lyrics_text{
+    scroll-behavior: smooth;
+    overflow-y: auto;
+    max-height: 80%;
+    margin-left: 3rem;
+    margin-right: 3rem;
+    flex: 2;
+}
+
+.lyrics_text_gray {
+    opacity: 0.5;
+    font-style: italic;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.lyrics_text_highlight {
+    font-weight: bold;
+    font-style: italic;
+    color: var(--font-color);
+    font-size: 1rem;
+}
+
+.lyrics details{
+    overflow: scroll;
+}
+
+.lyrics details summary{
+    position: fixed;
+    width: 100%;
+    text-align: center;
+}
+
+.lyrics details div{
+    margin-top: 2rem;
+    line-height: 2rem;
+}
+
+.lyrics details pre,
+.lyrics details i{
+    display: inline;
+}

@@ -1,0 +1,53 @@
+@import "sliders.css";
+@import "buttons.css";
+@import "groups.css";
+@import "switches.css";
+
+.settings_menu{
+    --settings-border-radius: 1rem;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 30%;
+    max-width: 100%;
+    min-height: 100%;
+    z-index: 256;
+    transform: scaleX(0);
+    background: var(--top-color);
+    transition: transform 0.2s ease;
+    scroll-behavior: smooth;
+    overflow-y: auto;
+    display: none;
+    border-radius: 0 0 var(--settings-border-radius) var(--settings-border-radius);
+}
+
+.settings_menu_show{
+    display: block !important;
+    transform: scaleX(1) !important;
+}
+
+.settings_menu * {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.settings_menu select{
+    background: transparent;
+    border: solid 1px transparent; /*to keep the same size when adding one*/
+    font-size: larger;
+    border-radius: var(--settings-border-radius);
+    padding: .5rem;
+}
+
+.settings_menu select option{
+    background: black;
+    color: white;
+    border: none;
+}
+
+.settings_menu select:hover{
+    cursor: pointer;
+    text-shadow: 0 0 5px white;
+    border: 1px solid var(--top-buttons-color-end);
+    background: var(--top-buttons-color);
+}

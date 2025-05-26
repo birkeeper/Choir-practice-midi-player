@@ -1,0 +1,53 @@
+.voice_meter{
+    cursor: not-allowed;
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--border-color);
+    min-width: 7em;
+    overflow: hidden;
+}
+
+.voice_meter.editable{
+    cursor: e-resize;
+}
+
+.voice_meter .voice_meter_bar{
+    position: relative;
+    display: block;
+    height: 100%;
+    margin-top: auto;
+    background-color: var(--primary-color);
+    border-radius: var(--notification-border-radius);
+}
+
+.voice_meter_light_color{
+    filter: brightness(1.4);
+}
+
+.voice_meter_bar_smooth{
+    transition: width ease-in-out 100ms;
+}
+
+.voice_meter .voice_meter_text{
+    position: absolute;
+    z-index: 1;
+    height: var(--voice-meter-height);
+    line-height: var(--voice-meter-height);
+    top: 0;
+    width: 100%;
+    text-align: center;
+    text-shadow: 1px 1px 2px #000;
+    -webkit-user-select: none;
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.voice_meter .voice_meter_text_light{
+    color: black;
+}
+
+.locked_meter{
+    color: red;
+}
