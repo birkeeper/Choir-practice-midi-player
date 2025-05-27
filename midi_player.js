@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v1.2.3cq"
+const VERSION = "v1.2.3cr"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -145,7 +145,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
     
     // create the context and add audio worklet
     const context = new AudioContext({latencyHint: "playback"});
-    await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/src/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
+    await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
     const synth = new Synthetizer(context.destination, primarySoundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
     {
         const soundFont = loadSoundFont(secondarySoundFontBuffer);
