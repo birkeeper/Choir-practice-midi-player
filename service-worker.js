@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v7.129"; 
+const CACHE_NAME = "v7.130"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -127,15 +127,15 @@ const putInCache = async (request, response) => {
         })
         .catch(() => {return Promise.resolve(undefined);}),
     ]));  
+  });
 
-    self.addEventListener("fetch", (event) => {// use the default fetch during installation of the service worker
-      event.respondWith(
-        cacheFirst({
-          request: event.request,
-          fallbackUrl: "./midi_player.html",
-        }),
-      );
-    });
+  self.addEventListener("fetch", (event) => {
+    event.respondWith(
+      cacheFirst({
+        request: event.request,
+        fallbackUrl: "./midi_player.html",
+      }),
+    );
   });
 
   self.addEventListener("activate", (event) => {
