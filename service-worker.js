@@ -85,6 +85,12 @@ const putInCache = async (request, response) => {
       caches.open(CACHE_NAME)
         .then((cache) => {return cache.add('./midi_player.js');})
         .catch(() => {return Promise.resolve(undefined);}),
+      caches.open(CACHE_NAME)
+        .then((cache) => {return cache.add('./midi_player.html');})
+        .catch(() => {return Promise.resolve(undefined);}),
+      caches.open(CACHE_NAME)
+        .then((cache) => {return cache.add('./midi_player.css');})
+        .catch(() => {return Promise.resolve(undefined);}),
     ]));  
   });
   
