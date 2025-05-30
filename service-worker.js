@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v7.136"; 
+const CACHE_NAME = "v7.138"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -59,21 +59,22 @@ const putInCache = async (request, response) => {
         const oldCacheNames = cacheNames.filter(name => name !== CACHE_NAME);
         // Get the latest cache name
         const latestCacheName = oldCacheNames[oldCacheNames.length - 1];
-        const latestCacheNumber = Number(latestCacheName.slice(1));
-        
-        if (latestCacheName && (latestCacheNumber>7.0)) {//settings of caches of versions <=7.0 are not compatible
-          caches.open(latestCacheName).then(oldCache => {
-            oldCache.keys().then(requests => {
-              const settingsRequests = requests.filter(request => request.url.includes('/settings/'));
-              settingsRequests.map(request => {
-                oldCache.match(request).then(response => {
-                  if (response) {
-                    putInCache(request, response);
-                  }
-                });
-              })
+                
+        if (latestCacheName) {
+          if (Number(latestCacheName.slice(1))>7.0) {//settings of caches of versions <=7.0 are not compatible
+            caches.open(latestCacheName).then(oldCache => {
+              oldCache.keys().then(requests => {
+                const settingsRequests = requests.filter(request => request.url.includes('/settings/'));
+                settingsRequests.map(request => {
+                  oldCache.match(request).then(response => {
+                    if (response) {
+                      putInCache(request, response);
+                    }
+                  });
+                })
+              });
             });
-          });
+          }
         }
         return Promise.resolve(undefined);
       }),
