@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v7.126"; 
+const CACHE_NAME = "v8.0"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -59,35 +59,78 @@ const putInCache = async (request, response) => {
         const oldCacheNames = cacheNames.filter(name => name !== CACHE_NAME);
         // Get the latest cache name
         const latestCacheName = oldCacheNames[oldCacheNames.length - 1];
-        
+                
         if (latestCacheName) {
-          caches.open(latestCacheName).then(oldCache => {
-            oldCache.keys().then(requests => {
-              const settingsRequests = requests.filter(request => request.url.includes('/settings/'));
-              settingsRequests.map(request => {
-                oldCache.match(request).then(response => {
-                  if (response) {
-                    putInCache(request, response);
-                  }
-                });
-              })
+          if (Number(latestCacheName.slice(1))>7.0) {//settings of caches of versions <=7.0 are not compatible
+            caches.open(latestCacheName).then(oldCache => {
+              oldCache.keys().then(requests => {
+                const settingsRequests = requests.filter(request => request.url.includes('/settings/'));
+                settingsRequests.map(request => {
+                  oldCache.match(request).then(response => {
+                    if (response) {
+                      putInCache(request, response);
+                    }
+                  });
+                })
+              });
             });
-          });
+          }
         }
         return Promise.resolve(undefined);
       }),
       caches.open(CACHE_NAME)
-        .then((cache) => {return cache.add(SOUNDFONT_GM);})
+        .then((cache) => {
+          fetch(SOUNDFONT_GM, {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put(SOUNDFONT_GM, response);
+          });
+        })
         .catch(() => {return Promise.resolve(undefined);}),
       caches.open(CACHE_NAME)
-        .then((cache) => {return cache.add(SOUNTFONT_SPECIAL);})
+        .then((cache) => {
+          fetch(SOUNTFONT_SPECIAL, {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put(SOUNTFONT_SPECIAL, response);
+          });
+        })
         .catch(() => {return Promise.resolve(undefined);}),
       caches.open(CACHE_NAME)
-        .then((cache) => {return cache.add('./midi_player.js');})
+        .then((cache) => {
+          fetch('./midi_player.js', {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put('./midi_player.js', response);
+          });
+        })
+        .catch(() => {return Promise.resolve(undefined);}),
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          fetch('./midi_player.html', {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put('./midi_player.html', response);
+          });
+        })
+        .catch(() => {return Promise.resolve(undefined);}),
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          fetch('./midi_player.css', {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put('./midi_player.css', response);
+          });
+        })
         .catch(() => {return Promise.resolve(undefined);}),
     ]));  
   });
-  
+
   self.addEventListener("fetch", (event) => {
     event.respondWith(
       cacheFirst({
