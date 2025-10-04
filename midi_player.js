@@ -385,13 +385,12 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
                     synth.lockController(channel.number, midiControllers.mainVolume, false);
                     synth.controllerChange (channel.number, midiControllers.mainVolume, volumeSlider.value);
                     synth.lockController(channel.number, midiControllers.mainVolume, true);
-                }
-                volumeSlider.onpointerup = () => {
                     channel.volume = parseInt(volumeSlider.value);
                     if (midiFileHash !== undefined && settings !== undefined) {
                         storeSettings(midiFileHash, settings);
                     }
                 }
+            
                 const column2 = document.createElement('div');
                 column2.className = 'd-flex volume-control ms-2 flex-grow-0 flex-shrink-1';
                 column2.appendChild(volumeSlider);
