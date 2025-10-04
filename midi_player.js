@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg } from './js/icons.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.0"
+const VERSION = "v2.0.0a"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -240,7 +240,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
             playbackRateInput.addEventListener('input',playbackRateCallback);
             function playbackRateCallback() {
                 seq.playbackRate = playbackRateInput.value;
-                playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(1)}x`;
+                playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
                 if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
                     context.resume();
                     seq.play(); // resume
