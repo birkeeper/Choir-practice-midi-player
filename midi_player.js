@@ -318,7 +318,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
                 //set up playback rate control based on settings
                 playbackRateInput.value = settings.playbackRate;
                 seq.playbackRate = settings.playbackRate;
-                playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(1)}x`;
+                playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(2)}x`;
                 if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
                     context.resume();
                     seq.play(); // resume
