@@ -162,7 +162,6 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
 
     let seq;
     let settings;
-    let midiFileHash;
     let timerID;
     
     async function setupApplication() {
@@ -249,9 +248,9 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
                     context.suspend();
                     seq.pause(); // pause
                 }
-                if (midiFileHash !== undefined && settings !== undefined) {
+                if (settings !== undefined && settings.midiFileHash !== undefined) {
                     settings.playbackRate = playbackRateInput.value;
-                    storeSettings(midiFileHash, settings);
+                    storeSettings(settings.midiFileHash, settings);
                 }
             }
         }
@@ -269,7 +268,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
         // on song change, show the name
-        seq.addOnSongChangeEvent(e => {
+        seq.addOnSongChangeEvent(async e => {
             console.log("song changed");
             document.getElementById("message").innerText = e.midiName;
             context.suspend();
@@ -286,15 +285,13 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
             channelControlsContainer.innerHTML = channelControlHeader.outerHTML; // Clear existing controls except for the header
 
             // read settings from cache if available
-            generateHash(buffer)
-            .then((data) => {
-                midiFileHash = data;
-                return retrieveSettings(midiFileHash);
-            })
+            const midiFileHash = await generateHash(buffer)
+            retrieveSettings(midiFileHash)
             .then ((data) => {
                 settings = data;
                 if (settings === null) { // no settings found in the cache
                     settings = {
+                        midiFileHash: midiFileHash,
                         playbackRate: 1.0,
                         channels: [],
                     };
