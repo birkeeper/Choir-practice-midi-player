@@ -166,7 +166,11 @@ self.addEventListener('message', async (event) => {
       let response;
       if (key === "./settings/current_midi_file") {
         response = await fetch(settings);
-      } else {
+      } 
+      else if (key.includes("blob_")) {
+        response = await fetch(settings);
+      } 
+      else {
         response = new Response(JSON.stringify(settings), {
           headers: { 'Content-Type': 'application/json' }     
         });

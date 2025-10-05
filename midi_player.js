@@ -66,8 +66,12 @@ async function storeSettings(key, settings) {
             const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
             postStoreSettingsMessage(key, fileURL);
             postStoreSettingsMessage("current_midi_file_name", settings.name); // file info is not stored in objectURL, only the blob info.
-
-        } else {
+        }
+        else if (key.startsWith("blob_")) { // store file
+            const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
+            postStoreSettingsMessage(key, fileURL);
+        }
+        else {
             postStoreSettingsMessage(key, settings);
         }
         async function postStoreSettingsMessage(key, settings) {
@@ -84,19 +88,35 @@ async function storeSettings(key, settings) {
 async function retrieveSettings(key) {
     try {
         if (navigator.serviceWorker.controller) {
-            const response1 = await fetch(`./settings/${key}`);
-            if (key ==="current_midi_file") {
-                const response2 = await fetch(`./settings/current_midi_file_name`);
-                if (response1.ok && response2.ok) {
-                    const fileName = await response2.json();
-                    const fileBlob = await response1.blob();
-                    const file = new File([fileBlob], fileName, {type: `${fileBlob.type}`});
-                    URL.revokeObjectURL(response1.url);
-                    return file;
-                }
+            if (key === "all") { //retrieve all settings
+                const messageChannel = new MessageChannel();
+                
+                messageChannel.port1.onmessage = (event) => {
+                    
+                };
+                
+                navigator.serviceWorker.controller.postMessage({
+                    type: "all",
+                    key: undefined,
+                    settings: undefined
+                }, [messageChannel.port2,]);
+                
+                
             } else {
-                if (response1.ok) {
-                    return await response1.json();
+                const response1 = await fetch(`./settings/${key}`);
+                if (key ==="current_midi_file") {
+                    const response2 = await fetch(`./settings/current_midi_file_name`);
+                    if (response1.ok && response2.ok) {
+                        const fileName = await response2.json();
+                        const fileBlob = await response1.blob();
+                        const file = new File([fileBlob], fileName, {type: `${fileBlob.type}`});
+                        URL.revokeObjectURL(response1.url);
+                        return file;
+                    }
+                } else {
+                    if (response1.ok) {
+                        return await response1.json();
+                    }
                 }
             }
         }
@@ -168,6 +188,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         // parse all the files
         const parsedSongs = [];
         const buffer = await file.arrayBuffer();
+        const midiFileHash = await generateHash(buffer);
         parsedSongs.push({
             binary: buffer,     // binary: the binary data of the file
             altName: file.name  // altName: the fallback name if the MIDI doesn't have one. Here we set it to the file name
@@ -248,7 +269,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
                     context.suspend();
                     seq.pause(); // pause
                 }
-                if (settings !== undefined && settings.midiFileHash !== undefined) {
+                if (settings?.midiFileHash !== undefined) {
                     settings.playbackRate = playbackRateInput.value;
                     storeSettings(settings.midiFileHash, settings);
                 }
@@ -268,7 +289,7 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
         // on song change, show the name
-        seq.addOnSongChangeEvent(async e => {
+        seq.addOnSongChangeEvent(e => {
             console.log("song changed");
             document.getElementById("message").innerText = e.midiName;
             context.suspend();
@@ -285,13 +306,13 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
             channelControlsContainer.innerHTML = channelControlHeader.outerHTML; // Clear existing controls except for the header
 
             // read settings from cache if available
-            const midiFileHash = await generateHash(buffer)
             retrieveSettings(midiFileHash)
             .then ((data) => {
                 settings = data;
                 if (settings === null) { // no settings found in the cache
                     settings = {
                         midiFileHash: midiFileHash,
+                        midiName: e.midiName,
                         playbackRate: 1.0,
                         channels: [],
                     };
@@ -310,7 +331,13 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
                         };
                         settings.channels.push(channelSettings);
                     });
-                } 
+                }
+                if (!Object.hasOwn(settings,"midiFileHash")) { //ensure compatibility with old settings stored in cache
+                    settings.midiFileHash = midiFileHash;
+                    settings.midiName = e.midiName;
+                }
+                settings.lastOpened = Date.now();
+                storeSettings(settings.midiFileHash,settings); 
                 
                 //set up playback rate control based on settings
                 playbackRateInput.value = settings.playbackRate;
@@ -383,8 +410,8 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
                     synth.controllerChange (channel.number, midiControllers.mainVolume, volumeSlider.value);
                     synth.lockController(channel.number, midiControllers.mainVolume, true);
                     channel.volume = parseInt(volumeSlider.value);
-                    if (midiFileHash !== undefined && settings !== undefined) {
-                        storeSettings(midiFileHash, settings);
+                    if (settings?.midiFileHash !== undefined) {
+                        storeSettings(settings.midiFileHash, settings);
                     }
                 }
             
@@ -435,8 +462,8 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
                         synth.programChange(channel.number, data[1]);
                         synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
                         console.log(`changing channel ${channel.number} to instrument ${event.target.value}`);
-                        if (midiFileHash !== undefined && settings !== undefined) {
-                            storeSettings(midiFileHash, settings);
+                        if (settings?.midiFileHash !== undefined) {
+                            storeSettings(settings.midiFileHash, settings);
                         }
                     });
                     instrumentControls.set(channel.number,instrumentSelect);
