@@ -89,19 +89,23 @@ async function retrieveSettings(key) {
     try {
         if (navigator.serviceWorker.controller) {
             if (key === "all") { //retrieve all settings
-                const messageChannel = new MessageChannel();
+                return new Promise((resolve, reject) => {
+                    const messageChannel = new MessageChannel();
                 
-                messageChannel.port1.onmessage = (event) => {
-                    
-                };
+                    messageChannel.port1.onmessage = async (responseArray) => {
+                        if (responseArray === null) {
+                            resolve(null);
+                        } else {
+                            resolve(await Promise.all(responseArray.map(res => res?.json())));
+                        }
+                    };
                 
-                navigator.serviceWorker.controller.postMessage({
-                    type: "all",
-                    key: undefined,
-                    settings: undefined
-                }, [messageChannel.port2,]);
-                
-                
+                    navigator.serviceWorker.controller.postMessage({
+                        type: "all",
+                        key: undefined,
+                        settings: undefined
+                    }, [messageChannel.port2,]);
+                });          
             } else {
                 const response1 = await fetch(`./settings/${key}`);
                 if (key ==="current_midi_file") {
@@ -154,7 +158,7 @@ const appendAlert = (message, type, id, callback) => {
 document.getElementById('version').textContent = VERSION;
 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
-
+document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE_PX);
 
 
 {
@@ -532,6 +536,12 @@ document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE
         console.log("file opened");
         storeSettings("current_midi_file",file);
         setupApplication();
+    });
+
+    // add an event listener for the recently opened files
+    document.getElementById("history").addEventListener("click", async event => {
+        console.log("retrieving recently opened files");
+        console.log(await retrieveSettings('all'));
     });
 }
 

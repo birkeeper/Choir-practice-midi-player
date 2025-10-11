@@ -185,5 +185,29 @@ self.addEventListener('message', async (event) => {
     const cache = await caches.open(CACHE_NAME);
     cache.delete(key);
   }
+  if (type === 'all') {
+    const port = event.ports[0]; // MessagePort for response
+    try { 
+      const cache = await caches.open(CACHE_NAME);
+    
+      // Filter requests: include '/settings', exclude 'blob_'
+      const matchingRequests = requests.filter(req =>
+        req.url.includes('/settings') && !req.url.includes('blob_')
+      );
+
+      // Get cached responses for matching requests
+      const responses = await Promise.all(
+        matchingRequests.map(req => cache.match(req))
+      );
+
+    
+      // Send the responses back to the calling script
+      port.postMessage(responses);
+    } catch (error) {
+      port.postMessage(null);
+    }
+
+
+  }
 });
   
