@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.0f"
+const VERSION = "v2.0.0g"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -92,7 +92,8 @@ async function retrieveSettings(key) {
                 return new Promise((resolve, reject) => {
                     const messageChannel = new MessageChannel();
                 
-                    messageChannel.port1.onmessage = async (responseArray) => {
+                    messageChannel.port1.onmessage = async (e) => {
+                        const responseArray = e.data;
                         if (responseArray === null) {
                             resolve(null);
                         } else {
