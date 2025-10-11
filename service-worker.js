@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v8.8"; 
+const CACHE_NAME = "v8.9"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -193,7 +193,7 @@ self.addEventListener('message', async (event) => {
     
       // Filter requests: include '/settings', exclude 'blob_'
       const matchingRequests = requests.filter(req =>
-        req.url.includes('/settings') && !req.url.includes('blob_')
+        req.url.includes('/settings') && !req.url.includes('blob_') && !req.url.includes('current_midi')
       );
 
       // Get cached responses for matching requests
