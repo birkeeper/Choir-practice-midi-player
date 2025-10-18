@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.0s"
+const VERSION = "v2.0.0t"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -550,9 +550,10 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
         for (const item of historyList)
         {
             const li = document.createElement('li');
-            li.class = "dropdown-item";
+            li.className = "dropdown-item";
+            li.href = "#";
             li.textContent = `${item.midiName}`;
-            li.value = `${item.midiFileHash}`;
+            li.customValue = `${item.midiFileHash}`;
             historyDropdown.appendChild(li);
         }
     });
