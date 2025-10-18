@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v8.17"; 
+const CACHE_NAME = "v8.18"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -206,7 +206,7 @@ self.addEventListener('message', async (event) => {
         responses.map(async res => res ? await res.json() : null)
       );
 
-      if (contents.length() === 0) { contents = null; }
+      if (contents.length === 0) { contents = null; }
 
       // Send the responses back to the calling script
       port.postMessage(contents);
