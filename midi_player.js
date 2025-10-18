@@ -540,9 +540,17 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
     });
 
     // add an event listener for the recently opened files
-    document.getElementById("history").addEventListener("click", async event => {
+    const historyDropdown = document.getElementById("historyDropdown")
+    historyDropdown.addEventListener("show.bs.dropdown", async event => {
         console.log("retrieving recently opened files");
-        console.log(await retrieveSettings('all'));
+        const historyList = await retrieveSettings('all');
+        console.log(historyList);
+        historyDropdown.innerHTML="";
+        for (item in historyDropdown):
+        {
+            history@@@
+        }
+        
     });
 }
 
