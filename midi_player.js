@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.0q"
+const VERSION = "v2.0.0s"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -545,14 +545,16 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
         console.log("retrieving recently opened files");
         const historyList = await retrieveSettings('all');
         console.log(historyList);
-        let htmlList = `<li><h5 class="dropdown-header">Recently opened songs</h5></li>\n`;
+        const historyDropdown = document.getElementById("historyDropdown");
+        historyDropdown.innerHTML = `<li><h5 class="dropdown-header">Recently opened songs</h5></li>\n`;
         for (const item of historyList)
         {
-            htmlList=htmlList.concat(`<li><a class="dropdown-item" href="#">${item.midiName}</a></li>`);
+            const li = document.createElement('li');
+            li.class = "dropdown-item";
+            li.textContent = `${item.midiName}`;
+            li.value = `${item.midiFileHash}`;
+            historyDropdown.appendChild(li);
         }
-        const historyDropdown = document.getElementById("historyDropdown");
-        historyDropdown.innerHTML=htmlList;
-        
     });
 }
 
