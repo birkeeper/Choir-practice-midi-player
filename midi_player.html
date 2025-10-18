@@ -27,7 +27,12 @@
         <div id="alertPlaceholder" class="d-flex mt-2 flex-column w-100"></div>
         <div class="d-flex flex-column align-items-left mt-2 border border-2 rounded-2 w-100">
             <div class="d-flex flex-row align-items-center mt-2 w-100">
-                <button id="history" class="d-none">Pause</button>
+                <button id="history" class="d-none dropdown-toggle" type="button" data-bs-toggle="dropdown">Pause</button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">Menu item</a></li>
+                    <li><a class="dropdown-item" href="#">Menu item</a></li>
+                    <li><a class="dropdown-item" href="#">Menu item</a></li>
+                </ul>
                 <label id="history-label" for="history" class="button-label flex-grow-0 flex-shrink-0 align-items-center ms-2"></label>
                 <input type="file" id="midi_input" accept=".mid,.midi,audio/*" disabled class="d-none">
                 <label id="midi_input-label" for="midi_input" class="button-label flex-grow-0 flex-shrink-0 align-items-center ms-2"></label>
