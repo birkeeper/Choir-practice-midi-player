@@ -5,8 +5,14 @@ const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
 const CACHE_NAME = "v8.34"; 
 
 const putInCache = async (request, response) => {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.put(request, response);
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, response);
+    }
+    catch (error) {
+      console.log(error);
+      console.log(request);
+    }
   };
   
   const cacheFirst = async ({ request, fallbackUrl }) => {
