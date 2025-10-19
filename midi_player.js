@@ -582,9 +582,9 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
         });
         historyList.forEach( async (item, index) => {
             if (index >= MAXNROFRECENTFILES) { 
-                console.log(`More than ${MAXNROFRECENTFILES} songs stored in cash. Removing ${li.midiFileHash} from cache.`)
-                deleteSettings(`blob_${li.midiFileHash}`);
-                deleteSettings(`${li.midiFileHash}`);
+                console.log(`More than ${MAXNROFRECENTFILES} songs stored in cash. Removing ${item.midiFileHash} from cache.`)
+                deleteSettings(`blob_${item.midiFileHash}`);
+                deleteSettings(`${item.midiFileHash}`);
                 return; 
             }
             
