@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.0u"
+const VERSION = "v2.0.0v"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -118,6 +118,13 @@ async function retrieveSettings(key) {
                         URL.revokeObjectURL(response1.url);
                         return file;
                     }
+                } else if (key.startsWith("blob_")){
+                    if (response1.ok) {
+                        const fileBlob = await response1.blob();
+                        const file = new File([fileBlob], key, {type: `${fileBlob.type}`});
+                        URL.revokeObjectURL(response1.url);
+                        return file;
+                    } 
                 } else {
                     if (response1.ok) {
                         return await response1.json();
@@ -296,7 +303,6 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
             console.log("song changed");
-            document.getElementById("message").innerText = e.midiName;
             context.suspend();
             seq.pause();
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
@@ -381,7 +387,9 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
                     }
                 });
             });
-        
+            
+            document.getElementById("message").innerText = settings.midiName;
+
             const currentBank = new Map();
             synth.eventHandler.removeEvent("controllerchange","controller-change-event");
             synth.eventHandler.addEvent("controllerchange","controller-change-event", e => {
@@ -535,7 +543,9 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
             return;
         }
         console.log("file opened");
+        const midiFileHash = await generateHash(await file.arrayBuffer());
         storeSettings("current_midi_file",file);
+        storeSettings(`blob_${midiFileHash}`,file);
         setupApplication();
     });
 
@@ -555,10 +565,15 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
             li.onclick = async (event) => {
                 const clickedElement = event.target;
                 const li = clickedElement.closest('li');
-                console.log(`clicked element: ${clickedElement}`);
-                console.log(`clicked li: ${li}`);
                 console.log(`midihash: ${li.midiFileHash}`);
-
+                file = await retrieveSettings(`blob_${li.midiFileHash}`);
+                if (file === null) { // file blob not found in cache
+                    console.log(`blob_${li.midiFileHash} not found in cash`);
+                    // delete setting
+                } else {
+                    console.log(`blob_${li.midiFileHash} retrieved from cash`);
+                    setupApplication();
+                }
             };
             historyDropdown.appendChild(li);
         }
