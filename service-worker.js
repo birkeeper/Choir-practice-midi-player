@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v8.28"; 
+const CACHE_NAME = "v8.29"; 
 
 const putInCache = async (request, response) => {
     const cache = await caches.open(CACHE_NAME);
@@ -184,6 +184,7 @@ self.addEventListener('message', async (event) => {
   if (type === 'deleteFromCache') {
     const cache = await caches.open(CACHE_NAME);
     cache.delete(key);
+    console.log(`settings (key: ${key}) deleted from cache ${CACHE_NAME}`);
   }
   if (type === 'all') {
     const port = event.ports[0]; // MessagePort for response

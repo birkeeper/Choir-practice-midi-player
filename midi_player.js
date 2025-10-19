@@ -6,10 +6,11 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.0w"
+const VERSION = "v2.0.0x"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
+const MAXNROFRECENTFILES = 1; // Maximum number of recently opened files that can be stored in the cache
 
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
@@ -77,6 +78,22 @@ async function storeSettings(key, settings) {
         async function postStoreSettingsMessage(key, settings) {
             navigator.serviceWorker.controller.postMessage({
                 type: 'storeSettings',
+                key: `./settings/${key}`,
+                settings: settings
+            });
+        }
+    }
+}
+
+// Function to delete settings
+async function deleteSettings(key, settings) {
+    if (navigator.serviceWorker.controller) {
+        console.log(`deleting settings (key: ${key}`);
+        postDeleteSettingsMessage(key, settings);
+
+        async function postDeleteSettingsMessage(key, settings) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'deleteFromCache',
                 key: `./settings/${key}`,
                 settings: settings
             });
@@ -538,7 +555,7 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
 
         if (!(file.type === 'audio/midi' || file.type === 'audio/x-midi' || file.type === 'audio/mid' || file.type === 'audio/midi-clip' 
             || file.type === 'audio/rtp-midi' || file.type === 'audio/rtx' || file.type === 'audio/sp-midi')) { //incorrect file type
-            appendAlert( "Incorrect file type. Select a midi file.", 'warning', 'fileError')
+            appendAlert( "Incorrect file type. Select a midi file.", 'warning', 'fileError');
             return;
         }
         console.log("file opened");
@@ -556,8 +573,16 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
         console.log(historyList);
         const historyDropdown = document.getElementById("historyDropdown");
         historyDropdown.innerHTML = `<li><h5 class="dropdown-header">Recently opened songs</h5></li>\n`;
-        for (const item of historyList)
-        {
+        if (!Array.isArray(historyList)) { return; }
+        historyList.sort((a,b) => { // sort list by date, last opened first
+            if (!a.hasOwn("lastOpened")) {return 1;}
+            if (!b.hasOwn("lastOpened")) {return -1;}
+            if (a.lastOpened > b.lastOpened) {return -1;}
+            else { return 1;}
+        });
+        historyList.forEach( async (item, index) => {
+            if (index >= MAXNROFRECENTFILES) { return; }
+            
             const li = document.createElement('li');
             li.innerHTML = `<a class="dropdown-item">${item.midiName}</a>`;
             li.midiFileHash = `${item.midiFileHash}`;
@@ -568,14 +593,17 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
                 file = await retrieveSettings(`blob_${li.midiFileHash}`);
                 if (file === null) { // file blob not found in cache
                     console.log(`blob_${li.midiFileHash} not found in cash`);
-                    // delete setting
+                    deleteSettings(`blob_${li.midiFileHash}`);
+                    deleteSettings(`${li.midiFileHash}`);
+                    appendAlert( "File not found. Select a different file or open a new one.", 'warning', 'fileError');
                 } else {
                     console.log(`blob_${li.midiFileHash} retrieved from cash`);
+                    storeSettings("current_midi_file", file);
                     setupApplication();
                 }
             };
             historyDropdown.appendChild(li);
-        }
+        });
     });
 }
 
