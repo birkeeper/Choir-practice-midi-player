@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.0y"
+const VERSION = "v2.0.0z"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -581,7 +581,12 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
             else { return 1;}
         });
         historyList.forEach( async (item, index) => {
-            if (index >= MAXNROFRECENTFILES) { return; }
+            if (index >= MAXNROFRECENTFILES) { 
+                console.log(`More than ${MAXNROFRECENTFILES} songs stored in cash. Removing ${li.midiFileHash} from cache.`)
+                deleteSettings(`blob_${li.midiFileHash}`);
+                deleteSettings(`${li.midiFileHash}`);
+                return; 
+            }
             
             const li = document.createElement('li');
             li.innerHTML = `<a class="dropdown-item">${item.midiName}</a>`;
@@ -593,7 +598,6 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
                 file = await retrieveSettings(`blob_${li.midiFileHash}`);
                 if (file === null) { // file blob not found in cache
                     console.log(`blob_${li.midiFileHash} not found in cash`);
-                    deleteSettings(`blob_${li.midiFileHash}`);
                     deleteSettings(`${li.midiFileHash}`);
                     appendAlert( "File not found. Select a different file or open a new one.", 'warning', 'fileError');
                 } else {
