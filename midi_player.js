@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.0v"
+const VERSION = "v2.0.0w"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -348,7 +348,8 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
                     settings.midiName = e.midiName;
                 }
                 settings.lastOpened = Date.now();
-                storeSettings(settings.midiFileHash,settings); 
+                storeSettings(settings.midiFileHash,settings);
+                document.getElementById("message").innerText = settings.midiName;
                 
                 //set up playback rate control based on settings
                 playbackRateInput.value = settings.playbackRate;
@@ -387,8 +388,6 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
                     }
                 });
             });
-            
-            document.getElementById("message").innerText = settings.midiName;
 
             const currentBank = new Map();
             synth.eventHandler.removeEvent("controllerchange","controller-change-event");
