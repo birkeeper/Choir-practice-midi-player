@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v8.37"; 
+const CACHE_NAME = "v8.38"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -12,7 +12,7 @@ const putInCache = async (request, response) => {
         status: response.status,
         statusText: response.statusText,
        headers: response.headers
-     });
+      });
 
       await cache.put(request, blobResponse);
     }
@@ -104,7 +104,14 @@ const putInCache = async (request, response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
-            return cache.put(SOUNDFONT_GM, response);
+            response.blob().then(blob => {
+              const blobResponse = new Response(blob, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
+              });    
+              return cache.put(SOUNDFONT_GM, blobResponse);
+            })  
           });
         })
         .catch(() => {return Promise.resolve(undefined);}),
@@ -114,7 +121,14 @@ const putInCache = async (request, response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
-            return cache.put(SOUNTFONT_SPECIAL, response);
+            response.blob().then(blob => {
+              const blobResponse = new Response(blob, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
+              });    
+              return cache.put(SOUNTFONT_SPECIAL, blobResponse);
+            }) 
           });
         })
         .catch(() => {return Promise.resolve(undefined);}),
