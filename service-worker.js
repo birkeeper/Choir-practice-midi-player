@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v8.41"; 
+const CACHE_NAME = "v9.0"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -20,12 +20,6 @@ const putInCache = async (request, response) => {
       console.log(error);
       console.log(request);
       console.log(response);
-      
-      self.navigator.storage.estimate().then(estimate => {
-        console.log(`Used: ${estimate.usage} bytes`);
-        console.log(`Quota: ${estimate.quota} bytes`);
-      })
-
     }
   };
   
