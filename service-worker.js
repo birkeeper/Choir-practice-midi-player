@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v8.38"; 
+const CACHE_NAME = "v8.39"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -155,6 +155,26 @@ const putInCache = async (request, response) => {
       caches.open(CACHE_NAME)
         .then((cache) => {
           fetch('./midi_player.css', {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put('./midi_player.css', response);
+          });
+        })
+        .catch(() => {return Promise.resolve(undefined);}),
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          fetch('./js/icons.js', {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put('./midi_player.css', response);
+          });
+        })
+        .catch(() => {return Promise.resolve(undefined);}),
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          fetch('./constants.js', {cache: "reload"}).then((response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
