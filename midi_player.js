@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1a"
+const VERSION = "v2.0.1b"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -325,23 +325,6 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
             seq.pause();
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
-            if ("mediaSession" in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({title: `${e.name}`});
-                navigator.mediaSession.playbackState = "paused";
-                navigator.mediaSession.setActionHandler("pause", () => {
-                    document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                    context.suspend();
-                    seq.pause(); // pause
-                    navigator.mediaSession.playbackState = "paused";
-                });
-                navigator.mediaSession.setActionHandler("play", () => {
-                    document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-                    context.suspend();
-                    seq.play(); // play
-                    navigator.mediaSession.playbackState = "playing";
-                });
-            }
-
             //update progress slider
             slider.max = Math.floor(seq.duration);
             totalTimeDisplay.textContent = formatTime(seq.duration);
@@ -423,6 +406,23 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
                     }
                 });
             });
+
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({title: `${e.name}`});
+                navigator.mediaSession.playbackState = "paused";
+                navigator.mediaSession.setActionHandler("pause", () => {
+                    document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                    context.suspend();
+                    seq.pause(); // pause
+                    navigator.mediaSession.playbackState = "paused";
+                });
+                navigator.mediaSession.setActionHandler("play", () => {
+                    document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+                    context.suspend();
+                    seq.play(); // play
+                    navigator.mediaSession.playbackState = "playing";
+                });
+            }
 
             const currentBank = new Map();
             synth.eventHandler.removeEvent("controllerchange","controller-change-event");
