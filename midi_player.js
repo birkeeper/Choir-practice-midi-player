@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1"
+const VERSION = "v2.0.1a"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -303,6 +303,7 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
                     storeSettings(settings.midiFileHash, settings);
                 }
             }
+
         }
         else { //when seq is defined
             for (const channel of settings.channels) {// unlock all channel controllers of the previous song, so it can be overwritten.
@@ -323,6 +324,23 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
             context.suspend();
             seq.pause();
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({title: `${e.name}`});
+                navigator.mediaSession.playbackState = "paused";
+                navigator.mediaSession.setActionHandler("pause", () => {
+                    document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                    context.suspend();
+                    seq.pause(); // pause
+                    navigator.mediaSession.playbackState = "paused";
+                });
+                navigator.mediaSession.setActionHandler("play", () => {
+                    document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+                    context.suspend();
+                    seq.play(); // play
+                    navigator.mediaSession.playbackState = "playing";
+                });
+            }
 
             //update progress slider
             slider.max = Math.floor(seq.duration);
