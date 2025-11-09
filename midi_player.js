@@ -408,7 +408,7 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
             });
 
             if ("mediaSession" in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({title: `${e.name}`});
+                navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
                 navigator.mediaSession.playbackState = "paused";
                 navigator.mediaSession.setActionHandler("pause", () => {
                     document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
