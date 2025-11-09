@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1b"
+const VERSION = "v2.0.1c"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -405,24 +405,26 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
                         }
                     }
                 });
-            });
 
-            if ("mediaSession" in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
-                navigator.mediaSession.playbackState = "paused";
-                navigator.mediaSession.setActionHandler("pause", () => {
-                    document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                    context.suspend();
-                    seq.pause(); // pause
+                
+                if ("mediaSession" in navigator) {
+                    navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
                     navigator.mediaSession.playbackState = "paused";
-                });
-                navigator.mediaSession.setActionHandler("play", () => {
-                    document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-                    context.suspend();
-                    seq.play(); // play
-                    navigator.mediaSession.playbackState = "playing";
-                });
-            }
+                    navigator.mediaSession.setActionHandler("pause", () => {
+                        document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                        context.suspend();
+                        seq.pause(); // pause
+                        navigator.mediaSession.playbackState = "paused";
+                    });
+                    navigator.mediaSession.setActionHandler("play", () => {
+                        document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+                        context.suspend();
+                        seq.play(); // play
+                        navigator.mediaSession.playbackState = "playing";
+                    });
+                    navigator.mediaSession.setPositionState({duration: seq.duration})
+                }
+            });
 
             const currentBank = new Map();
             synth.eventHandler.removeEvent("controllerchange","controller-change-event");
