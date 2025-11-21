@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1i"
+const VERSION = "v2.0.1j"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -283,7 +283,10 @@ const audioElement = document.createElement('audio');
 
             function timerCallback() {
                 slider.value = Math.floor(seq.currentTime);
-                currentTimeDisplay.textContent = formatTime(seq.currentTime);            
+                currentTimeDisplay.textContent = formatTime(seq.currentTime);    
+                if ("mediaSession" in navigator) {
+                    navigator.mediaSession.setPositionState({position: seq.currentTime});
+                }       
             }
 
             // make a slider to set the playback rate
@@ -545,6 +548,13 @@ const audioElement = document.createElement('audio');
                         context.resume();
                         seq.play(); // play
                         navigator.mediaSession.playbackState = "playing";
+                    });
+                    navigator.mediaSession.setActionHandler("seekto", (evt) => {
+                        if(!evt?.fastSeek)
+                        {
+                            slider.value = Math.floor(seq.currentTime);
+                            currentTimeDisplay.textContent = formatTime(seq.currentTime);
+                        }
                     });
                     navigator.mediaSession.setPositionState({duration: seq.duration});
                     if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
