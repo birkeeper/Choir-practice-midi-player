@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1k"
+const VERSION = "v2.0.1l"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -228,6 +228,7 @@ const audioElement = document.createElement('audio');
         const totalTimeDisplay = document.getElementById('totalTime');
         const playbackRateInput = document.getElementById('playbackRate');
         const playbackRateValue = document.getElementById('playbackRateValue');
+        const currentTimeDisplay = document.getElementById('currentTime');
 
         function formatTime(seconds) {// for displaying song progress
             const minutes = Math.floor(seconds / 60);
@@ -240,7 +241,6 @@ const audioElement = document.createElement('audio');
             seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,}); // create the sequencer with the parsed midis
             
             // make the slider move with the song and define what happens when the user moves the slider
-            const currentTimeDisplay = document.getElementById('currentTime');
             if (timerID) {
                 clearInterval(timerID);
                 console.log(`progress slider timer cleared: ${timerID}`);
@@ -532,45 +532,45 @@ const audioElement = document.createElement('audio');
 
         // on pause click
         document.getElementById("pause").onclick = () => {
-            if ("mediaSession" in navigator) {
-                audioElement.src = './icons/10-seconds-of-silence.mp3'; //dummy audio element
-                audioElement.play()
-                .then(() => {
-                    navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
-                    navigator.mediaSession.setActionHandler("pause", () => {
-                        document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                        context.suspend();
-                        seq.pause(); // pause
-                        navigator.mediaSession.playbackState = "paused";
+            if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
+                document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+                if ("mediaSession" in navigator) {
+                    audioElement.src = './icons/10-minutes-of-silence.mp3'; //dummy audio element
+                    audioElement.play()
+                    .then(() => {
+                        navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
+                        navigator.mediaSession.setActionHandler("pause", () => {
+                            document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                            context.suspend();
+                            seq.pause(); // pause
+                            navigator.mediaSession.playbackState = "paused";
+                        });
+                        navigator.mediaSession.setActionHandler("play", () => {
+                            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+                            context.resume();
+                            seq.play(); // play
+                            navigator.mediaSession.playbackState = "playing";
+                        });
+                        navigator.mediaSession.setActionHandler("seekto", (evt) => {
+                            if(!evt?.fastSeek)
+                            {
+                                slider.value = Math.floor(seq.currentTime);
+                                currentTimeDisplay.textContent = formatTime(seq.currentTime);
+                            }
+                        });
+                        navigator.mediaSession.setPositionState({duration: seq.duration});
                     });
-                    navigator.mediaSession.setActionHandler("play", () => {
-                        document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-                        context.resume();
-                        seq.play(); // play
-                        navigator.mediaSession.playbackState = "playing";
-                    });
-                    navigator.mediaSession.setActionHandler("seekto", (evt) => {
-                        if(!evt?.fastSeek)
-                        {
-                            slider.value = Math.floor(seq.currentTime);
-                            currentTimeDisplay.textContent = formatTime(seq.currentTime);
-                        }
-                    });
-                    navigator.mediaSession.setPositionState({duration: seq.duration});
-                    if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
-                        document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-                        context.resume();
-                        seq.play(); // resume
-                        navigator.mediaSession.playbackState = "playing";
-                    }
-                    else {
-                        document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                        context.suspend();
-                        seq.pause(); // pause
-                        navigator.mediaSession.playbackState = "paused";
-                    }
-                    audioElement.pause();
-                });
+                }
+                context.resume();
+                seq.play(); // resume
+                navigator.mediaSession.playbackState = "playing";
+            }
+            else {
+                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                context.suspend();
+                seq.pause(); // pause
+                audioElement.pause();
+                navigator.mediaSession.playbackState = "paused";
             }
         }
     }
