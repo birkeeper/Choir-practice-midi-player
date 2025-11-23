@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1n"
+const VERSION = "v2.0.1o"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -240,13 +240,21 @@ const audioElement = document.createElement('audio');
         { // setup main part of the application. This is only executed once after startup when the first song is loaded.
             seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,}); // create the sequencer with the parsed midis
             
-            // make the slider move with the song and define what happens when the user moves the slider
-            if (timerID) {
-                clearInterval(timerID);
-                console.log(`progress slider timer cleared: ${timerID}`);
+            function clearProgressTimer() {
+                if (timerID) {
+                    clearInterval(timerID);
+                    console.log(`progress slider timer cleared: ${timerID}`);
+                }
             }
-            timerID = setInterval(timerCallback, 500);
-            console.log(`progress slider timer started: ${timerID}`);
+
+            function startProgressTimer() {
+                if (!timerID) {
+                    timerID = setInterval(timerCallback, 500);
+                    console.log(`progress slider timer started: ${timerID}`);
+                }
+            }
+
+            // make the slider move with the song and define what happens when the user moves the slider
             slider.oninput = () => {
                 currentTimeDisplay.textContent = formatTime(Number(slider.value));
             };
@@ -255,29 +263,22 @@ const audioElement = document.createElement('audio');
             slider.addEventListener("touchend", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
         
             function handleClickProgressSlider() {
-                if (timerID) {
-                    clearInterval(timerID);
-                    console.log(`progress slider timer cleared: ${timerID}`);
-                    timerID = undefined;
-                }
+                clearProgressTimer();
                 console.log("progress slider clicked");
             }
         
             function handleReleaseProgressSlider() {
                 seq.currentTime = Number(slider.value);
-                if (!timerID) {
-                    timerID = setInterval(timerCallback, 500);
-                    console.log(`progress slider timer started: ${timerID}`);
-
-                    if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                        context.resume();
-                        seq.play(); // resume
-                    }
-                    else {
-                        context.suspend();
-                        seq.pause(); // pause
-                    }
-                }         
+                audioElement.currentTime = Number(slider.value);
+                startProgressTimer();
+                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
+                    context.resume();
+                    seq.play(); // resume
+                }
+                else {
+                    context.suspend();
+                    seq.pause(); // pause
+                }
                 console.log("progress slider released");
             }
 
@@ -322,6 +323,22 @@ const audioElement = document.createElement('audio');
         seq.pause();
         document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
+        // on song ended reset the current time and pause the song
+        seq.addOnSongEndedEvent(() => {
+            document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+            context.suspend();
+            seq.pause(); // pause
+            audioElement.pause();
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.playbackState = "paused";
+            }
+            clearProgressTimer();
+            seq.currentTime = 0.0;
+            audioElement.currentTime = 0.0;
+            slider.value = Math.floor(0.0);
+            currentTimeDisplay.textContent = formatTime(0.0);
+        },"songEndedEventID")
+        
         // on song change, show the name
         seq.addOnSongChangeEvent(e => {
             console.log("song changed");
@@ -528,7 +545,7 @@ const audioElement = document.createElement('audio');
                 return container;
             }
             
-        }, "example-time-change"); // make sure to add a unique id!
+        }, "songChangeEventID"); // make sure to add a unique id!
 
         // on pause click
         document.getElementById("pause").onclick = () => {
@@ -545,6 +562,7 @@ const audioElement = document.createElement('audio');
                             seq.pause(); // pause
                             audioElement.pause();
                             navigator.mediaSession.playbackState = "paused";
+                            clearProgressTimer();
                         });
                         navigator.mediaSession.setActionHandler("play", () => {
                             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
@@ -552,28 +570,40 @@ const audioElement = document.createElement('audio');
                             seq.play(); // play
                             audioElement.play();
                             navigator.mediaSession.playbackState = "playing";
+                            startProgressTimer();
                         });
                         navigator.mediaSession.setActionHandler("seekto", (evt) => {
                             if(!evt?.fastSeek)
                             {
+                                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
+                                    clearProgressTimer();
+                                }
                                 seq.currentTime = evt.seekTime;
+                                audioElement.currentTime = evt.seekTime;
                                 slider.value = Math.floor(evt.seekTime);
                                 currentTimeDisplay.textContent = formatTime(evt.seekTime);
+                                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
+                                    startProgressTimer();
+                                }
                             }
                         });
-                        navigator.mediaSession.setPositionState({duration: seq.duration});
+                        navigator.mediaSession.setPositionState({duration: seq.duration, position: seq.currentTime});
                     });
+                    navigator.mediaSession.playbackState = "playing";
                 }
                 context.resume();
                 seq.play(); // resume
-                navigator.mediaSession.playbackState = "playing";
+                startProgressTimer();                
             }
             else {
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                 context.suspend();
                 seq.pause(); // pause
                 audioElement.pause();
-                navigator.mediaSession.playbackState = "paused";
+                if ("mediaSession" in navigator) {
+                    navigator.mediaSession.playbackState = "paused";
+                }
+                clearProgressTimer();
             }
         }
     }
