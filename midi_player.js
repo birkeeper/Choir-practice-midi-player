@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1o"
+const VERSION = "v2.0.1p"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -236,23 +236,23 @@ const audioElement = document.createElement('audio');
             return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         }
 
+        function clearProgressTimer() {
+            if (timerID) {
+                clearInterval(timerID);
+                console.log(`progress slider timer cleared: ${timerID}`);
+            }
+        }
+
+        function startProgressTimer() {
+            if (!timerID) {
+                timerID = setInterval(timerCallback, 500);
+                console.log(`progress slider timer started: ${timerID}`);
+            }
+        }
+
         if(seq === undefined)
         { // setup main part of the application. This is only executed once after startup when the first song is loaded.
             seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,}); // create the sequencer with the parsed midis
-            
-            function clearProgressTimer() {
-                if (timerID) {
-                    clearInterval(timerID);
-                    console.log(`progress slider timer cleared: ${timerID}`);
-                }
-            }
-
-            function startProgressTimer() {
-                if (!timerID) {
-                    timerID = setInterval(timerCallback, 500);
-                    console.log(`progress slider timer started: ${timerID}`);
-                }
-            }
 
             // make the slider move with the song and define what happens when the user moves the slider
             slider.oninput = () => {
