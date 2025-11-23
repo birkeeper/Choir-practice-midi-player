@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1t"
+const VERSION = "v2.0.1u"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -393,6 +393,20 @@ const audioElement = document.createElement('audio');
                 settings.lastOpened = Date.now();
                 storeSettings(settings.midiFileHash,settings);
                 document.getElementById("message").innerText = settings.midiName;
+                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                context.suspend();
+                seq.pause(); // pause
+                audioElement.pause();
+                clearProgressTimer();
+                seq.currentTime = 0.0;
+                audioElement.currentTime = 0.0;
+                slider.value = Math.floor(0.0);
+                currentTimeDisplay.textContent = formatTime(0.0);
+                if ("mediaSession" in navigator) {
+                    navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
+                    navigator.mediaSession.playbackState = "paused";
+                    navigator.mediaSession.setPositionState({duration: seq.duration, position: 0.0});
+                }
                 
                 //set up playback rate control based on settings
                 playbackRateInput.value = settings.playbackRate;
