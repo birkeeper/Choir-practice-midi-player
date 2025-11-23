@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1r"
+const VERSION = "v2.0.1s"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -255,7 +255,7 @@ const audioElement = document.createElement('audio');
             if(seq !== undefined) {
                 slider.value = Math.floor(seq.currentTime);
                 currentTimeDisplay.textContent = formatTime(seq.currentTime);    
-                if ("mediaSession" in navigator) {
+                if (("mediaSession" in navigator) && (seq.duration >= seq.currentTime)) {
                     navigator.mediaSession.setPositionState({duration: seq.duration, position: seq.currentTime});
                 } 
             }      
