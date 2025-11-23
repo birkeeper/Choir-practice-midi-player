@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1p"
+const VERSION = "v2.0.1q"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -250,6 +250,16 @@ const audioElement = document.createElement('audio');
             }
         }
 
+        function timerCallback() {
+            if(seq !== undefined) {
+                slider.value = Math.floor(seq.currentTime);
+                currentTimeDisplay.textContent = formatTime(seq.currentTime);    
+                if ("mediaSession" in navigator) {
+                    navigator.mediaSession.setPositionState({duration: seq.duration, position: seq.currentTime});
+                } 
+            }      
+        }
+
         if(seq === undefined)
         { // setup main part of the application. This is only executed once after startup when the first song is loaded.
             seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,}); // create the sequencer with the parsed midis
@@ -280,14 +290,6 @@ const audioElement = document.createElement('audio');
                     seq.pause(); // pause
                 }
                 console.log("progress slider released");
-            }
-
-            function timerCallback() {
-                slider.value = Math.floor(seq.currentTime);
-                currentTimeDisplay.textContent = formatTime(seq.currentTime);    
-                if ("mediaSession" in navigator) {
-                    navigator.mediaSession.setPositionState({duration: seq.duration, position: seq.currentTime});
-                }       
             }
 
             // make a slider to set the playback rate
