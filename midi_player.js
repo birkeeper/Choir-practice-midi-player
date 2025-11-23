@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1l"
+const VERSION = "v2.0.1m"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -536,26 +536,29 @@ const audioElement = document.createElement('audio');
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
                 if ("mediaSession" in navigator) {
                     audioElement.src = './icons/10-minutes-of-silence.mp3'; //dummy audio element
-                    audioElement.play()
+                    audioElement.play();
                     .then(() => {
                         navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
                         navigator.mediaSession.setActionHandler("pause", () => {
                             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                             context.suspend();
                             seq.pause(); // pause
+                            audioElement.pause();
                             navigator.mediaSession.playbackState = "paused";
                         });
                         navigator.mediaSession.setActionHandler("play", () => {
                             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
                             context.resume();
                             seq.play(); // play
+                            audioElement.play();
                             navigator.mediaSession.playbackState = "playing";
                         });
                         navigator.mediaSession.setActionHandler("seekto", (evt) => {
                             if(!evt?.fastSeek)
                             {
-                                slider.value = Math.floor(seq.currentTime);
-                                currentTimeDisplay.textContent = formatTime(seq.currentTime);
+                                seq.currentTime = evt.seekTime;
+                                slider.value = Math.floor(evt.seekTime);
+                                currentTimeDisplay.textContent = formatTime(evt.seekTime);
                             }
                         });
                         navigator.mediaSession.setPositionState({duration: seq.duration});
