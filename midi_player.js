@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1s"
+const VERSION = "v2.0.1t"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -332,14 +332,15 @@ const audioElement = document.createElement('audio');
             context.suspend();
             seq.pause(); // pause
             audioElement.pause();
-            if ("mediaSession" in navigator) {
-                navigator.mediaSession.playbackState = "paused";
-            }
             clearProgressTimer();
             seq.currentTime = 0.0;
             audioElement.currentTime = 0.0;
             slider.value = Math.floor(0.0);
             currentTimeDisplay.textContent = formatTime(0.0);
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.playbackState = "paused";
+                navigator.mediaSession.setPositionState({duration: seq.duration, position: 0.0});
+            }
         },"songEndedEventID")
         
         // on song change, show the name
