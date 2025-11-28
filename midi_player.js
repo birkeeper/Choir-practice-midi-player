@@ -6,11 +6,12 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1w"
+const VERSION = "v2.0.1x"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
+const AUDIOBUFFERINGTIME = 300; // [ms] time before the audioelement gets time to buffer the audio stream before playing
 
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
@@ -287,10 +288,12 @@ let audioElementStream = undefined;
                 if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
                     context.resume();
                     seq.play(); // resume
+                    setTimeout(() => audioElement.play(), AUDIOBUFFERINGTIME);
                 }
                 else {
                     context.suspend();
                     seq.pause(); // pause
+                    audioElement.pause();
                 }
                 console.log("progress slider released");
             }
@@ -303,10 +306,12 @@ let audioElementStream = undefined;
                 if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
                     context.resume();
                     seq.play(); // resume
+                    setTimeout(() => audioElement.play(), AUDIOBUFFERINGTIME);
                 }
                 else {
                     context.suspend();
                     seq.pause(); // pause
+                    audioElement.pause();
                 }
                 if (settings?.midiFileHash !== undefined) {
                     settings.playbackRate = playbackRateInput.value;
@@ -326,6 +331,7 @@ let audioElementStream = undefined;
         seq.preservePlaybackState = true;
         context.suspend();
         seq.pause();
+        audioElement.pause();
         document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
         // on song ended reset the current time and pause the song
@@ -417,10 +423,12 @@ let audioElementStream = undefined;
                 if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
                     context.resume();
                     seq.play(); // resume
+                    setTimeout(() => audioElement.play(), AUDIOBUFFERINGTIME);
                 }
                 else {
                     context.suspend();
                     seq.pause(); // pause
+                    audioElement.pause();
                 }
                 
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
@@ -588,7 +596,7 @@ let audioElementStream = undefined;
                                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
                                 context.resume();
                                 seq.play(); // play
-                                setTimeout(() => audioElement.play(), 300);
+                                setTimeout(() => audioElement.play(), AUDIOBUFFERINGTIME);
                                 navigator.mediaSession.playbackState = "playing";
                                 startProgressTimer();
                             });
@@ -609,11 +617,12 @@ let audioElementStream = undefined;
                             });
                             navigator.mediaSession.setPositionState({duration: seq.duration, position: seq.currentTime});
                         })
-                    , 300);
+                    , AUDIOBUFFERINGTIME);
                     navigator.mediaSession.playbackState = "playing";
                 }
                 context.resume();
                 seq.play(); // resume
+                setTimeout(() => audioElement.play(), AUDIOBUFFERINGTIME);
                 startProgressTimer();                
             }
             else {
