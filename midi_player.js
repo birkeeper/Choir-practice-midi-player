@@ -5,7 +5,7 @@ import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI,
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
-const VERSION = "v2.0.1v"
+const VERSION = "v2.0.1w"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -14,9 +14,24 @@ const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that c
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
 
-function midiToWav(midi, seq, synth) {
+async function midiToWav(midi, primarySoundFontBuffer, secondarySoundFontBuffer) {
     const sampleRate = 44100;
     const sampleCount = Math.ceil(44100 * (midi.duration + 2));
+    const synth = new SpessaSynthProcessor(sampleRate, {
+    enableEventSystem: false,
+    effectsEnabled: false
+    });
+    synth.soundfontManager.reloadManager(loadSoundFont(primarySoundFontBuffer));
+    const soundFont = loadSoundFont(secondarySoundFontBuffer);
+    instruments = {...soundFont.presets};
+    for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
+        instrument.bank = SOUNDFONTBANK;
+    }
+    await synth.soundfontManager.addNewSoundFont(secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
+    await synth.processorInitialized;
+    const seq = new SpessaSynthSequencer(synth);
+    seq.loadNewSongList([midi]);
+    seq.loop = false;
     const outLeft = new Float32Array(sampleCount);
     const outRight = new Float32Array(sampleCount);
     const start = performance.now();
@@ -600,7 +615,7 @@ const audioElement = document.createElement('audio');
             }
 
             const midi = new MIDI(buffer);
-            midiToWav(midi, seq, synth);
+            midiToWav(midi, primarySoundFontBuffer, secondarySoundFontBuffer);
             
         }, "songChangeEventID"); // make sure to add a unique id!
 
