@@ -5,7 +5,7 @@ import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI,
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
-const VERSION = "v2.0.1x"
+const VERSION = "v2.0.1y"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -22,12 +22,7 @@ async function midiToWav(midi, primarySoundFontBuffer, secondarySoundFontBuffer)
     effectsEnabled: false
     });
     synth.soundfontManager.reloadManager(loadSoundFont(primarySoundFontBuffer));
-    const soundFont = loadSoundFont(secondarySoundFontBuffer);
-    instruments = {...soundFont.presets};
-    for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
-        instrument.bank = SOUNDFONTBANK;
-    }
-    await synth.soundfontManager.addNewSoundFont(secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
+    synth.soundfontManager.addNewSoundFont(loadSoundFont(secondarySoundFontBuffer),"secondary",SOUNDFONTBANK);
     await synth.processorInitialized;
     const seq = new SpessaSynthSequencer(synth);
     seq.loadNewSongList([midi]);
