@@ -5,7 +5,7 @@ import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI,
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
-const VERSION = "v2.0.1y"
+const VERSION = "v2.0.1z"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -45,11 +45,6 @@ async function midiToWav(midi, primarySoundFontBuffer, secondarySoundFontBuffer)
         synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
         filledSamples += bufferSize;
         i++;
-        // log progress
-        if (i % 100 === 0)
-        {
-            console.info("Rendered", Math.floor(seq.currentTime * 100) / 100, "/", durationRounded);
-        }
     }
     const rendered = Math.floor(performance.now() - start);
     console.info("Rendered in", rendered, `ms (${Math.floor((midi.duration * 1000 / rendered) * 100) / 100}x)`);
