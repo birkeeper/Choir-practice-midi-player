@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
 
-const VERSION = "v2.0.1y"
+const VERSION = "v2.0.1z"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -580,7 +580,7 @@ let audioElementStream = undefined;
             if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
                 if ("mediaSession" in navigator) {
-                    audioElement.src = URL.createObjectURL(audioElementStream.stream); //audio context stream
+                    audioElement.srcObject = audioElementStream.stream; //audio context stream
                     setTimeout(() => audioElement.play()
                         .then(() => {
                             navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
