@@ -1,12 +1,11 @@
 // import the modules
 
 import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from './libraries/spessasynth_lib/index.js';
-import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI } from './libraries/spessasynth_core/index.js';
+import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI, audioToWav } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
-
-const VERSION = "v2.0.1u"
+const VERSION = "v2.0.1v"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -14,6 +13,43 @@ const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that c
 
 let instruments; // map of midi instruments to secondary soundfont preset numbers
 const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
+
+function midiToWav(midi, seq, synth) {
+    const sampleRate = 44100;
+    const sampleCount = Math.ceil(44100 * (midi.duration + 2));
+    const outLeft = new Float32Array(sampleCount);
+    const outRight = new Float32Array(sampleCount);
+    const start = performance.now();
+    let filledSamples = 0;
+    // note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
+    const BUFFER_SIZE = 128;
+    let i = 0;
+    const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
+    const outputArray = [outLeft, outRight];
+    while (filledSamples < sampleCount)
+    {
+        // process sequencer
+        seq.processTick();
+        // render
+        const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
+        synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
+        filledSamples += bufferSize;
+        i++;
+        // log progress
+        if (i % 100 === 0)
+        {
+            console.info("Rendered", Math.floor(seq.currentTime * 100) / 100, "/", durationRounded);
+        }
+    }
+    const rendered = Math.floor(performance.now() - start);
+    console.info("Rendered in", rendered, `ms (${Math.floor((midi.duration * 1000 / rendered) * 100) / 100}x)`);
+    const wave = audioToWav(
+        [outLeft, outRight],
+        sampleRate
+    );
+    const completed = Math.floor(performance.now() - start);
+    console.info("completed in", completed, `ms`);
+}
 
 async function generateHash(fileBuffer) {
     const hashBuffer = await crypto.subtle.digest('SHA-1', fileBuffer);
@@ -562,6 +598,9 @@ const audioElement = document.createElement('audio');
             
                 return container;
             }
+
+            const midi = new MIDI(buffer);
+            midiToWav(midi, seq, synth);
             
         }, "songChangeEventID"); // make sure to add a unique id!
 
