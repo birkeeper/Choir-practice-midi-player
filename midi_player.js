@@ -1,11 +1,11 @@
 // import the modules
 
 import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from './libraries/spessasynth_lib/index.js';
-import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI, audioToWav } from './libraries/spessasynth_core/index.js';
+import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI, audioToWav, SpessaSynthSequencer, SpessaSynthProcessor } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
 
-const VERSION = "v2.0.1w"
+const VERSION = "v2.0.1x"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
