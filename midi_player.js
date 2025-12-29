@@ -5,7 +5,7 @@ import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI 
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 
-const VERSION = "v2.0.1ab"
+const VERSION = "v2.0.1ac"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -57,7 +57,7 @@ navigator.serviceWorker.addEventListener("controllerchange", () => {
     window.location.reload();
 });
 
-const dedicatedWorker = new Worker("./dedicated-worker.js");
+const dedicatedWorker = new Worker("./dedicated-worker.js", {type: "module"});
 
 // Function to store settings
 async function storeSettings(key, settings) {
