@@ -2,6 +2,8 @@ import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from './libraries/spessa
 import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI, audioToWav, SpessaSynthSequencer, SpessaSynthProcessor } from './libraries/spessasynth_core/index.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 
+console.log("initalising dedicated worker...");
+
 // load the soundfonts
 const [responseSecondary, responsePrimary] = await Promise.all([fetch(SOUNTFONT_SPECIAL), fetch(SOUNDFONT_GM)]);
 // load the soundfonts into array buffers
@@ -15,6 +17,7 @@ synth.soundfontManager.reloadManager(loadSoundFont(primarySoundFontBuffer));
 synth.soundfontManager.addNewSoundFont(loadSoundFont(secondarySoundFontBuffer),"secondary",SOUNDFONTBANK);
 
 self.onmessage = (msg) => {
+    console.log("message received in dedicated worker");
     midiToWav(msg.data);
 };
 
@@ -52,3 +55,5 @@ async function midiToWav(midi) {
     const completed = Math.floor(performance.now() - start);
     console.info("completed in", completed, `ms`);
 }
+
+console.log("dedicated worker initialised");
