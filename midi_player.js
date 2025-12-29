@@ -1,9 +1,9 @@
 // import the modules
 
 import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from './libraries/spessasynth_lib/index.js';
-import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI, audioToWav, SpessaSynthSequencer, SpessaSynthProcessor } from './libraries/spessasynth_core/index.js';
+import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
-import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
+import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 
 const VERSION = "v2.0.1z"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
@@ -12,49 +12,6 @@ const MAINVOLUME = 1.5;
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
 
 let instruments; // map of midi instruments to secondary soundfont preset numbers
-const SOUNDFONTBANK = 1; // bank where the secondary soundfont needs to be loaded
-
-async function midiToWav(midi, primarySoundFontBuffer, secondarySoundFontBuffer) {
-    const sampleRate = 44100;
-    const sampleCount = Math.ceil(44100 * (midi.duration + 2));
-    const synth = new SpessaSynthProcessor(sampleRate, {
-    enableEventSystem: false,
-    effectsEnabled: false
-    });
-    synth.soundfontManager.reloadManager(loadSoundFont(primarySoundFontBuffer));
-    synth.soundfontManager.addNewSoundFont(loadSoundFont(secondarySoundFontBuffer),"secondary",SOUNDFONTBANK);
-    await synth.processorInitialized;
-    const seq = new SpessaSynthSequencer(synth);
-    seq.loadNewSongList([midi]);
-    seq.loop = false;
-    const outLeft = new Float32Array(sampleCount);
-    const outRight = new Float32Array(sampleCount);
-    const start = performance.now();
-    let filledSamples = 0;
-    // note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
-    const BUFFER_SIZE = 128;
-    let i = 0;
-    const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
-    const outputArray = [outLeft, outRight];
-    while (filledSamples < sampleCount)
-    {
-        // process sequencer
-        seq.processTick();
-        // render
-        const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
-        synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
-        filledSamples += bufferSize;
-        i++;
-    }
-    const rendered = Math.floor(performance.now() - start);
-    console.info("Rendered in", rendered, `ms (${Math.floor((midi.duration * 1000 / rendered) * 100) / 100}x)`);
-    const wave = audioToWav(
-        [outLeft, outRight],
-        sampleRate
-    );
-    const completed = Math.floor(performance.now() - start);
-    console.info("completed in", completed, `ms`);
-}
 
 async function generateHash(fileBuffer) {
     const hashBuffer = await crypto.subtle.digest('SHA-1', fileBuffer);
@@ -99,6 +56,8 @@ navigator.serviceWorker.addEventListener("controllerchange", () => {
     console.log("The controller of current browsing context has changed. Reloading the page");
     window.location.reload();
 });
+
+const dedicatedWorker = new Worker("./dedicated-worker.js");
 
 // Function to store settings
 async function storeSettings(key, settings) {
@@ -605,7 +564,7 @@ const audioElement = document.createElement('audio');
             }
 
             const midi = new MIDI(buffer);
-            midiToWav(midi, primarySoundFontBuffer, secondarySoundFontBuffer);
+            dedicatedWorker.postMessage(midi);
             
         }, "songChangeEventID"); // make sure to add a unique id!
 
