@@ -1,7 +1,7 @@
 //import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from '../libraries/spessasynth_lib/index.js';
 //import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI, audioToWav, SpessaSynthSequencer, SpessaSynthProcessor } from '../libraries/spessasynth_core/index.js';
-import { loadSoundFont, audioToWav, SpessaSynthSequencer, SpessaSynthProcessor } from '../libraries/spessasynth_core/index.js';
-import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "../constants.js";
+import { loadSoundFont, audioToWav, SpessaSynthSequencer, SpessaSynthProcessor } from './libraries/spessasynth_core/index.js';
+import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 
 console.log("initalising dedicated worker...");
 
