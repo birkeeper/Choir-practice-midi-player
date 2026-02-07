@@ -5,7 +5,7 @@ import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI 
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 
-const VERSION = "v2.0.1ai"
+const VERSION = "v2.0.1aj"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -396,6 +396,8 @@ const audioElement = document.createElement('audio');
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                 context.suspend();
                 seq.pause(); // pause
+				audioElement.src = `./generatedWav/${settings.midiFileHash}.wav`; // point to file that will be generated on the fly
+				console.log(`generated wave file loaded: ${audioElement.src}`);
                 audioElement.pause();
                 clearProgressTimer();
                 seq.currentTime = 0.0;
@@ -573,7 +575,6 @@ const audioElement = document.createElement('audio');
             if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
                 if ("mediaSession" in navigator) {
-                    audioElement.src = './icons/10-minutes-of-silence.mp3'; //dummy audio element
                     audioElement.play()
                     .then(() => {
                         navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});

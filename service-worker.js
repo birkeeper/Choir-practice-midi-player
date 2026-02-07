@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.34"; 
+const CACHE_NAME = "v9.35"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -180,7 +180,16 @@ const putInCache = async (request, response) => {
   });
 
   self.addEventListener("fetch", (event) => {
-    event.respondWith(
+	const url = new URL(event.request.url);
+ 	if (url.pathname.startsWith('./generatedWav/') && url.pathname.endsWith('.wav')) {
+    	console.log(`received fetch for: ${url}`);
+		for (const pair of event.request.headers.entries()) {
+  			console.log(`${pair[0]}: ${pair[1]}`);
+		}
+		event.respondWith(handleSongRequest(event, url));
+  	}
+
+	event.respondWith(	
       cacheFirst({
         request: event.request,
         fallbackUrl: "./midi_player.html",
@@ -262,8 +271,15 @@ self.addEventListener('message', async (event) => {
     } catch (error) {
       port.postMessage(null);
     }
-
-
   }
 });
+
+
+async function handleSongRequest(event, url) {
+	if (!event.clientId) return fetch(event.request); // cross-origin edge case
+	const client = await self.clients.get(event.clientId);
+	if (!client) return fetch(event.request);
+	return new Response(null, { status: 404 });
+}
+
   
