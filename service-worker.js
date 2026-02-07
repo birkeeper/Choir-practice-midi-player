@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.36"; 
+const CACHE_NAME = "v9.37"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -186,15 +186,17 @@ const putInCache = async (request, response) => {
 		for (const pair of event.request.headers.entries()) {
   			console.log(`${pair[0]}: ${pair[1]}`);
 		}
-		event.respondWith(handleSongRequest(event, url));
-  	}
-
-	event.respondWith(	
-      cacheFirst({
-        request: event.request,
-        fallbackUrl: "./midi_player.html",
-      }),
-    );
+		const id = url.pathname.match(/^\/generatedWav\/(.+)\.wav$/);
+		id = id[1];
+		event.respondWith(handleSongRequest(event.request, id));
+  	} else {
+		event.respondWith(	
+      		cacheFirst({
+        		request: event.request,
+        		fallbackUrl: "./midi_player.html",
+      		}),
+    	);
+	}
   });
 
   self.addEventListener("activate", (event) => {
@@ -275,11 +277,45 @@ self.addEventListener('message', async (event) => {
 });
 
 
-async function handleSongRequest(event, url) {
-	if (!event.clientId) return fetch(event.request); // cross-origin edge case
-	const client = await self.clients.get(event.clientId);
-	if (!client) return fetch(event.request);
-	return new Response(null, { status: 404 });
+async function handleSongRequest(request, songID) {
+	const response = await fetch(`./settings/${songID}`);
+	if (!response.ok) { 
+		return new Response(null, { status: 404 });
+	}
+	const settings = await response.json();
+	if (settings?.wavLength === undefined) {
+		return new Response(null, { status: 404 });
+	}
+	const total = settings.wavLength;
+	const rangeHdr = request.headers.get('Range');
+  	let isPartial = false;
+  	let start = 0, end = total - 1;
+
+	
+	if (rangeHdr) {
+		const m = /bytes=(\d*)-(\d*)/.exec(rangeHdr);
+		if (!m) {
+			return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
+		}
+		isPartial = true;
+
+		if (m[1] !== '') start = Number(m[1]);
+		if (m[2] !== '') end   = Number(m[2]);
+		
+		if (start >= total || end < start) {
+			return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
+		}
+	}
+
+	let body = null;
+	const contentLength = end - start + 1;
+	const headers = new Headers({
+		'Content-Type': 'audio/wav',
+		'Accept-Ranges': 'bytes',
+		'Content-Length': String(contentLength)
+	});
+	if (isPartial) {headers.set('Content-Range', `bytes ${start}-${end}/${total}`);}
+	return new Response(body, { status: isPartial ? 206 : 200, headers });
 }
 
   
