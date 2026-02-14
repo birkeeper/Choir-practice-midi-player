@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.39"; 
+const CACHE_NAME = "v9.40"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -277,7 +277,8 @@ self.addEventListener('message', async (event) => {
 
 
 async function handleSongRequest(request, songID) {
-	const response = await fetch(`./settings/${songID}`);
+	const cache = await caches.open(CACHE_NAME);
+	const response = await cache.match(`./settings/${songID}`);
 	if (!response.ok) { 
 		return new Response(null, { status: 404 });
 	}
