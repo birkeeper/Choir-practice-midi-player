@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.38"; 
+const CACHE_NAME = "v9.39"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -187,8 +187,7 @@ const putInCache = async (request, response) => {
   			console.log(`${pair[0]}: ${pair[1]}`);
 		}
 		const id = url.pathname.match(/\/generatedWav\/(.+)\.wav$/);
-		id = id[1];
-		event.respondWith(handleSongRequest(event.request, id));
+		event.respondWith(handleSongRequest(event.request, id[1]));
   	} else {
 		event.respondWith(	
       		cacheFirst({
