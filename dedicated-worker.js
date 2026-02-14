@@ -19,7 +19,16 @@ synth.soundfontManager.addNewSoundFont(loadSoundFont(secondarySoundFontBuffer),"
 
 self.onmessage = (msg) => {
     console.log("message received in dedicated worker");
-    midiToWav(msg.data);
+	if (msg.data.type === 'LOAD_MIDI') {
+		console.log(`loading midi`);
+		midiToWav(msg.data.midi);
+	}
+	if (msg.data.type === 'AUDIO_RANGE_REQ') {
+		const port = ports && ports[0];
+		if (!port) {return;}
+		console.log(`range request received: song hash: ${data.songID}, start: ${data.start}, end: ${data.end}`);
+	}
+    
 };
 
 async function midiToWav(midi) {

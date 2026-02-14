@@ -307,6 +307,11 @@ async function handleSongRequest(request, songID) {
 		}
 	}
 
+	
+	const channel = new MessageChannel();
+  	const port = channel.port1;
+	self.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, start: start, end: end },[channel.port2]);
+
 	let body = null;
 	const contentLength = end - start + 1;
 	const headers = new Headers({

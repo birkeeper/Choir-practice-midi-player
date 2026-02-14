@@ -58,6 +58,15 @@ navigator.serviceWorker.addEventListener("controllerchange", () => {
 });
 
 const dedicatedWorker = new Worker("./dedicated-worker.js", {type: "module"});
+navigator.serviceWorker.addEventListener("message", (event) => {
+    const { data, ports } = event;
+    const portFromSW = ports && ports[0];
+    if (!data || !portFromSW) return;
+	if (data.type === 'AUDIO_RANGE_REQ') {
+		console.log(`received ${data.type} message in main.js`);
+		dedicatedWorker.postMessage(data, [portFromSW]);
+	}
+});
 
 // Function to store settings
 async function storeSettings(key, settings) {
@@ -111,8 +120,9 @@ async function retrieveSettings(key) {
                 
                     messageChannel.port1.onmessage = async (e) => {
                         const responseArray = e.data;
+						messageChannel.port1.close();
                         if (responseArray === null) {
-                            resolve(null);
+							resolve(null);
                         } else {
                             resolve(await Promise.all(responseArray));
                         }
@@ -566,7 +576,7 @@ const audioElement = document.createElement('audio');
             }
 
             const midi = new MIDI(buffer);
-            dedicatedWorker.postMessage(midi);
+            dedicatedWorker.postMessage({type: 'LOAD_MIDI', midi: midi});
             
         }, "songChangeEventID"); // make sure to add a unique id!
 
