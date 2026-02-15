@@ -27,7 +27,7 @@ self.onmessage = (msg) => {
 	if (msg.data.type === 'AUDIO_RANGE_REQ') {
 		const port = msg.ports && msg.ports[0];
 		if (!port) {return;}
-		console.log(`range request received: song hash: ${data.songID}, start: ${data.start}, end: ${data.end}`);
+		console.log(`range request received: song hash: ${msg.data.songID}, start: ${msg.data.start}, end: ${msg.data.end}`);
 	}
     
 };
