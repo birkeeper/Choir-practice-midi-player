@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.42"; 
+const CACHE_NAME = "v9.43"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -296,6 +296,13 @@ async function handleSongRequest(request, songID) {
 	if (settings?.wavLength_bytes === undefined) {
 		return new Response(null, { status: 404 });
 	}
+	const clientList = await self.clients.matchAll();
+	let client;
+	for (const clientItem of clientList) {
+    	if (clientItem.url === "midi_player.html") {
+      		client = clientItem;
+		}
+	}
 	const total = settings.wavLength_bytes;
 	const rangeHdr = request.headers.get('Range');
   	let isPartial = false;
@@ -320,7 +327,7 @@ async function handleSongRequest(request, songID) {
 	
 	const channel = new MessageChannel();
   	const port = channel.port1;
-	self.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, start: start, end: end },[channel.port2]);
+	client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, start: start, end: end },[channel.port2]);
 
 	let body = null;
 	const contentLength = end - start + 1;
