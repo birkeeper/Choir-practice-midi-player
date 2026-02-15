@@ -25,7 +25,7 @@ self.onmessage = (msg) => {
 		midiToWav(msg.data.midi);
 	}
 	if (msg.data.type === 'AUDIO_RANGE_REQ') {
-		const port = ports && ports[0];
+		const port = msg.ports && msg.ports[0];
 		if (!port) {return;}
 		console.log(`range request received: song hash: ${data.songID}, start: ${data.start}, end: ${data.end}`);
 	}
