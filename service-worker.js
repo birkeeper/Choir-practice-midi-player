@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.43"; 
+const CACHE_NAME = "v9.44"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -299,7 +299,7 @@ async function handleSongRequest(request, songID) {
 	const clientList = await self.clients.matchAll();
 	let client;
 	for (const clientItem of clientList) {
-    	if (clientItem.url === "midi_player.html") {
+    	if (clientItem.url.includes("midi_player.html")) {
       		client = clientItem;
 		}
 	}
