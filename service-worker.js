@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.41"; 
+const CACHE_NAME = "v9.42"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -176,6 +176,16 @@ const putInCache = async (request, response) => {
           });
         })
         .catch(() => {return Promise.resolve(undefined);}),
+	  caches.open(CACHE_NAME)
+        .then((cache) => {
+          fetch('./dedicated-worker.js', {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put('./dedicated-worker.js', response);
+          });
+        })
+        .catch(() => {return Promise.resolve(undefined);}),
     ]));  
   });
 
@@ -286,7 +296,7 @@ async function handleSongRequest(request, songID) {
 	if (settings?.wavLength_bytes === undefined) {
 		return new Response(null, { status: 404 });
 	}
-	const total = settings.wavLength;
+	const total = settings.wavLength_bytes;
 	const rangeHdr = request.headers.get('Range');
   	let isPartial = false;
   	let start = 0, end = total - 1;
