@@ -4,8 +4,9 @@ import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from './libraries/spessa
 import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
+import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1ao"
+const VERSION = "v2.0.1ap"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -400,6 +401,10 @@ const audioElement = document.createElement('audio');
                     settings.midiFileHash = midiFileHash;
                     settings.midiName = e.midiName;
                 }
+				if (!Object.hasOwn(settings,"wavLength_bytes")) { //ensure compatibility with old settings stored in cache
+					settings.duration_s = e.duration; // [s] midi duration. start of the file to `midi.lastVoiceEventTick`.
+					settings.wavLength_bytes = Math.floor(e.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
+				}
                 settings.lastOpened = Date.now();
                 storeSettings(settings.midiFileHash,settings);
                 document.getElementById("message").innerText = settings.midiName;
