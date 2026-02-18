@@ -67,4 +67,72 @@ async function midiToWav(midi) {
     console.info("completed in", completed, `ms`);
 }
 
+function generateWavHeader(midi) {
+	const dataLength_bytes = Math.floor(midi.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
+	const fileSize_bytes = dataLength_bytes + WAV_HEADERSIZE -8; // [bytes] file size -8
+	const header = new Uint8Array(WAV_HEADERSIZE);
+
+	// 'RIFF'
+    header.set([82, 73, 70, 70], 0);
+    // File length
+    header.set(
+        new Uint8Array([
+            fileSize_bytes & 0xff,
+            (fileSize_bytes >> 8) & 0xff,
+            (fileSize_bytes >> 16) & 0xff,
+            (fileSize_bytes >> 24) & 0xff
+        ]),
+        4
+    );
+	// 'WAVE'
+    header.set([87, 65, 86, 69], 8);
+    // 'fmt '
+    header.set([102, 109, 116, 32], 12);
+    // Fmt chunk length
+    header.set([16, 0, 0, 0], 16); // 16 for PCM
+    // Audio format (PCM)
+    header.set([1, 0], 20);
+    // Number of channels
+    header.set([WAV_NROFCHANNELS & 255, WAV_NROFCHANNELS >> 8], 22);
+    // Sample rate
+    header.set(
+        new Uint8Array([
+            WAV_SAMPLERATE & 0xff,
+            (WAV_SAMPLERATE >> 8) & 0xff,
+            (WAV_SAMPLERATE >> 16) & 0xff,
+            (WAV_SAMPLERATE >> 24) & 0xff
+        ]),
+        24
+    );
+	// Byte rate (sample rate * block align)
+    const byteRate = WAV_SAMPLERATE * WAV_NROFCHANNELS * (WAV_BITSPERSAMPLE/8); 
+    header.set(
+        new Uint8Array([
+            byteRate & 0xff,
+            (byteRate >> 8) & 0xff,
+            (byteRate >> 16) & 0xff,
+            (byteRate >> 24) & 0xff
+        ]),
+        28
+    );
+    // Block align (channels * bytes per sample)
+    header.set([WAV_NROFCHANNELS * (WAV_BITSPERSAMPLE/8), 0], 32); // N channels * bits per channel / 8
+    // Bits per sample
+    header.set([WAV_BITSPERSAMPLE, 0], 34); 
+	// Data chunk identifier 'data'
+    header.set([100, 97, 116, 97], 36);
+    // Data chunk length
+    header.set(
+        new Uint8Array([
+            dataLength_bytes & 0xff,
+            (dataLength_bytes >> 8) & 0xff,
+            (dataLength_bytes >> 16) & 0xff,
+            (dataLength_bytes >> 24) & 0xff
+        ]),
+        40
+    );
+
+	return header;
+}
+
 console.log("dedicated worker initialised");
