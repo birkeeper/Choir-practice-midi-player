@@ -5,32 +5,62 @@ import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
 console.log("initalising dedicated worker...");
-
+const CHUNCKSIZE = 128 * 100; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
 // load the soundfonts
 const [responseSecondary, responsePrimary] = await Promise.all([fetch(SOUNTFONT_SPECIAL), fetch(SOUNDFONT_GM)]);
 // load the soundfonts into array buffers
 const [secondarySoundFontBuffer, primarySoundFontBuffer] = await Promise.all([responseSecondary.arrayBuffer(), responsePrimary.arrayBuffer()]);
-const sampleRate = 44100;
-const synth = new SpessaSynthProcessor(sampleRate, {
+const synth = new SpessaSynthProcessor(WAV_SAMPLERATE, {
     enableEventSystem: false,
     effectsEnabled: false
 });
 synth.soundfontManager.reloadManager(loadSoundFont(primarySoundFontBuffer));
 synth.soundfontManager.addNewSoundFont(loadSoundFont(secondarySoundFontBuffer),"secondary",SOUNDFONTBANK);
+await synth.processorInitialized;
+const seq = new SpessaSynthSequencer(synth);
+let midi;
 
 self.onmessage = (msg) => {
     console.log("message received in dedicated worker");
 	if (msg.data.type === 'LOAD_MIDI') {
 		console.log(`loading midi`);
-		midiToWav(msg.data.midi);
+		midi = msg.data.midi;
+		seq.loadNewSongList([midi]);
+    	seq.loop = false;
 	}
 	if (msg.data.type === 'AUDIO_RANGE_REQ') {
 		const port = msg.ports && msg.ports[0];
 		if (!port) {return;}
-		console.log(`range request received: song hash: ${msg.data.songID}, start: ${msg.data.start}, end: ${msg.data.end}`);
+		const start = msg.data.start;
+		const end = msg.data.end;
+		console.log(`range request received: song hash: ${msg.data.songID}, start: ${start}, end: ${end}`);
+		
+		try {
+			// Send header slice if needed.
+			if (start < WAV_HEADERSIZE) {
+				const hdr = generateWavHeader();
+				const hdrSlice = hdr.slice(start, Math.min(end + 1, WAV_HEADERSIZE));
+				port.postMessage({ type: 'chunk', data: hdrSlice.buffer }, [hdrSlice.buffer]);
+			}
+
+			// Send PCM bytes if needed.
+			const dataLength_bytes = Math.floor(midi.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
+			const dataStart = Math.max(start, WAV_HEADERSIZE) - WAV_HEADERSIZE;
+			const dataEndExclusive = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
+			sendPCMchuncks(port, dataStart, dataEndExclusive);
+
+			port.postMessage({ type: 'end' });
+      		port.close();
+    	} catch (err) {
+      		port.postMessage({ type: 'error', message: String(err?.message || err) });
+      		port.close();
+    	}
 	}
-    
 };
+
+function sendPCMchuncks(port, start, end) { // generates PCM data for the byte range [start, end] and send them in chuncks through the port provided
+
+}
 
 async function midiToWav(midi) {
     const sampleCount = Math.ceil(44100 * (midi.duration + 2)); 
@@ -67,7 +97,7 @@ async function midiToWav(midi) {
     console.info("completed in", completed, `ms`);
 }
 
-function generateWavHeader(midi) {
+function generateWavHeader() {
 	const dataLength_bytes = Math.floor(midi.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
 	const fileSize_bytes = dataLength_bytes + WAV_HEADERSIZE -8; // [bytes] file size -8
 	const header = new Uint8Array(WAV_HEADERSIZE);
