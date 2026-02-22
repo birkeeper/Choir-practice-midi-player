@@ -45,9 +45,9 @@ self.onmessage = (msg) => {
 
 			// Send PCM bytes if needed.
 			const dataLength_bytes = Math.floor(midi.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
-			const dataStart = Math.max(start, WAV_HEADERSIZE) - WAV_HEADERSIZE;
-			const dataEndExclusive = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
-			sendPCMchuncks(port, dataStart, dataEndExclusive);
+			const dataStart_bytes = Math.max(start, WAV_HEADERSIZE) - WAV_HEADERSIZE;
+			const dataEndExclusive_bytes = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
+			sendPCMchuncks(port, dataStart_bytes, dataEndExclusive_bytes);
 
 			port.postMessage({ type: 'end' });
       		port.close();
@@ -58,8 +58,45 @@ self.onmessage = (msg) => {
 	}
 };
 
-function sendPCMchuncks(port, start, end) { // generates PCM data for the byte range [start, end] and send them in chuncks through the port provided
+function sendPCMchuncks(port, start_bytes, end_bytes) { // generates PCM data for the byte range [start, end] and send them in chuncks through the port provided
+	const start_seconds = start_bytes / WAV_SAMPLERATE / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS;
+	seq.currentTime = start_seconds;
+	const dataLength_samples = (end_bytes - start_bytes) / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS; // per channel
+	let processedSamples = 0;
+	while (processedSamples < dataLength_samples) { // process in chunks
+		const sampleCount = Math.min(CHUNCKSIZE, dataLength_samples - processedSamples);
+		const outLeft = new Float32Array(sampleCount);
+    	const outRight = new Float32Array(sampleCount);
+		const outputArray = [outLeft, outRight];
+		const outputPCM = new Uint8Array(sampleCount * WAV_NROFCHANNELS * (WAV_BITSPERSAMPLE/8));
+		const BUFFER_SIZE = 128; // note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
+		let filledSamples = 0;
+		while (filledSamples < sampleCount)
+    	{
+			// process sequencer
+			seq.processTick();
+			// render
+			const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
+			synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
+			filledSamples += bufferSize;
+    	}
 
+		let offset = 0;
+		for (let i = 0; i < WAV_NROFCHANNELS; i++) {
+			// Interleave both channels
+			for (const d of outputArray) {
+				const sample = Math.min(
+					32767,
+					Math.max(-32768, d[i] * 32767)
+				);
+				// Convert to 16-bit
+				outputPCM[offset++] = sample & 0xff;
+				outputPCM[offset++] = (sample >> 8) & 0xff;
+			}
+    	}
+		processedSamples += sampleCount;
+		port.postMessage({ type: 'chunk', bytes: outputPCM },[outputPCM]);
+	}
 }
 
 async function midiToWav(midi) {

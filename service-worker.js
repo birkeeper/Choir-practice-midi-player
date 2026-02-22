@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.46"; 
+const CACHE_NAME = "v9.47"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -325,11 +325,29 @@ async function handleSongRequest(request, songID) {
 	}
 
 	
-	const channel = new MessageChannel();
-  	const port = channel.port1;
-	client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, start: start, end: end },[channel.port2]);
+	const stream = new ReadableStream({
+    	start(controller){
+        	const channel = new MessageChannel();
+			const port = channel.port1;
+			port.onmessage = (e) => {
+				const msg = e.data;
+				if (msg.type === 'chunk') {
+					// Transferable ArrayBuffer to avoid copies
+					controller.enqueue(new Uint8Array(msg.bytes));
+				} else if (msg.type === 'end') {
+					controller.close();
+					port.close();
+				} else if (msg.type === 'error') {
+					controller.error(new Error(msg.reason || 'gen failed'));
+					port.close();
+				}
+			}
+        	self.workerPort.start();
 
-	let body = null;
+        	client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, start: start, end: end },[channel.port2]);
+    	}
+    });
+
 	const contentLength = end - start + 1;
 	const headers = new Headers({
 		'Content-Type': 'audio/wav',
@@ -337,7 +355,7 @@ async function handleSongRequest(request, songID) {
 		'Content-Length': String(contentLength)
 	});
 	if (isPartial) {headers.set('Content-Range', `bytes ${start}-${end}/${total}`);}
-	return new Response(body, { status: isPartial ? 206 : 200, headers });
+	return new Response(isPartial ? stream : null, { status: isPartial ? 206 : 200, headers });
 }
 
   
