@@ -95,7 +95,7 @@ function sendPCMchuncks(port, start_bytes, end_bytes) { // generates PCM data fo
 			}
     	}
 		processedSamples += sampleCount;
-		port.postMessage({ type: 'chunk', bytes: outputPCM },[outputPCM]);
+		port.postMessage({ type: 'chunk', data: outputPCM.buffer },[outputPCM.buffer]);
 	}
 }
 

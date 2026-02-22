@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.48"; 
+const CACHE_NAME = "v9.49"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -333,7 +333,7 @@ async function handleSongRequest(request, songID) {
 				const msg = e.data;
 				if (msg.type === 'chunk') {
 					// Transferable ArrayBuffer to avoid copies
-					controller.enqueue(new Uint8Array(msg.bytes));
+					controller.enqueue(new Uint8Array(msg.data));
 				} else if (msg.type === 'end') {
 					controller.close();
 					port.close();
