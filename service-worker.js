@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.49"; 
+const CACHE_NAME = "v9.50"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -343,7 +343,10 @@ async function handleSongRequest(request, songID) {
 				}
 			}
         	client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, start: start, end: end },[channel.port2]);
-    	}
+    	},
+		cancel(reason) {
+			console.log(`ReadableStream canceled, because: ${reason}`);
+		}
     });
 
 	const contentLength = end - start + 1;
