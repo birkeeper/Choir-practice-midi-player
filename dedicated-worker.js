@@ -19,6 +19,7 @@ synth.soundfontManager.addNewSoundFont(loadSoundFont(secondarySoundFontBuffer),"
 await synth.processorInitialized;
 const seq = new SpessaSynthSequencer(synth);
 let midi;
+let cancelRequest = false; // cancels a range request on request of the client
 
 self.onmessage = (msg) => {
     console.log("message received in dedicated worker");
@@ -34,7 +35,14 @@ self.onmessage = (msg) => {
 		const start = msg.data.start;
 		const end = msg.data.end;
 		console.log(`range request received: song hash: ${msg.data.songID}, start: ${start}, end: ${end}`);
-		
+		port.onmessage = (e) => {
+			if (e.type === 'cancel') {
+				port.close();
+				cancelRequest = true;
+				console.log("cancelling current range request");
+			}
+		}
+
 		try {
 			// Send header slice if needed.
 			if (start < WAV_HEADERSIZE) {
@@ -73,6 +81,11 @@ function sendPCMchuncks(port, start_bytes, end_bytes) { // generates PCM data fo
 		let filledSamples = 0;
 		while (filledSamples < sampleCount)
     	{
+			if (cancelRequest) {
+				cancelRequest = true;
+				console.log("current range request cancelled");
+				return;
+			}
 			// process sequencer
 			seq.processTick();
 			// render
