@@ -95,7 +95,7 @@ function sendPCMchuncks(port, start_bytes, end_bytes) { // generates PCM data fo
     	}
 
 		let offset = 0;
-		for (let i = 0; i < WAV_NROFCHANNELS; i++) {
+		for (let i = 0; i < sampleCount; i++) {
 			// Interleave both channels
 			for (const d of outputArray) {
 				const sample = Math.min(
