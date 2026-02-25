@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.53"; 
+const CACHE_NAME = "v9.54"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -324,11 +324,11 @@ async function handleSongRequest(request, songID) {
 		}
 	}
 
-	
+	let port;
 	const stream = new ReadableStream({
     	start(controller){
         	const channel = new MessageChannel();
-			const port = channel.port1;
+			port = channel.port1;
 			port.onmessage = (e) => {
 				const msg = e.data;
 				if (msg.type === 'chunk') {

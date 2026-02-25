@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1bb"
+const VERSION = "v2.0.1bc"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -276,10 +276,10 @@ audioElement.addEventListener("ended", (event) => {
 
         function timerCallback() {
             if(seq !== undefined) {
-                slider.value = Math.floor(seq.currentTime);
-                currentTimeDisplay.textContent = formatTime(seq.currentTime);    
-                if (("mediaSession" in navigator) && (seq.duration >= seq.currentTime)) {
-                    navigator.mediaSession.setPositionState({duration: seq.duration, position: seq.currentTime});
+                slider.value = Math.floor(audioElement.currentTime);
+                currentTimeDisplay.textContent = formatTime(audioElement.currentTime);    
+                if (("mediaSession" in navigator) && (audioElement.duration >= audioElement.currentTime)) {
+                    navigator.mediaSession.setPositionState({duration: audioElement.duration, position: audioElement.currentTime});
                 } 
             }      
         }
@@ -302,7 +302,6 @@ audioElement.addEventListener("ended", (event) => {
             }
         
             function handleReleaseProgressSlider() {
-                seq.currentTime = Number(slider.value);
                 audioElement.currentTime = Number(slider.value);
                 startProgressTimer();
                 console.log("progress slider released");
@@ -348,13 +347,12 @@ audioElement.addEventListener("ended", (event) => {
             seq.pause(); // pause
             audioElement.pause();
             clearProgressTimer();
-            seq.currentTime = 0.0;
             audioElement.currentTime = 0.0;
             slider.value = Math.floor(0.0);
             currentTimeDisplay.textContent = formatTime(0.0);
             if ("mediaSession" in navigator) {
                 navigator.mediaSession.playbackState = "paused";
-                navigator.mediaSession.setPositionState({duration: seq.duration, position: 0.0});
+                navigator.mediaSession.setPositionState({duration: audioElement.duration, position: 0.0});
             }
         },"songEndedEventID")
         
@@ -419,7 +417,6 @@ audioElement.addEventListener("ended", (event) => {
 				console.log(`generated wave file loaded: ${audioElement.src}`);
                 audioElement.pause();
                 clearProgressTimer();
-                seq.currentTime = 0.0;
                 audioElement.currentTime = 0.0;
                 slider.value = Math.floor(0.0);
                 currentTimeDisplay.textContent = formatTime(0.0);
@@ -615,7 +612,6 @@ audioElement.addEventListener("ended", (event) => {
                                 if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
                                     clearProgressTimer();
                                 }
-                                seq.currentTime = evt.seekTime;
                                 audioElement.currentTime = evt.seekTime;
                                 slider.value = Math.floor(evt.seekTime);
                                 currentTimeDisplay.textContent = formatTime(evt.seekTime);
@@ -624,7 +620,7 @@ audioElement.addEventListener("ended", (event) => {
                                 }
                             }
                         });
-                        navigator.mediaSession.setPositionState({duration: seq.duration, position: seq.currentTime});
+                        navigator.mediaSession.setPositionState({duration: audioElement.duration, position: audioElement.currentTime});
                     });
                     navigator.mediaSession.playbackState = "playing";
                 }
