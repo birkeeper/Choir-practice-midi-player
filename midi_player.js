@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1ba"
+const VERSION = "v2.0.1bb"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -195,7 +195,7 @@ document.getElementById('version').textContent = VERSION;
 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
 document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE_PX);
-const audioElement = Audio();
+const audioElement = new Audio();
 audioElement.addEventListener("error",(event) => {
 	console.log(`error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}`);
 });
