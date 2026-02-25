@@ -6,7 +6,7 @@ import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1az"
+const VERSION = "v2.0.1ba"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAINVOLUME = 1.5;
@@ -305,14 +305,6 @@ audioElement.addEventListener("ended", (event) => {
                 seq.currentTime = Number(slider.value);
                 audioElement.currentTime = Number(slider.value);
                 startProgressTimer();
-                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                    context.resume();
-                    seq.play(); // resume
-                }
-                else {
-                    context.suspend();
-                    seq.pause(); // pause
-                }
                 console.log("progress slider released");
             }
 
@@ -607,16 +599,12 @@ audioElement.addEventListener("ended", (event) => {
                         navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
                         navigator.mediaSession.setActionHandler("pause", () => {
                             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                            context.suspend();
-                            seq.pause(); // pause
                             audioElement.pause();
                             navigator.mediaSession.playbackState = "paused";
                             clearProgressTimer();
                         });
                         navigator.mediaSession.setActionHandler("play", () => {
                             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-                            context.resume();
-                            seq.play(); // play
                             audioElement.play();
                             navigator.mediaSession.playbackState = "playing";
                             startProgressTimer();
@@ -640,14 +628,11 @@ audioElement.addEventListener("ended", (event) => {
                     });
                     navigator.mediaSession.playbackState = "playing";
                 }
-                context.resume();
-                seq.play(); // resume
+				else {audioElement.play();}
                 startProgressTimer();                
             }
             else {
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                context.suspend();
-                seq.pause(); // pause
                 audioElement.pause();
                 if ("mediaSession" in navigator) {
                     navigator.mediaSession.playbackState = "paused";
