@@ -55,12 +55,12 @@ self.onmessage = (msg) => {
 			let processedSamples = 0;
 
 			port.onmessage = (e) => {
-				if (e.type === 'cancel') {
+				if (e.data.type === 'cancel') {
 					port.close();
 					cancelRequest = true;
 					console.log("cancelling current range request");
 				}
-				else if (e.type === 'reqNextChunk') {
+				else if (e.data.type === 'reqNextChunk') {
 					if (processedSamples < dataLength_samples) { // process in chunks
 						const chunkPort = e.ports && e.ports[0];
 						const sampleCount = sendPCMchunk(chunkPort);
