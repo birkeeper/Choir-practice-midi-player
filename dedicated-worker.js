@@ -1,8 +1,9 @@
 //import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from '../libraries/spessasynth_lib/index.js';
 //import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI, audioToWav, SpessaSynthSequencer, SpessaSynthProcessor } from '../libraries/spessasynth_core/index.js';
-import { loadSoundFont, audioToWav, SpessaSynthSequencer, SpessaSynthProcessor } from './libraries/spessasynth_core/index.js';
+import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor } from './libraries/spessasynth_core/index.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
+const MAINVOLUME = 1.5;
 
 console.log("initalising dedicated worker...");
 const CHUNCKSIZE = 128 * 100; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
@@ -16,8 +17,18 @@ const synth = new SpessaSynthProcessor(WAV_SAMPLERATE, {
 });
 synth.soundfontManager.reloadManager(loadSoundFont(primarySoundFontBuffer));
 synth.soundfontManager.addNewSoundFont(loadSoundFont(secondarySoundFontBuffer),"secondary",SOUNDFONTBANK);
+const soundFont = loadSoundFont(secondarySoundFontBuffer);
+const instruments = {...soundFont.presets}; // map of midi instruments to secondary soundfont preset numbers
+for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
+	instrument.bank = SOUNDFONTBANK;
+}
 await synth.processorInitialized;
+synth.masterGain = MAINVOLUME;
 const seq = new SpessaSynthSequencer(synth);
+seq.skipToFirstNoteOn = false;
+seq.loop = false; // the sequencer loops a single song by default
+seq.preservePlaybackState = true;
+
 let midi;
 
 self.onmessage = (msg) => {
@@ -107,52 +118,6 @@ function sendPCMchunk(port, sampleCount) { // generates  a chunk of PCM data and
 	port.postMessage({ type: 'chunk', data: outputPCM.buffer },[outputPCM.buffer]);
 }
 
-function sendPCMchuncks(port, start_bytes, end_bytes) { // generates PCM data for the byte range [start, end] and send them in chuncks through the port provided
-	const start_seconds = start_bytes / WAV_SAMPLERATE / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS;
-	seq.currentTime = start_seconds;
-	const dataLength_samples = (end_bytes - start_bytes) / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS; // per channel
-	let processedSamples = 0;
-	while (processedSamples < dataLength_samples) { // process in chunks
-		const sampleCount = Math.min(CHUNCKSIZE, dataLength_samples - processedSamples);
-		const outLeft = new Float32Array(sampleCount);
-    	const outRight = new Float32Array(sampleCount);
-		const outputArray = [outLeft, outRight];
-		const outputPCM = new Uint8Array(sampleCount * WAV_NROFCHANNELS * (WAV_BITSPERSAMPLE/8));
-		const BUFFER_SIZE = 128; // note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
-		let filledSamples = 0;
-		while (filledSamples < sampleCount)
-    	{
-			if (cancelRequest) {
-				cancelRequest = true;
-				console.log("current range request cancelled");
-				return;
-			}
-			// process sequencer
-			seq.processTick();
-			// render
-			const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
-			synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
-			filledSamples += bufferSize;
-    	}
-
-		let offset = 0;
-		for (let i = 0; i < sampleCount; i++) {
-			// Interleave both channels
-			for (const d of outputArray) {
-				const sample = Math.min(
-					32767,
-					Math.max(-32768, d[i] * 32767)
-				);
-				// Convert to 16-bit
-				outputPCM[offset++] = sample & 0xff;
-				outputPCM[offset++] = (sample >> 8) & 0xff;
-			}
-    	}
-		processedSamples += sampleCount;
-		port.postMessage({ type: 'chunk', data: outputPCM.buffer },[outputPCM.buffer]);
-	}
-}
-
 function generateWavHeader() {
 	const dataLength_bytes = Math.floor(midi.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
 	const fileSize_bytes = dataLength_bytes + WAV_HEADERSIZE -8; // [bytes] file size -8
@@ -222,3 +187,4 @@ function generateWavHeader() {
 }
 
 console.log("dedicated worker initialised");
+self.postMessage({type: 'workerInitalised', instruments: instruments})

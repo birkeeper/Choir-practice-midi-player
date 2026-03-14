@@ -3,16 +3,12 @@
 import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from './libraries/spessasynth_lib/index.js';
 import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
-import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
 const VERSION = "v2.0.1bj"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
-const MAINVOLUME = 1.5;
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
-
-let instruments; // map of midi instruments to secondary soundfont preset numbers
 
 async function generateHash(fileBuffer) {
     const hashBuffer = await crypto.subtle.digest('SHA-1', fileBuffer);
@@ -209,31 +205,18 @@ audioElement.addEventListener("ended", (event) => {
 	console.log(`playing of source AudioElement ended. Ready state: ${audioElement.readyState}`);
 });
 
+dedicatedWorker.onmessage ( (e) => {
+	const msg = e.data;
+	if (msg.type === 'workerInitalised')
+	{
+		activateApplication(msg.instruments);
+	}
+})
 
+async function activateApplication(instruments) 
 {
-    // load the soundfonts
-    const [responseSecondary, responsePrimary] = await Promise.all([fetch(SOUNTFONT_SPECIAL), fetch(SOUNDFONT_GM)]);
-    // load the soundfonts into array buffers
-    const [secondarySoundFontBuffer, primarySoundFontBuffer] = await Promise.all([responseSecondary.arrayBuffer(), responsePrimary.arrayBuffer()]);
-    
-    // create the context and add audio worklet
-    const context = new AudioContext({latencyHint: "playback"});
-    await context.audioWorklet.addModule(new URL("./libraries/spessasynth_lib/" + WORKLET_URL_ABSOLUTE, import.meta.url));
-    const synth = new Synthetizer(context.destination, primarySoundFontBuffer, undefined, undefined, {chorusEnabled: false, reverbEnabled: false});     // create the synthetizer
-    {
-        const soundFont = loadSoundFont(secondarySoundFontBuffer);
-        instruments = {...soundFont.presets};
-    }
-    document.getElementById("message").innerText = "Select a midi file.";
-    for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
-        instrument.bank = SOUNDFONTBANK;
-    }
-    await synth.isReady;
-    await synth.soundfontManager.addNewSoundFont(secondarySoundFontBuffer,"secondary",SOUNDFONTBANK);
     document.getElementById("midi_input").disabled = false;
-    synth.setMainVolume(MAINVOLUME);
 
-    let seq;
     let settings;
     let timerID;
     
@@ -242,10 +225,13 @@ audioElement.addEventListener("ended", (event) => {
         const parsedSongs = [];
         const buffer = await file.arrayBuffer();
         const midiFileHash = await generateHash(buffer);
-        parsedSongs.push({
+		const midi = new MIDI(buffer);
+        dedicatedWorker.postMessage({type: 'LOAD_MIDI', midi: midi});
+
+        /*parsedSongs.push({
             binary: buffer,     // binary: the binary data of the file
             altName: file.name  // altName: the fallback name if the MIDI doesn't have one. Here we set it to the file name
-        });
+        });*/
         
         const slider = document.getElementById("progress");
         const totalTimeDisplay = document.getElementById('totalTime');
@@ -275,76 +261,55 @@ audioElement.addEventListener("ended", (event) => {
         }
 
         function timerCallback() {
-            if(seq !== undefined) {
-                slider.value = Math.floor(audioElement.currentTime);
-                currentTimeDisplay.textContent = formatTime(audioElement.currentTime);    
-                if (("mediaSession" in navigator) && (audioElement.duration >= audioElement.currentTime)) {
-                    navigator.mediaSession.setPositionState({duration: audioElement.duration, position: audioElement.currentTime});
-                } 
-            }      
+			slider.value = Math.floor(audioElement.currentTime);
+			currentTimeDisplay.textContent = formatTime(audioElement.currentTime);    
+			/*if (("mediaSession" in navigator) && (audioElement.duration >= audioElement.currentTime)) {
+				navigator.mediaSession.setPositionState({duration: audioElement.duration, position: audioElement.currentTime});
+			}*/ //@@@ TO BE DELETED if not necessary      
         }
 
-        if(seq === undefined)
-        { // setup main part of the application. This is only executed once after startup when the first song is loaded.
-            seq = new Sequencer(parsedSongs, synth, {skipToFirstNoteOn: false,}); // create the sequencer with the parsed midis
+		// make the slider move with the song and define what happens when the user moves the slider
+		slider.oninput = () => {
+			currentTimeDisplay.textContent = formatTime(Number(slider.value));
+		};
+		slider.addEventListener("pointerdown", handleClickProgressSlider, { capture: true});
+		slider.addEventListener("pointerup", handleReleaseProgressSlider, { capture: false});
+		slider.addEventListener("touchend", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
+	
+		function handleClickProgressSlider() {
+			clearProgressTimer();
+			console.log("progress slider clicked");
+		}
+	
+		function handleReleaseProgressSlider() {
+			audioElement.currentTime = Number(slider.value);
+			startProgressTimer();
+			console.log("progress slider released");
+		}
 
-            // make the slider move with the song and define what happens when the user moves the slider
-            slider.oninput = () => {
-                currentTimeDisplay.textContent = formatTime(Number(slider.value));
-            };
-            slider.addEventListener("pointerdown", handleClickProgressSlider, { capture: true});
-            slider.addEventListener("pointerup", handleReleaseProgressSlider, { capture: false});
-            slider.addEventListener("touchend", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
-        
-            function handleClickProgressSlider() {
-                clearProgressTimer();
-                console.log("progress slider clicked");
-            }
-        
-            function handleReleaseProgressSlider() {
-                audioElement.currentTime = Number(slider.value);
-                startProgressTimer();
-                console.log("progress slider released");
-            }
-
-            // make a slider to set the playback rate
-            playbackRateInput.addEventListener('input',playbackRateCallback);
-            function playbackRateCallback() {
-                seq.playbackRate = playbackRateInput.value;
-                playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
-                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                    context.resume();
-                    seq.play(); // resume
-                }
-                else {
-                    context.suspend();
-                    seq.pause(); // pause
-                }
-                if (settings?.midiFileHash !== undefined) {
-                    settings.playbackRate = playbackRateInput.value;
-                    storeSettings(settings.midiFileHash, settings);
-                }
-            }
-
-        }
-        else { //when seq is defined
+		// make a slider to set the playback rate
+		playbackRateInput.addEventListener('input',playbackRateCallback);
+		function playbackRateCallback() {
+			//seq.playbackRate = playbackRateInput.value; // TO BE REPLACED with new code
+			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
+			if (settings?.midiFileHash !== undefined) {
+				settings.playbackRate = playbackRateInput.value;
+				storeSettings(settings.midiFileHash, settings);
+			}
+		}
+        /*else { //when seq is defined
             for (const channel of settings.channels) {// unlock all channel controllers of the previous song, so it can be overwritten.
                 synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
                 synth.lockController(channel.number, midiControllers.bankSelect, false);
             }
             seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
-        }
-        seq.loop = false; // the sequencer loops a single song by default
-        seq.preservePlaybackState = true;
-        context.suspend();
-        seq.pause();
+        }*/ // TO BE DELETED - necessary in worker?
+        
         document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
         // on song ended reset the current time and pause the song
-        seq.addOnSongEndedEvent(() => {
+		audioElement.onended = () => {
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-            context.suspend();
-            seq.pause(); // pause
             audioElement.pause();
             clearProgressTimer();
             audioElement.currentTime = 0.0;
@@ -354,18 +319,16 @@ audioElement.addEventListener("ended", (event) => {
                 navigator.mediaSession.playbackState = "paused";
                 navigator.mediaSession.setPositionState({duration: audioElement.duration, position: 0.0});
             }
-        },"songEndedEventID")
+        }
         
         // on song change, show the name
-        seq.addOnSongChangeEvent(e => {
+        {
             console.log("song changed");
-            context.suspend();
-            seq.pause();
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
             //update progress slider
-            slider.max = Math.floor(seq.duration);
-            totalTimeDisplay.textContent = formatTime(seq.duration);
+            slider.max = Math.floor(midi.duration);
+            totalTimeDisplay.textContent = formatTime(midi.duration);
             
             // create channel controls
             const channelControlsContainer = document.getElementById('channel-controls');
@@ -379,14 +342,14 @@ audioElement.addEventListener("ended", (event) => {
                 if (settings === null) { // no settings found in the cache
                     settings = {
                         midiFileHash: midiFileHash,
-                        midiName: e.midiName,
+                        midiName: midi.midiName,
                         playbackRate: 1.0,
                         channels: [],
                     };
-                    let nrOfTracks = e.tracksAmount;
-                    const channelsPerTrack = e.usedChannelsOnTrack;
+                    let nrOfTracks = midi.tracksAmount;
+                    const channelsPerTrack = midi.usedChannelsOnTrack;
                     const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
-                    const trackNames = getTrackNames(buffer); // track names in the midi file. Track contents is not available in e.
+                    const trackNames = getTrackNames(midi); // track names in the midi file.
                     channelNumbers.forEach(channelNumber => {
                         const trackNumber = channelsPerTrack.findIndex(set => set.has(channelNumber));
                         const channelSettings = {
@@ -401,18 +364,17 @@ audioElement.addEventListener("ended", (event) => {
                 }
                 if (!Object.hasOwn(settings,"midiFileHash")) { //ensure compatibility with old settings stored in cache
                     settings.midiFileHash = midiFileHash;
-                    settings.midiName = e.midiName;
+                    settings.midiName = midi.midiName;
                 }
 				if (!Object.hasOwn(settings,"wavLength_bytes")) { //ensure compatibility with old settings stored in cache
-					settings.duration_s = e.duration; // [s] midi duration. start of the file to `midi.lastVoiceEventTick`.
-					settings.wavLength_bytes = Math.floor(e.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
+					settings.duration_s = midi.duration; // [s] midi duration. start of the file to `midi.lastVoiceEventTick`.
+					settings.wavLength_bytes = Math.floor(midi.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
 				}
                 settings.lastOpened = Date.now();
                 storeSettings(settings.midiFileHash,settings);
                 document.getElementById("message").innerText = settings.midiName;
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                context.suspend();
-                seq.pause(); // pause
+
 				audioElement.src = `./generatedWav/${settings.midiFileHash}.wav`; // point to file that will be generated on the fly
 				console.log(`generated wave file loaded: ${audioElement.src}`);
                 audioElement.pause();
@@ -430,15 +392,7 @@ audioElement.addEventListener("ended", (event) => {
                 playbackRateInput.value = settings.playbackRate;
                 seq.playbackRate = settings.playbackRate;
                 playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(2)}x`;
-                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                    context.resume();
-                    seq.play(); // resume
-                }
-                else {
-                    context.suspend();
-                    seq.pause(); // pause
-                }
-                
+                @@@ here
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
                 for (const channel of settings.channels) {
                     const channelControl = createChannelControl(channel, synth, instrumentControls, channel === settings.channels[settings.channels.length-1]);
@@ -581,10 +535,9 @@ audioElement.addEventListener("ended", (event) => {
                 return container;
             }
 
-            const midi = new MIDI(buffer);
-            dedicatedWorker.postMessage({type: 'LOAD_MIDI', midi: midi});
             
-        }, "songChangeEventID"); // make sure to add a unique id!
+            
+        }
 
         // on pause click
         document.getElementById("pause").onclick = () => {
@@ -711,8 +664,7 @@ audioElement.addEventListener("ended", (event) => {
     });
 }
 
-function getTrackNames(arrayBuffer) { // returns the tracknames from the midifile represented in the arrayBuffer
-    const parsedMIDI = new MIDI(arrayBuffer);
+function getTrackNames(parsedMIDI) { // returns the tracknames from the midifile represented in the arrayBuffer
     const tracks = parsedMIDI.tracks; //array of tracks. Each track contains an array of midi messages (MidiMessages)
     const trackNames = [];
     for (const track of tracks) {
