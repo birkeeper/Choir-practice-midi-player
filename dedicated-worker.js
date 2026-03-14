@@ -63,7 +63,8 @@ self.onmessage = (msg) => {
 				else if (e.data.type === 'reqNextChunk') {
 					if (processedSamples < dataLength_samples) { // process in chunks
 						const chunkPort = e.ports && e.ports[0];
-						const sampleCount = sendPCMchunk(chunkPort);
+						const sampleCount = Math.min(CHUNCKSIZE, dataLength_samples - processedSamples);
+						sendPCMchunk(chunkPort, sampleCount);
 						processedSamples += sampleCount;
 					}
 					else { // all chuncks processed.
@@ -79,8 +80,7 @@ self.onmessage = (msg) => {
 	}
 };
 
-function sendPCMchunk(port) { // generates  a chunk of PCM data and send it through the port provided. Returns the sample count of the chunk
-	const sampleCount = Math.min(CHUNCKSIZE, dataLength_samples - processedSamples);
+function sendPCMchunk(port, sampleCount) { // generates  a chunk of PCM data and send it through the port provided. Returns the sample count of the chunk
 	const outLeft = new Float32Array(sampleCount);
 	const outRight = new Float32Array(sampleCount);
 	const outputArray = [outLeft, outRight];
@@ -116,7 +116,6 @@ function sendPCMchunk(port) { // generates  a chunk of PCM data and send it thro
 		}
 	}
 	port.postMessage({ type: 'chunk', data: outputPCM.buffer },[outputPCM.buffer]);
-	return sampleCount;
 }
 
 function sendPCMchuncks(port, start_bytes, end_bytes) { // generates PCM data for the byte range [start, end] and send them in chuncks through the port provided
