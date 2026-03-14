@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.56"; 
+const CACHE_NAME = "v9.57"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -330,8 +330,7 @@ async function handleSongRequest(request, songID) {
         	const channel = new MessageChannel();
 			port = channel.port1;
 			port.onmessage = (e) => {
-				const msg = e.data;
-				if (msg.type === 'chunk') {
+				if (msg.type == 'chunk') {
 					// Transferable ArrayBuffer to avoid copies
 					controller.enqueue(new Uint8Array(msg.data));
 				} else if (msg.type === 'end') {
@@ -344,12 +343,26 @@ async function handleSongRequest(request, songID) {
 			}
         	client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, start: start, end: end },[channel.port2]);
     	},
+		pull(controller){
+			return new Promise( async (resolve, reject) => {
+				const chunkChannel = new MessageChannel();
+				port.postMessage({type: 'reqNextChunk'}, [chunkChannel.port2]);
+				chunkChannel.port1.onmessage = (e) => {
+					const msg = e.data;
+					if (msg.type === 'chunk') {
+						// Transferable ArrayBuffer to avoid copies
+						controller.enqueue(new Uint8Array(msg.data));
+						resolve();
+					}
+				}
+			});
+		},
 		cancel(reason) {
 			console.log(`ReadableStream canceled, because: ${reason}`);
 			port.postMessage({type: 'cancel'});
 			port.close();
 		}
-    });
+    }, {highWaterMark: 10});
 
 	const contentLength = end - start + 1;
 	const headers = new Headers({
