@@ -19,7 +19,6 @@ synth.soundfontManager.addNewSoundFont(loadSoundFont(secondarySoundFontBuffer),"
 await synth.processorInitialized;
 const seq = new SpessaSynthSequencer(synth);
 let midi;
-let cancelRequest = false; // cancels a range request on request of the client
 
 self.onmessage = (msg) => {
     console.log("message received in dedicated worker");
@@ -55,12 +54,7 @@ self.onmessage = (msg) => {
 			let processedSamples = 0;
 
 			port.onmessage = (e) => {
-				if (e.data.type === 'cancel') {
-					port.close();
-					cancelRequest = true;
-					console.log("cancelling current range request");
-				}
-				else if (e.data.type === 'reqNextChunk') {
+				if (e.data.type === 'reqNextChunk') {
 					if (processedSamples < dataLength_samples) { // process in chunks
 						const chunkPort = e.ports && e.ports[0];
 						const sampleCount = Math.min(CHUNCKSIZE, dataLength_samples - processedSamples);
@@ -89,11 +83,6 @@ function sendPCMchunk(port, sampleCount) { // generates  a chunk of PCM data and
 	let filledSamples = 0;
 	while (filledSamples < sampleCount)
 	{
-		if (cancelRequest) {
-			cancelRequest = true;
-			console.log("current range request cancelled");
-			return;
-		}
 		// process sequencer
 		seq.processTick();
 		// render
@@ -162,41 +151,6 @@ function sendPCMchuncks(port, start_bytes, end_bytes) { // generates PCM data fo
 		processedSamples += sampleCount;
 		port.postMessage({ type: 'chunk', data: outputPCM.buffer },[outputPCM.buffer]);
 	}
-}
-
-async function midiToWav(midi) {
-    const sampleCount = Math.ceil(44100 * (midi.duration + 2)); 
-    await synth.processorInitialized;
-    const seq = new SpessaSynthSequencer(synth);
-    seq.loadNewSongList([midi]);
-    seq.loop = false;
-    const outLeft = new Float32Array(sampleCount);
-    const outRight = new Float32Array(sampleCount);
-    const start = performance.now();
-    let filledSamples = 0;
-    // note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
-    const BUFFER_SIZE = 128;
-    let i = 0;
-    const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
-    const outputArray = [outLeft, outRight];
-    while (filledSamples < sampleCount)
-    {
-        // process sequencer
-        seq.processTick();
-        // render
-        const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
-        synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
-        filledSamples += bufferSize;
-        i++;
-    }
-    const rendered = Math.floor(performance.now() - start);
-    console.info("Rendered in", rendered, `ms (${Math.floor((midi.duration * 1000 / rendered) * 100) / 100}x)`);
-    const wave = audioToWav(
-        [outLeft, outRight],
-        sampleRate
-    );
-    const completed = Math.floor(performance.now() - start);
-    console.info("completed in", completed, `ms`);
 }
 
 function generateWavHeader() {
