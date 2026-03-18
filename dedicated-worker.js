@@ -2,6 +2,7 @@
 //import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI, audioToWav, SpessaSynthSequencer, SpessaSynthProcessor } from '../libraries/spessasynth_core/index.js';
 import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor } from './libraries/spessasynth_core/index.js';
 import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI} from './libraries/spessasynth_core/index.js';
+import { MidiAudioChannel } from './libraries/spessasynth_core/src/synthetizer/audio_engine/engine_components/midi_audio_channel.js'
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 const MAINVOLUME = 1.5;
@@ -41,35 +42,35 @@ self.onmessage = (msg) => {
     	seq.loop = false;
 	}
 	else if (msg.data.type === 'SetMainVolume') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.mainVolume] = false;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.mainVolume] = false;
 		synth.controllerChange(msg.data.channel, midiControllers.mainVolume, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.mainVolume] = true;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.mainVolume] = true;
 	}
 	else if (msg.data.type === 'isDrum') {
-		synth.midiAudioChannels[msg.data.channel].setDrums(msg.data.boolean);
+		//synth.midiAudioChannels[msg.data.channel].setDrums(msg.data.boolean);
 	}
 	else if (msg.data.type === 'bankSelect') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = false;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = false;
 		synth.controllerChange(msg.data.channel, midiControllers.bankSelect, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = true;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = true;
 	}
 	else if (msg.data.type === 'programChange') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[ALL_CHANNELS_OR_DIFFERENT_ACTION] = false;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[ALL_CHANNELS_OR_DIFFERENT_ACTION] = false;
 		synth.programChange(msg.data.channel, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[ALL_CHANNELS_OR_DIFFERENT_ACTION] = true;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[ALL_CHANNELS_OR_DIFFERENT_ACTION] = true;
 	}
 	else if (msg.data.type === 'releaseBankSelect') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = false;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = false;
 	}
 	else if (msg.data.type === 'modulationWheel') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.modulationWheel] = false;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.modulationWheel] = false;
 		synth.controllerChange(msg.data.channel, midiControllers.modulationWheel, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.modulationWheel] = true;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.modulationWheel] = true;
 	}
 	else if (msg.data.type === 'pan') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.pan] = false;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.pan] = false;
 		synth.controllerChange(msg.data.channel, midiControllers.pan, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.pan] = true;
+		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.pan] = true;
 	}
 	else if (msg.data.type === 'AUDIO_RANGE_REQ') {
 		const port = msg.ports && msg.ports[0];
@@ -219,4 +220,4 @@ function generateWavHeader() {
 }
 
 console.log("dedicated worker initialised");
-self.postMessage({type: 'workerInitalised', instruments: instruments})
+self.postMessage({type: 'workerInitalised', instruments: instruments});
