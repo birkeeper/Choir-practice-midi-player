@@ -1,11 +1,9 @@
 // import the modules
-
-import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from './libraries/spessasynth_lib/index.js';
-import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI } from './libraries/spessasynth_core/index.js';
+import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1bj"
+const VERSION = "v2.0.1bk"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -385,21 +383,21 @@ async function activateApplication(instruments)
                 if ("mediaSession" in navigator) {
                     navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
                     navigator.mediaSession.playbackState = "paused";
-                    navigator.mediaSession.setPositionState({duration: seq.duration, position: 0.0});
+                    navigator.mediaSession.setPositionState({duration: midi.duration, position: 0.0});
                 }
                 
                 //set up playback rate control based on settings
                 playbackRateInput.value = settings.playbackRate;
-                seq.playbackRate = settings.playbackRate;
+                //seq.playbackRate = settings.playbackRate;
                 playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(2)}x`;
-                @@@ here
+
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
                 for (const channel of settings.channels) {
-                    const channelControl = createChannelControl(channel, synth, instrumentControls, channel === settings.channels[settings.channels.length-1]);
+                    const channelControl = createChannelControl(channel, instrumentControls, channel === settings.channels[settings.channels.length-1]);
                     channelControlsContainer.appendChild(channelControl);
                 }
 
-                synth.eventHandler.removeEvent("programchange","program-change-event");
+                /*synth.eventHandler.removeEvent("programchange","program-change-event");
                 synth.eventHandler.addEvent("programchange","program-change-event", e => {
                     let bank = currentBank.get(e.channel) === undefined ? 0 : currentBank.get(e.channel);
                     console.log(`program change to preset ${e.channel}:${bank}:${e.program}`);
@@ -415,19 +413,19 @@ async function activateApplication(instruments)
                             }
                         }
                     }
-                });
+                });*/
             });
 
-            const currentBank = new Map();
+            /*const currentBank = new Map();
             synth.eventHandler.removeEvent("controllerchange","controller-change-event");
             synth.eventHandler.addEvent("controllerchange","controller-change-event", e => {
                 if (e.controllerNumber === 0) { // bank select
                     console.log(`controller change to ${e.channel}:${e.controllerNumber}:${e.controllerValue}`);
                     currentBank.set(e.channel, e.controllerValue);
                 }
-            });
+            });*/
             
-            function createChannelControl(channel, synth, instrumentControls, lastChannel) {
+            function createChannelControl(channel, instrumentControls, lastChannel) {
                 const container = document.createElement('div');
                 if (lastChannel){container.className = 'd-flex flex-row align-items-center mt-2 mb-2 w-100';} // added bottom margin
                 else {container.className = 'd-flex flex-row align-items-center mt-2 w-100';}
@@ -443,17 +441,21 @@ async function activateApplication(instruments)
                 volumeSlider.min = 0;
                 volumeSlider.max = 127;
                 volumeSlider.value = channel.volume;
-                synth.lockController(channel.number, midiControllers.mainVolume, false);
-                synth.controllerChange (channel.number, midiControllers.mainVolume, volumeSlider.value);
-                synth.lockController(channel.number, midiControllers.mainVolume, true);
+				dedicatedWorker.postMessage({type: 'SetMainVolume', channel: channel.number, value: volumeSlider.value});
                 volumeSlider.onchange = () => {
-                    synth.lockController(channel.number, midiControllers.mainVolume, false);
-                    synth.controllerChange (channel.number, midiControllers.mainVolume, volumeSlider.value);
-                    synth.lockController(channel.number, midiControllers.mainVolume, true);
+                    dedicatedWorker.postMessage({type: 'SetMainVolume', channel: channel.number, value: volumeSlider.value});
                     channel.volume = parseInt(volumeSlider.value);
                     if (settings?.midiFileHash !== undefined) {
                         storeSettings(settings.midiFileHash, settings);
                     }
+					const currentTime = audioElement.currentTime;
+					const paused = audioElement.paused; 
+					audioElement.src = `./generatedWav/${settings.midiFileHash}.wav`;
+					audioElement.load();
+					audioElement.currentTime = currentTime;
+					if (paused) { audioElement.pause(); }
+					else { audioElement.play();}
+					
                 }
             
                 const column2 = document.createElement('div');
@@ -465,7 +467,7 @@ async function activateApplication(instruments)
                 instrumentSelect.className = 'form-select';
                 const option = document.createElement('option');
                 //option.className = 'instrument-option';
-                option.value = ""
+                option.value = "-1:0"
                 option.textContent = "Default"
                 if (channel.selectedInstrument === "Default") {
                     option.selected = true;
@@ -473,10 +475,10 @@ async function activateApplication(instruments)
                 instrumentSelect.appendChild(option);
                 
                 if (channel.number === DEFAULT_PERCUSSION_CHANNEL) { 
-                    synth.channelProperties[channel.number].isDrum = true; 
-                    instrumentSelect.disabled = true;
+                    dedicatedWorker.postMessage({type: 'isDrum', channel: channel.number, boolean: true});
+					instrumentSelect.disabled = true;
                 }
-                if (!synth.channelProperties[channel.number].isDrum) { // do not have interactive drop-down menu when the channel is used for percussion.
+                else { // do not have interactive drop-down menu when the channel is used for percussion.
                     let defaultInstrumentSelected = true;
                     for (const instrument of Object.values(instruments)) {
                         const option = document.createElement('option');
@@ -495,17 +497,24 @@ async function activateApplication(instruments)
                                 channel.selectedInstrument = option.textContent;
                             }
                         }
-                        synth.lockController(channel.number, midiControllers.bankSelect, false);
-                        synth.controllerChange (channel.number, midiControllers.bankSelect, data[0]);
-                        synth.lockController(channel.number, midiControllers.bankSelect, true);
-                        currentBank.set(channel.number, data[0]);
-                        synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
-                        synth.programChange(channel.number, data[1]);
-                        synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, true);
-                        console.log(`changing channel ${channel.number} to instrument ${event.target.value}`);
+                        if (data[0] === '-1') { // default instrument selected
+							dedicatedWorker.postMessage({type: 'releaseBankSelect'}); // bankselect controller is released
+						} else {
+							dedicatedWorker.postMessage({type: 'bankSelect', channel: channel.number, value:  data[0]});
+							dedicatedWorker.postMessage({type: 'programChange', channel: channel.number, value:  data[1]});
+						}
+                        //currentBank.set(channel.number, data[0]);
+						console.log(`changing channel ${channel.number} to instrument ${event.target.value}`);
                         if (settings?.midiFileHash !== undefined) {
                             storeSettings(settings.midiFileHash, settings);
                         }
+						const currentTime = audioElement.currentTime;
+						const paused = audioElement.paused; 
+						audioElement.src = `./generatedWav/${settings.midiFileHash}.wav`;
+						audioElement.load();
+						audioElement.currentTime = currentTime;
+						if (paused) { audioElement.pause(); }
+						else { audioElement.play();}
                     });
                     instrumentControls.set(channel.number,instrumentSelect);
                     if (!defaultInstrumentSelected) {
@@ -523,20 +532,13 @@ async function activateApplication(instruments)
 
                             
                 //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
-                synth.lockController(channel.number, midiControllers.modulationWheel, false);
-                synth.controllerChange (channel.number, midiControllers.modulationWheel, 0);
-                synth.lockController(channel.number, midiControllers.modulationWheel, true);
+                dedicatedWorker.postMessage({type: 'modulationWheel', channel: channel.number, value: 0});
             
                 //set and lock the pan of the channel
-                synth.lockController(channel.number, midiControllers.pan, false);
-                synth.controllerChange (channel.number, midiControllers.pan, channel.pan);
-                synth.lockController(channel.number, midiControllers.pan, true);
+				dedicatedWorker.postMessage({type: 'pan', channel: channel.number, value: channel.pan});
             
                 return container;
             }
-
-            
-            
         }
 
         // on pause click
