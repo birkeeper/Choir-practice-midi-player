@@ -1,7 +1,5 @@
-//import { WORKLET_URL_ABSOLUTE, Sequencer, Synthetizer } from '../libraries/spessasynth_lib/index.js';
-//import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI, audioToWav, SpessaSynthSequencer, SpessaSynthProcessor } from '../libraries/spessasynth_core/index.js';
 import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor } from './libraries/spessasynth_core/index.js';
-import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI} from './libraries/spessasynth_core/index.js';
+//import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI} from './libraries/spessasynth_core/index.js';
 //import { MidiAudioChannel } from './libraries/spessasynth_core/src/synthetizer/audio_engine/engine_components/midi_audio_channel.js'
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
