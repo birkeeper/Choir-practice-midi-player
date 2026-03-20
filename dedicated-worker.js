@@ -3,7 +3,7 @@ import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor } from './lib
 //import { MidiAudioChannel } from './libraries/spessasynth_core/src/synthetizer/audio_engine/engine_components/midi_audio_channel.js'
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
-const MAINVOLUME = 1.5;
+//const MAINVOLUME = 1.5;
 
 console.log("worker: initalising dedicated worker...");
 const CHUNCKSIZE = 128 * 100; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
