@@ -7,12 +7,13 @@ import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 const MAINVOLUME = 1.5;
 
-console.log("initalising dedicated worker...");
+console.log("worker: initalising dedicated worker...");
 const CHUNCKSIZE = 128 * 100; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
 // load the soundfonts
 const [responseSecondary, responsePrimary] = await Promise.all([fetch(SOUNTFONT_SPECIAL), fetch(SOUNDFONT_GM)]);
 // load the soundfonts into array buffers
 const [secondarySoundFontBuffer, primarySoundFontBuffer] = await Promise.all([responseSecondary.arrayBuffer(), responsePrimary.arrayBuffer()]);
+console.log("worker: soundfonts fetched");
 const synth = new SpessaSynthProcessor(WAV_SAMPLERATE, {
     enableEventSystem: false,
     effectsEnabled: false
@@ -26,10 +27,12 @@ for (const instrument of Object.values(instruments)) { //adjust soundfont preset
 }
 await synth.processorInitialized;
 synth.setMasterParameter('masterGain', MAINVOLUME);
+console.log("worker: synthProcessor initialised");
 const seq = new SpessaSynthSequencer(synth);
 seq.skipToFirstNoteOn = false;
 seq.loop = false; // the sequencer loops a single song by default
 seq.preservePlaybackState = true;
+console.log("worker: synthSequencer initialised");
 
 let midi;
 
@@ -219,5 +222,5 @@ function generateWavHeader() {
 	return header;
 }
 
-console.log("dedicated worker initialised");
+console.log("worker: dedicated worker initialised");
 self.postMessage({type: 'workerInitalised', instruments: instruments});

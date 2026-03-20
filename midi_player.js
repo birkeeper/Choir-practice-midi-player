@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1bo"
+const VERSION = "v2.0.1bp"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -53,6 +53,7 @@ navigator.serviceWorker.addEventListener("controllerchange", () => {
 });
 
 const dedicatedWorker = new Worker("./dedicated-worker.js", {type: "module"});
+console.log("dedicated worker created");
 navigator.serviceWorker.addEventListener("message", (event) => {
     const { data, ports } = event;
     const portFromSW = ports && ports[0];
@@ -202,14 +203,17 @@ audioElement.addEventListener("suspend", (event) => {
 audioElement.addEventListener("ended", (event) => {
 	console.log(`playing of source AudioElement ended. Ready state: ${audioElement.readyState}`);
 });
+console.log("audioElement created");
 
 dedicatedWorker.onmessage = (e) => {
 	const msg = e.data;
 	if (msg.type === 'workerInitalised')
 	{
+		console.log("dedicated worker initialised")
 		activateApplication(msg.instruments);
 	}
 };
+console.log("dedicate worker's onmessage defined");
 
 async function activateApplication(instruments) 
 {
