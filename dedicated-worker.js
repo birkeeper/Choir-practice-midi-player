@@ -18,18 +18,18 @@ const synth = new SpessaSynthProcessor(WAV_SAMPLERATE, {
 });
 synth.soundfontManager.reloadManager(loadSoundFont(primarySoundFontBuffer));
 synth.soundfontManager.addNewSoundFont(loadSoundFont(secondarySoundFontBuffer),"secondary",SOUNDFONTBANK);
-const soundFont = loadSoundFont(secondarySoundFontBuffer);
+/*const soundFont = loadSoundFont(secondarySoundFontBuffer);
 const instruments = {...soundFont.presets}; // map of midi instruments to secondary soundfont preset numbers
 for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
 	instrument.bank = SOUNDFONTBANK;
-}
+}*/
 await synth.processorInitialized;
-synth.setMasterParameter('masterGain', MAINVOLUME);
+//synth.setMasterParameter('masterGain', MAINVOLUME);
 console.log("worker: synthProcessor initialised");
 const seq = new SpessaSynthSequencer(synth);
-seq.skipToFirstNoteOn = false;
+/*seq.skipToFirstNoteOn = false;
 seq.loop = false; // the sequencer loops a single song by default
-seq.preservePlaybackState = true;
+seq.preservePlaybackState = true;*/
 console.log("worker: synthSequencer initialised");
 
 let midi;
@@ -221,4 +221,4 @@ function generateWavHeader() {
 }
 
 console.log("worker: dedicated worker initialised");
-self.postMessage({type: 'workerInitalised', instruments: instruments});
+//self.postMessage({type: 'workerInitalised', instruments: instruments});
