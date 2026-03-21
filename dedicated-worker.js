@@ -1,6 +1,4 @@
 import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor, midiControllers } from './libraries/spessasynth_core/index.js';
-//import { midiControllers, , loadSoundFont, MIDI} from './libraries/spessasynth_core/index.js';
-//import { MidiAudioChannel } from './libraries/spessasynth_core/src/synthetizer/audio_engine/engine_components/midi_audio_channel.js'
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 //const MAINVOLUME = 1.5;
@@ -27,8 +25,8 @@ await synth.processorInitialized;
 //synth.setMasterParameter('masterGain', MAINVOLUME);
 console.log("worker: synthProcessor initialised");
 const seq = new SpessaSynthSequencer(synth);
-/*seq.skipToFirstNoteOn = false;
-seq.loop = false; // the sequencer loops a single song by default
+seq.skipToFirstNoteOn = false;
+/*seq.loop = false; // the sequencer loops a single song by default
 seq.preservePlaybackState = true;*/
 console.log("worker: synthSequencer initialised");
 
