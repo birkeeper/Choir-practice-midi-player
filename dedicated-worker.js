@@ -1,4 +1,4 @@
-import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor } from './libraries/spessasynth_core/index.js';
+import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor, midiControllers } from './libraries/spessasynth_core/index.js';
 //import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI} from './libraries/spessasynth_core/index.js';
 //import { MidiAudioChannel } from './libraries/spessasynth_core/src/synthetizer/audio_engine/engine_components/midi_audio_channel.js'
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
@@ -35,14 +35,14 @@ console.log("worker: synthSequencer initialised");
 let midi;
 
 self.onmessage = (msg) => {
-    console.log("message received in dedicated worker");
+    console.log(`worker: message received of type: ${msg.data.type}`);
 	if (msg.data.type === 'LOAD_MIDI') {
 		console.log(`loading midi`);
 		midi = msg.data.midi;
 		seq.loadNewSongList([midi]);
     	seq.loop = false;
 	}
-	/*else if (msg.data.type === 'SetMainVolume') {
+	else if (msg.data.type === 'SetMainVolume') {
 		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.mainVolume] = false;
 		synth.controllerChange(msg.data.channel, midiControllers.mainVolume, msg.data.value);
 		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.mainVolume] = true;
@@ -72,7 +72,7 @@ self.onmessage = (msg) => {
 		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.pan] = false;
 		synth.controllerChange(msg.data.channel, midiControllers.pan, msg.data.value);
 		//synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.pan] = true;
-	}*/
+	}
 	else if (msg.data.type === 'AUDIO_RANGE_REQ') {
 		const port = msg.ports && msg.ports[0];
 		if (!port) {return;}
