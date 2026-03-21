@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1bt"
+const VERSION = "v2.0.1bv"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -221,6 +221,7 @@ console.log("dedicate worker's onmessage defined");
 async function activateApplication(instruments) 
 {
     document.getElementById("midi_input").disabled = false;
+	document.getElementById("message").innerText = "open midi file";
 
     let settings;
     let timerID;
@@ -230,7 +231,7 @@ async function activateApplication(instruments)
         const parsedSongs = [];
         const buffer = await file.arrayBuffer();
         const midiFileHash = await generateHash(buffer);
-		const midi = new MIDI(buffer);
+		const midi = new MIDI(buffer, file.name);
         dedicatedWorker.postMessage({type: 'LOAD_MIDI', midi: midi});
 
         /*parsedSongs.push({
