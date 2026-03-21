@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.82"; 
+const CACHE_NAME = "v9.83"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -197,7 +197,8 @@ const putInCache = async (request, response) => {
   			console.log(`${pair[0]}: ${pair[1]}`);
 		}
 		const id = url.pathname.match(/\/generatedWav\/(.+)\.wav$/);
-		event.respondWith(handleSongRequest(event.request, id[1]));
+		const split = id[1].split('_'); // format: songID_randomUUID
+		event.respondWith(handleSongRequest(event.request, split[0], split[1]));
   	} else {
 		event.respondWith(	
       		cacheFirst({
@@ -286,7 +287,7 @@ self.addEventListener('message', async (event) => {
 });
 
 
-async function handleSongRequest(request, songID) {
+async function handleSongRequest(request, songID, randomUUID) {
 	const cache = await caches.open(CACHE_NAME);
 	const response = await cache.match(`./settings/${songID}`);
 	if (!response.ok) { 
@@ -342,7 +343,7 @@ async function handleSongRequest(request, songID) {
 					port.close();
 				}
 			}
-        	client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, start: start, end: end },[channel.port2]);
+        	client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, start: start, end: end },[channel.port2]);
     	},
 		pull(controller){
 			return new Promise( async (resolve, reject) => {

@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1cb"
+const VERSION = "v2.0.1cc"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -381,7 +381,7 @@ async function activateApplication(instruments)
                 document.getElementById("message").innerText = settings.midiName;
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
-				audioElement.src = `./generatedWav/${settings.midiFileHash}.wav`; // point to file that will be generated on the fly
+				audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`; // point to file that will be generated on the fly
 				console.log(`generated wave file loaded: ${audioElement.src}`);
                 audioElement.pause();
                 clearProgressTimer();
@@ -458,7 +458,7 @@ async function activateApplication(instruments)
                     }
 					const currentTime = audioElement.currentTime;
 					const paused = audioElement.paused; 
-					audioElement.src = `./generatedWav/${settings.midiFileHash}.wav`;
+					audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
 					audioElement.load();
 					audioElement.currentTime = currentTime;
 					if (paused) { audioElement.pause(); }
@@ -519,7 +519,7 @@ async function activateApplication(instruments)
                         }
 						const currentTime = audioElement.currentTime;
 						const paused = audioElement.paused; 
-						audioElement.src = `./generatedWav/${settings.midiFileHash}.wav`;
+						audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
 						audioElement.load();
 						audioElement.currentTime = currentTime;
 						if (paused) { audioElement.pause(); }
