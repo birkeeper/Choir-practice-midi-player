@@ -63,6 +63,9 @@ self.onmessage = (msg) => {
 	else if (msg.data.type === 'releaseBankSelect') {
 		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = false;
 	}
+	else if (msg.data.type === 'releasePreset') {
+		synth.midiAudioChannels[msg.data.channel].setPresetLock(false);
+	}
 	else if (msg.data.type === 'modulationWheel') {
 		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.modulationWheel] = false;
 		synth.controllerChange(msg.data.channel, midiControllers.modulationWheel, msg.data.value);

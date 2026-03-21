@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1by"
+const VERSION = "v2.0.1bz"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -507,6 +507,7 @@ async function activateApplication(instruments)
                         }
                         if (data[0] === '-1') { // default instrument selected
 							dedicatedWorker.postMessage({type: 'releaseBankSelect'}); // bankselect controller is released
+							dedicatedWorker.postMessage({type: 'releasePreset'}); // preset is released
 						} else {
 							dedicatedWorker.postMessage({type: 'bankSelect', channel: channel.number, value:  data[0]});
 							dedicatedWorker.postMessage({type: 'programChange', channel: channel.number, value:  data[1]});
