@@ -1,5 +1,5 @@
 import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor, midiControllers } from './libraries/spessasynth_core/index.js';
-//import { midiControllers, ALL_CHANNELS_OR_DIFFERENT_ACTION, loadSoundFont, MIDI} from './libraries/spessasynth_core/index.js';
+//import { midiControllers, , loadSoundFont, MIDI} from './libraries/spessasynth_core/index.js';
 //import { MidiAudioChannel } from './libraries/spessasynth_core/src/synthetizer/audio_engine/engine_components/midi_audio_channel.js'
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
@@ -56,9 +56,9 @@ self.onmessage = (msg) => {
 		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = true;
 	}
 	else if (msg.data.type === 'programChange') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[ALL_CHANNELS_OR_DIFFERENT_ACTION] = false;
+		synth.midiAudioChannels[msg.data.channel].setPresetLock(false);
 		synth.programChange(msg.data.channel, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[ALL_CHANNELS_OR_DIFFERENT_ACTION] = true;
+		synth.midiAudioChannels[msg.data.channel].setPresetLock(true);
 	}
 	else if (msg.data.type === 'releaseBankSelect') {
 		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = false;
