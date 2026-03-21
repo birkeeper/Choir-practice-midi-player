@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1cc"
+const VERSION = "v2.0.1cd"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -487,14 +487,20 @@ async function activateApplication(instruments)
 					instrumentSelect.disabled = true;
                 }
                 else { // do not have interactive drop-down menu when the channel is used for percussion.
-                    let defaultInstrumentSelected = true;
                     for (const instrument of Object.values(instruments)) {
                         const option = document.createElement('option');
                         option.value = `${instrument.bank}:${instrument.program}`;
                         option.textContent = instrument.presetName;
-                        if (channel.selectedInstrument === instrument.presetName) {
+                        if (channel.selectedInstrument === instrument.presetName) { // activate selected instrument
                             option.selected = true;
-                            defaultInstrumentSelected = false;
+                            if (instrument.bank === -1) { // default instrument selected
+								dedicatedWorker.postMessage({type: 'releaseBankSelect', channel: channel.number}); // bankselect controller is released
+								dedicatedWorker.postMessage({type: 'releasePreset', channel: channel.number}); // preset is released
+							}
+							else {
+								dedicatedWorker.postMessage({type: 'bankSelect', channel: channel.number, value: instrument.bank});
+								dedicatedWorker.postMessage({type: 'programChange', channel: channel.number, value: instrument.program});
+							}
                         } else {option.selected = false;}
                         instrumentSelect.appendChild(option);
                     }
@@ -525,14 +531,7 @@ async function activateApplication(instruments)
 						if (paused) { audioElement.pause(); }
 						else { audioElement.play();}
                     });
-                    instrumentControls.set(channel.number,instrumentSelect);
-                    if (!defaultInstrumentSelected) {
-                        setTimeout(() => {
-                            const event = new Event("change");
-                            instrumentSelect.dispatchEvent(event);
-                            console.log(`activate instrument ${instrumentSelect.value} for channel ${channel.number}`);
-                        }, 100); 
-                    }                      
+                    instrumentControls.set(channel.number,instrumentSelect);                 
                 }
                 const column = document.createElement('div');
                 column.className = 'd-flex instrument-select mx-2';
