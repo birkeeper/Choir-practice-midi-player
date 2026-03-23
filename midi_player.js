@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1ce"
+const VERSION = "v2.0.1cf"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -60,10 +60,14 @@ console.log("dedicated worker created");
 navigator.serviceWorker.addEventListener("message", (event) => {
     const { data, ports } = event;
     const portFromSW = ports && ports[0];
-    if (!data || !portFromSW) return;
+    if (!data) return;
 	if (data.type === 'AUDIO_RANGE_REQ') {
+		if (!portFromSW) return;
 		console.log(`received ${data.type} message in main.js`);
 		dedicatedWorker.postMessage(data, [portFromSW]);
+	}
+	else if (data.type === 'DEBUG') {
+		appendAlert(data.message);
 	}
 });
 
