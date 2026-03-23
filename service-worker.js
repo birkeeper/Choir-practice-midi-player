@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.90"; 
+const CACHE_NAME = "v9.91"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -193,6 +193,9 @@ const putInCache = async (request, response) => {
 	const url = new URL(event.request.url);
  	if (url.pathname.includes('/generatedWav/') && url.pathname.endsWith('.wav')) {
     	console.log(`received fetch for: ${url}`);
+		const id = url.pathname.match(/\/generatedWav\/(.+)\.wav$/);
+		const split = id[1].split('_'); // format: songID_randomUUID
+		event.respondWith(handleSongRequest(event.request, split[0], split[1]));
 		self.clients.matchAll() // DEBUG
 		.then((clientList) => {
 			let client; //DEBUG
@@ -206,10 +209,7 @@ const putInCache = async (request, response) => {
 				console.log(`${pair[0]}: ${pair[1]}`);
 				debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
 			}
-			client.postMessage({type: "DEBUG", message: debugStringArray.join("\n")}); //DEBUG
-			const id = url.pathname.match(/\/generatedWav\/(.+)\.wav$/);
-			const split = id[1].split('_'); // format: songID_randomUUID
-			event.respondWith(handleSongRequest(event.request, split[0], split[1]));
+			client.postMessage({type: "DEBUG", message: debugStringArray.join(" | ")}); //DEBUG			
 		});
   	} else {
 		event.respondWith(	
