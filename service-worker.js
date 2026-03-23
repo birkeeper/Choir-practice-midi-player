@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.86"; 
+const CACHE_NAME = "v9.87"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -189,10 +189,11 @@ const putInCache = async (request, response) => {
     ]));  
   });
 
-  self.addEventListener("fetch", (event) => {
+  self.addEventListener("fetch", async (event) => {
 	const url = new URL(event.request.url);
  	if (url.pathname.includes('/generatedWav/') && url.pathname.endsWith('.wav')) {
     	console.log(`received fetch for: ${url}`);
+		const clientList = await self.clients.matchAll(); // DEBUG
 		let client; //DEBUG
 		for (const clientItem of clientList) { //DEBUG
     		if (clientItem.url.includes("midi_player.html")) { //DEBUG
