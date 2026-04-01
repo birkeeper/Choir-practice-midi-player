@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1cl"
+const VERSION = "v2.0.1cm"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -200,19 +200,19 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
 const audioElement = new Audio();
 audioElement.addEventListener("error",(event) => {
 	console.log(`main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`);
-	self.postMessage({type: "DEBUG", message: `main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`});
+	appendAlert( `main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`,'info', 'debug');
 });
 audioElement.addEventListener("stalled", (event) => {
 	console.log(`main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-	self.postMessage({type: "DEBUG", message: `main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`});
+	appendAlert(`main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`,'info', 'debug');
 });
 audioElement.addEventListener("suspend", (event) => {
 	console.log(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-	self.postMessage({type: "DEBUG", message: `main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`});
+	appendAlert(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`,'info', 'debug');
 });
 audioElement.addEventListener("ended", (event) => {
 	console.log(`main: playing of source AudioElement ended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-	self.postMessage({type: "DEBUG", message: `main: playing of source AudioElement ended. Ready state: ${audioElement.readyState}, ${audioElement.src}`});
+	appendAlert(`main: playing of source AudioElement ended. Ready state: ${audioElement.readyState}, ${audioElement.src}`,'info', 'debug');
 });
 console.log("audioElement created");
 
@@ -222,6 +222,9 @@ dedicatedWorker.onmessage = (e) => {
 	{
 		console.log("dedicated worker initialised")
 		activateApplication(msg.instruments);
+	}
+	else if (data.type === 'DEBUG') {
+		appendAlert(data.message,'info', 'debug');
 	}
 };
 console.log("dedicate worker's onmessage defined");
