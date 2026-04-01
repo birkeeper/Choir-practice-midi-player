@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.91"; 
+const CACHE_NAME = "v9.92"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -204,11 +204,11 @@ const putInCache = async (request, response) => {
 					client = clientItem; //DEBUG
 				} //DEBUG
 			} //DEBUG
-			let debugStringArray = []; //DEBUG
+			let debugStringArray = [`service worker: UUID: ${split[1]}`]; //DEBUG
 			for (const pair of event.request.headers.entries()) {
-				console.log(`${pair[0]}: ${pair[1]}`);
 				debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
 			}
+			console.log(debugStringArray.join(" | "));
 			client.postMessage({type: "DEBUG", message: debugStringArray.join(" | ")}); //DEBUG			
 		});
   	} else {
@@ -375,7 +375,8 @@ async function handleSongRequest(request, songID, randomUUID) {
 			});
 		},
 		cancel(reason) {
-			console.log(`ReadableStream canceled, because: ${reason}`);
+			console.log(`service worker: ReadableStream canceled; UUID: ${randomUUID}`);
+			client.postMessage({type: "DEBUG", message: `service worker: ReadableStream canceled; UUID: ${randomUUID}`}); //DEBUG	
 			port.close();
 		}
     }, {highWaterMark: 10});
