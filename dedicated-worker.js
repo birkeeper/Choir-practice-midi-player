@@ -31,6 +31,8 @@ seq.preservePlaybackState = true;*/
 console.log("worker: synthSequencer initialised");
 
 let midi;
+let rangeRequestInProgress = false;
+let port; 
 
 self.onmessage = (msg) => {
     console.log(`worker: message received of type: ${msg.data.type}`);
@@ -75,8 +77,13 @@ self.onmessage = (msg) => {
 		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.pan] = true;
 	}
 	else if (msg.data.type === 'AUDIO_RANGE_REQ') {
-		const port = msg.ports && msg.ports[0];
+		if (rangeRequestInProgress) { // stop current range request in progress when new one arrives
+			port.postMessage({ type: 'end' });
+			port.close();
+		}
+		port = msg.ports && msg.ports[0];
 		if (!port) {return;}
+		rangeRequestInProgress = true;
 		const start = msg.data.start;
 		const end = msg.data.end;
 		console.log(`dedicated worker: range request received. song hash: ${msg.data.songID}, random UUID: ${msg.data.UUID}, start: ${start}, end: ${end}`);
@@ -89,6 +96,11 @@ self.onmessage = (msg) => {
 				const hdr = generateWavHeader();
 				const hdrSlice = hdr.slice(start, Math.min(end + 1, WAV_HEADERSIZE));
 				port.postMessage({ type: 'chunk', data: hdrSlice.buffer }, [hdrSlice.buffer]);
+			}
+			if (end < WAV_HEADERSIZE) { // only one chunk
+				port.postMessage({ type: 'end' });
+      			port.close();
+				rangeRequestInProgress = false;
 			}
 
 			// Send PCM bytes if needed.
@@ -108,15 +120,17 @@ self.onmessage = (msg) => {
 						sendPCMchunk(chunkPort, sampleCount);
 						processedSamples += sampleCount;
 					}
-					else { // all chuncks processed.
+					if (processedSamples >= dataLength_samples) { // all chuncks processed.
 						port.postMessage({ type: 'end' });
       					port.close();
+						rangeRequestInProgress = false;
 					}
 				}
 			}
     	} catch (err) {
       		port.postMessage({ type: 'error', message: String(err?.message || err) });
       		port.close();
+			rangeRequestInProgress = false;
     	}
 	}
 };

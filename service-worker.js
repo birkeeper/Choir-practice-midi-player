@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.94"; 
+const CACHE_NAME = "v9.95"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -350,9 +350,11 @@ async function handleSongRequest(request, songID, randomUUID) {
 				} else if (msg.type === 'end') {
 					controller.close();
 					port.close();
+					client.postMessage({type: "DEBUG", message: `service worker: end message received, ReadableStream closed; UUID: ${randomUUID}`}); //DEBUG	
 				} else if (msg.type === 'error') {
 					controller.error(new Error(msg.reason || 'gen failed'));
 					port.close();
+					client.postMessage({type: "DEBUG", message: `service worker: error message received; ${msg.reason}; ReadableStream closed; UUID: ${randomUUID}`}); //DEBUG
 				}
 			}
         	client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, start: start, end: end },[channel.port2]);
