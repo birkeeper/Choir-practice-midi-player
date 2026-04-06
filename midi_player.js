@@ -463,14 +463,7 @@ async function activateApplication(instruments)
                     if (settings?.midiFileHash !== undefined) {
                         storeSettings(settings.midiFileHash, settings);
                     }
-					const currentTime = audioElement.currentTime;
-					const paused = audioElement.paused; 
-					audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
-					audioElement.load();
-					audioElement.currentTime = currentTime;
-					if (paused) { audioElement.pause(); }
-					else { audioElement.play();}
-					
+					updateAudioElement();					
                 }
             
                 const column2 = document.createElement('div');
@@ -526,13 +519,7 @@ async function activateApplication(instruments)
                         if (settings?.midiFileHash !== undefined) {
                             storeSettings(settings.midiFileHash, settings);
                         }
-						const currentTime = audioElement.currentTime;
-						const paused = audioElement.paused; 
-						audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
-						audioElement.load();
-						audioElement.currentTime = currentTime;
-						if (paused) { audioElement.pause(); }
-						else { audioElement.play();}
+						updateAudioElement();
                     });
                     instrumentControls.set(channel.number,instrumentSelect);                 
                 }
@@ -628,6 +615,16 @@ async function activateApplication(instruments)
         storeSettings(`blob_${midiFileHash}`,file);
         setupApplication();
     });
+
+	function updateAudioElement() { // 
+		const currentTime = audioElement.currentTime;
+		const paused = audioElement.paused; 
+		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
+		audioElement.load();
+		audioElement.currentTime = currentTime;
+		if (paused) { audioElement.pause(); }
+		else { audioElement.play();}
+	}
 
     // add an event listener for the recently opened files
     const history = document.getElementById("history");
