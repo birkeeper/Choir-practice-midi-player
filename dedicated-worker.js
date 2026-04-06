@@ -126,6 +126,10 @@ self.onmessage = (msg) => {
 						rangeRequestInProgress = false;
 					}
 				}
+				else if (e.data.type === 'cancel') { //service worker cancels stream
+					port.close();
+					rangeRequestInProgress = false;
+				}
 			}
     	} catch (err) {
       		port.postMessage({ type: 'error', message: String(err?.message || err) });

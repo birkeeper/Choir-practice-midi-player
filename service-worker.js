@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.95"; 
+const CACHE_NAME = "v9.96"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -379,6 +379,7 @@ async function handleSongRequest(request, songID, randomUUID) {
 		cancel(reason) {
 			console.log(`service worker: ReadableStream canceled; UUID: ${randomUUID}`);
 			client.postMessage({type: "DEBUG", message: `service worker: ReadableStream canceled; UUID: ${randomUUID}`}); //DEBUG	
+			port.postMessage({type: 'cancel'});
 			port.close();
 		}
     }, {highWaterMark: 10});
