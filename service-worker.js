@@ -196,21 +196,11 @@ const putInCache = async (request, response) => {
 		const id = url.pathname.match(/\/generatedWav\/(.+)\.wav$/);
 		const split = id[1].split('_'); // format: songID_randomUUID
 		event.respondWith(handleSongRequest(event.request, split[0], split[1]));
-		self.clients.matchAll() // DEBUG
-		.then((clientList) => {
-			let client; //DEBUG
-			for (const clientItem of clientList) { //DEBUG
-				if (clientItem.url.includes("midi_player.html")) { //DEBUG
-					client = clientItem; //DEBUG
-				} //DEBUG
-			} //DEBUG
-			let debugStringArray = [`service worker: UUID: ${split[1]}`]; //DEBUG
-			for (const pair of event.request.headers.entries()) {
-				debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
-			}
-			console.log(debugStringArray.join(" | "));
-			client.postMessage({type: "DEBUG", message: debugStringArray.join(" | ")}); //DEBUG			
-		});
+		let debugStringArray = [`service worker: UUID: ${split[1]}`]; //DEBUG
+		for (const pair of event.request.headers.entries()) {
+			debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
+		}
+		console.log(debugStringArray.join(" | "));
   	} else {
 		event.respondWith(	
       		cacheFirst({
@@ -350,11 +340,9 @@ async function handleSongRequest(request, songID, randomUUID) {
 				} else if (msg.type === 'end') {
 					controller.close();
 					port.close();
-					client.postMessage({type: "DEBUG", message: `service worker: end message received, ReadableStream closed; UUID: ${randomUUID}`}); //DEBUG	
 				} else if (msg.type === 'error') {
 					controller.error(new Error(msg.reason || 'gen failed'));
 					port.close();
-					client.postMessage({type: "DEBUG", message: `service worker: error message received; ${msg.reason}; ReadableStream closed; UUID: ${randomUUID}`}); //DEBUG
 				}
 			}
         	client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, start: start, end: end },[channel.port2]);
@@ -378,7 +366,6 @@ async function handleSongRequest(request, songID, randomUUID) {
 		},
 		cancel(reason) {
 			console.log(`service worker: ReadableStream canceled; UUID: ${randomUUID}`);
-			client.postMessage({type: "DEBUG", message: `service worker: ReadableStream canceled; UUID: ${randomUUID}`}); //DEBUG	
 			port.postMessage({type: 'cancel'});
 			port.close();
 		}

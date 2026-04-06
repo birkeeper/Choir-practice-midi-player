@@ -87,8 +87,6 @@ self.onmessage = (msg) => {
 		const start = msg.data.start;
 		const end = msg.data.end;
 		console.log(`dedicated worker: range request received. song hash: ${msg.data.songID}, random UUID: ${msg.data.UUID}, start: ${start}, end: ${end}`);
-		self.postMessage({type: "DEBUG", message: `dedicated worker: range request received. song hash: ${msg.data.songID}, random UUID: ${msg.data.UUID}, start: ${start}, end: ${end}`});
-		
 
 		try {
 			// Send header slice if needed.

@@ -200,19 +200,15 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
 const audioElement = new Audio();
 audioElement.addEventListener("error",(event) => {
 	console.log(`main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`);
-	appendAlert( `main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`,'info', 'debug');
 });
 audioElement.addEventListener("stalled", (event) => {
 	console.log(`main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-	appendAlert(`main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`,'info', 'debug');
 });
 audioElement.addEventListener("suspend", (event) => {
 	console.log(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-	appendAlert(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`,'info', 'debug');
 });
 audioElement.addEventListener("ended", (event) => {
 	console.log(`main: playing of source AudioElement ended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-	appendAlert(`main: playing of source AudioElement ended. Ready state: ${audioElement.readyState}, ${audioElement.src}`,'info', 'debug');
 });
 console.log("audioElement created");
 
