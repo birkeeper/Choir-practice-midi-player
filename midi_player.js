@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1cp"
+const VERSION = "v2.0.1cq"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -305,6 +305,7 @@ async function activateApplication(instruments)
 		function playbackRateCallback() {
 			//seq.playbackRate = playbackRateInput.value; // TO BE REPLACED with new code
 			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
+			dedicatedWorker.postMessage({type: 'playbackRate', value: playbackRateInput.value});
 			if (settings?.midiFileHash !== undefined) {
 				settings.playbackRate = playbackRateInput.value;
 				storeSettings(settings.midiFileHash, settings);
@@ -403,7 +404,7 @@ async function activateApplication(instruments)
                 
                 //set up playback rate control based on settings
                 playbackRateInput.value = settings.playbackRate;
-                //seq.playbackRate = settings.playbackRate;
+                dedicatedWorker.postMessage({type: 'playbackRate', value: settings.playbackRate});
                 playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(2)}x`;
 
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
@@ -411,24 +412,6 @@ async function activateApplication(instruments)
                     const channelControl = createChannelControl(channel, instrumentControls, channel === settings.channels[settings.channels.length-1]);
                     channelControlsContainer.appendChild(channelControl);
                 }
-
-                /*synth.eventHandler.removeEvent("programchange","program-change-event");
-                synth.eventHandler.addEvent("programchange","program-change-event", e => {
-                    let bank = currentBank.get(e.channel) === undefined ? 0 : currentBank.get(e.channel);
-                    console.log(`program change to preset ${e.channel}:${bank}:${e.program}`);
-                    if (instrumentControls.has(e.channel)) {
-                        const options = instrumentControls.get(e.channel);
-                        if ( bank === 0) { // change the default setting to the latest instrument that is to bank 0 for the indicated channel
-                            for (let i=0; i<options.length; i++) {
-                                if (options[i].textContent === "Default") {
-                                    options[i].value = `${bank}:${e.program}`;
-                                    console.log(`default option set to preset ${e.channel}:${bank}:${e.program}`);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                });*/
             });
 
             /*const currentBank = new Map();
@@ -533,8 +516,7 @@ async function activateApplication(instruments)
                 dedicatedWorker.postMessage({type: 'modulationWheel', channel: channel.number, value: 0});
             
                 //set and lock the pan of the channel
-				dedicatedWorker.postMessage({type: 'pan', channel: channel.number, value: channel.pan});
-            
+				dedicatedWorker.postMessage({type: 'pan', channel: channel.number, value: channel.pan});            
                 return container;
             }
         }

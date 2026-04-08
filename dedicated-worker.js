@@ -33,6 +33,7 @@ console.log("worker: synthSequencer initialised");
 let midi;
 let rangeRequestInProgress = false;
 let port; 
+let playbackRate = 1;
 
 self.onmessage = (msg) => {
     console.log(`worker: message received of type: ${msg.data.type}`);
@@ -76,6 +77,10 @@ self.onmessage = (msg) => {
 		synth.controllerChange(msg.data.channel, midiControllers.pan, msg.data.value);
 		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.pan] = true;
 	}
+	else if (msg.data.type === 'playbackRate') {
+		seq.playbackRate = msg.data.value;
+		playbackRate = msg.data.value;
+	}
 	else if (msg.data.type === 'AUDIO_RANGE_REQ') {
 		if (rangeRequestInProgress) { // stop current range request in progress when new one arrives
 			port.postMessage({ type: 'end' });
@@ -102,7 +107,7 @@ self.onmessage = (msg) => {
 			}
 
 			// Send PCM bytes if needed.
-			const dataLength_bytes = Math.floor(midi.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
+			const dataLength_bytes = Math.floor(midi.duration / playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
 			const dataStart_bytes = Math.max(start, WAV_HEADERSIZE) - WAV_HEADERSIZE;
 			const dataEndExclusive_bytes = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
 			const start_seconds = dataStart_bytes / WAV_SAMPLERATE / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS;
