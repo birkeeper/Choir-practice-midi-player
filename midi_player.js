@@ -274,11 +274,11 @@ async function activateApplication(instruments)
         }
 
         function timerCallback() {
-			slider.value = Math.floor(audioElement.currentTime);
-			currentTimeDisplay.textContent = formatTime(audioElement.currentTime);    
-			/*if (("mediaSession" in navigator) && (audioElement.duration >= audioElement.currentTime)) {
-				navigator.mediaSession.setPositionState({duration: audioElement.duration, position: audioElement.currentTime});
-			}*/ //@@@ TO BE DELETED if not necessary      
+			slider.value = Math.floor(audioElement.currentTime * settings.playbackRate);
+			currentTimeDisplay.textContent = formatTime(audioElement.currentTime * settings.playbackRate);    
+			if (("mediaSession" in navigator) && (audioElement.duration >= audioElement.currentTime)) {
+				navigator.mediaSession.setPositionState({duration: audioElement.duration * settings.playbackRate, position: audioElement.currentTime * settings.playbackRate});
+			}   
         }
 
 		// make the slider move with the song and define what happens when the user moves the slider
@@ -295,7 +295,7 @@ async function activateApplication(instruments)
 		}
 	
 		function handleReleaseProgressSlider() {
-			audioElement.currentTime = Number(slider.value);
+			audioElement.currentTime = Number(slider.value) / settings.playbackRate;
 			startProgressTimer();
 			console.log("progress slider released");
 		}
@@ -331,7 +331,7 @@ async function activateApplication(instruments)
             currentTimeDisplay.textContent = formatTime(0.0);
             if ("mediaSession" in navigator) {
                 navigator.mediaSession.playbackState = "paused";
-                navigator.mediaSession.setPositionState({duration: audioElement.duration, position: 0.0});
+                navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: 0.0});
             }
         }
         
@@ -382,7 +382,7 @@ async function activateApplication(instruments)
                 }
 				if (!Object.hasOwn(settings,"wavLength_bytes")) { //ensure compatibility with old settings stored in cache
 					settings.duration_s = midi.duration; // [s] midi duration. start of the file to `midi.lastVoiceEventTick`.
-					settings.wavLength_bytes = Math.floor(midi.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
+					settings.wavLength_bytes = Math.floor(midi.duration / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
 				}
                 settings.lastOpened = Date.now();
                 storeSettings(settings.midiFileHash,settings);
@@ -547,7 +547,7 @@ async function activateApplication(instruments)
                                 if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
                                     clearProgressTimer();
                                 }
-                                audioElement.currentTime = evt.seekTime;
+                                audioElement.currentTime = evt.seekTime / settings.playbackRate;
                                 slider.value = Math.floor(evt.seekTime);
                                 currentTimeDisplay.textContent = formatTime(evt.seekTime);
                                 if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
@@ -555,7 +555,7 @@ async function activateApplication(instruments)
                                 }
                             }
                         });
-                        navigator.mediaSession.setPositionState({duration: audioElement.duration, position: audioElement.currentTime});
+                        navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime*settings.playbackRate});
                     });
                     navigator.mediaSession.playbackState = "playing";
                 }
