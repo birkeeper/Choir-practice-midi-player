@@ -176,7 +176,7 @@ function sendPCMchunk(port, sampleCount) { // generates  a chunk of PCM data and
 }
 
 function generateWavHeader() {
-	const dataLength_bytes = Math.floor(midi.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
+	const dataLength_bytes = Math.floor(midi.duration / playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
 	const fileSize_bytes = dataLength_bytes + WAV_HEADERSIZE -8; // [bytes] file size -8
 	const header = new Uint8Array(WAV_HEADERSIZE);
 

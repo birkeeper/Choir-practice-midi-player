@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1cq"
+const VERSION = "v2.0.1cr"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -306,18 +306,13 @@ async function activateApplication(instruments)
 			//seq.playbackRate = playbackRateInput.value; // TO BE REPLACED with new code
 			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
 			dedicatedWorker.postMessage({type: 'playbackRate', value: playbackRateInput.value});
+			let currentPlaybackRate = settings.playbackRate;
 			if (settings?.midiFileHash !== undefined) {
 				settings.playbackRate = playbackRateInput.value;
 				storeSettings(settings.midiFileHash, settings);
 			}
+			updateAudioElement(currentPlaybackRate);
 		}
-        /*else { //when seq is defined
-            for (const channel of settings.channels) {// unlock all channel controllers of the previous song, so it can be overwritten.
-                synth.lockController(channel.number, ALL_CHANNELS_OR_DIFFERENT_ACTION, false);
-                synth.lockController(channel.number, midiControllers.bankSelect, false);
-            }
-            seq.loadNewSongList(parsedSongs); // the sequencer is already created, no need to create a new one.
-        }*/ // TO BE DELETED - necessary in worker?
         
         document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
@@ -446,7 +441,7 @@ async function activateApplication(instruments)
                     if (settings?.midiFileHash !== undefined) {
                         storeSettings(settings.midiFileHash, settings);
                     }
-					updateAudioElement();					
+					updateAudioElement(settings.playbackRate);					
                 }
             
                 const column2 = document.createElement('div');
@@ -502,7 +497,7 @@ async function activateApplication(instruments)
                         if (settings?.midiFileHash !== undefined) {
                             storeSettings(settings.midiFileHash, settings);
                         }
-						updateAudioElement();
+						updateAudioElement(settings.playbackRate);
                     });
                     instrumentControls.set(channel.number,instrumentSelect);                 
                 }
@@ -598,12 +593,12 @@ async function activateApplication(instruments)
         setupApplication();
     });
 
-	function updateAudioElement() { // 
-		const currentTime = audioElement.currentTime;
+	function updateAudioElement(currentPlaybackRate) { // 
+		const currentTime = audioElement.currentTime * currentPlaybackRate;
 		const paused = audioElement.paused; 
 		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
 		audioElement.load();
-		audioElement.currentTime = currentTime;
+		audioElement.currentTime = currentTime / settings.playbackRate;
 		if (paused) { audioElement.pause(); }
 		else { audioElement.play();}
 	}
