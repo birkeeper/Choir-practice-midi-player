@@ -110,7 +110,7 @@ self.onmessage = (msg) => {
 			const dataLength_bytes = Math.floor(midi.duration / playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
 			const dataStart_bytes = Math.max(start, WAV_HEADERSIZE) - WAV_HEADERSIZE;
 			const dataEndExclusive_bytes = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
-			const start_seconds = dataStart_bytes / WAV_SAMPLERATE / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS;
+			const start_seconds = dataStart_bytes / WAV_SAMPLERATE / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS *playbackRate;
 			seq.currentTime = start_seconds;
 			const dataLength_samples = (dataEndExclusive_bytes - dataStart_bytes) / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS; // per channel
 			let processedSamples = 0;
