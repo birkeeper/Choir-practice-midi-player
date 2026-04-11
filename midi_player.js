@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1cw"
+const VERSION = "v2.0.1cx"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -248,11 +248,6 @@ async function activateApplication(instruments)
         const midiFileHash = await generateHash(buffer);
 		const midi = new MIDI(buffer, file.name);
         dedicatedWorker.postMessage({type: 'LOAD_MIDI', midi: midi});
-
-        /*parsedSongs.push({
-            binary: buffer,     // binary: the binary data of the file
-            altName: file.name  // altName: the fallback name if the MIDI doesn't have one. Here we set it to the file name
-        });*/
         
         const slider = document.getElementById("progress");
         const totalTimeDisplay = document.getElementById('totalTime');
@@ -323,8 +318,6 @@ async function activateApplication(instruments)
 			updateAudioElement(currentPlaybackRate);
 		}
         
-        document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-
         // on song ended reset the current time and pause the song
 		audioElement.onended = () => {
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
@@ -389,23 +382,9 @@ async function activateApplication(instruments)
 					settings.wavLength_bytes = Math.floor(midi.duration / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
 				}
                 settings.lastOpened = Date.now();
-                storeSettings(settings.midiFileHash,settings);
-                document.getElementById("message").innerText = settings.midiName;
+				document.getElementById("message").innerText = settings.midiName;
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-
-				audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`; // point to file that will be generated on the fly
-				console.log(`generated wave file loaded: ${audioElement.src}`);
-                audioElement.pause();
-                clearProgressTimer();
-                audioElement.currentTime = 0.0;
-                slider.value = Math.floor(0.0);
-                currentTimeDisplay.textContent = formatTime(0.0);
-                if ("mediaSession" in navigator) {
-                    navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
-                    navigator.mediaSession.playbackState = "paused";
-                    navigator.mediaSession.setPositionState({duration: settings.duration_s, position: 0.0});
-                }
-                
+                               
                 //set up playback rate control based on settings
                 playbackRateInput.value = settings.playbackRate;
                 dedicatedWorker.postMessage({type: 'playbackRate', value: settings.playbackRate});
@@ -416,16 +395,50 @@ async function activateApplication(instruments)
                     const channelControl = createChannelControl(channel, instrumentControls, channel === settings.channels[settings.channels.length-1]);
                     channelControlsContainer.appendChild(channelControl);
                 }
+				
+				storeSettings(settings.midiFileHash,settings)
+				.then( () => { // setup audioElement
+                	audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`; // point to file that will be generated on the fly
+					console.log(`generated wave file loaded: ${audioElement.src}`);
+					audioElement.pause();
+					clearProgressTimer();
+					audioElement.currentTime = 0.0;
+					slider.value = Math.floor(0.0);
+					currentTimeDisplay.textContent = formatTime(0.0);
+					if ("mediaSession" in navigator) {
+						navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
+						navigator.mediaSession.playbackState = "paused";
+						navigator.mediaSession.setPositionState({duration: settings.duration_s, position: 0.0});
+						navigator.mediaSession.setActionHandler("pause", () => {
+                            document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                            audioElement.pause();
+                            navigator.mediaSession.playbackState = "paused";
+                            clearProgressTimer();
+                        });
+                        navigator.mediaSession.setActionHandler("play", () => {
+                            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+                            audioElement.play();
+                            navigator.mediaSession.playbackState = "playing";
+                            startProgressTimer();
+                        });
+                        navigator.mediaSession.setActionHandler("seekto", (evt) => {
+                            if(!evt?.fastSeek)
+                            {
+                                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
+                                    clearProgressTimer();
+                                }
+                                audioElement.currentTime = evt.seekTime / settings.playbackRate;
+                                slider.value = Math.floor(evt.seekTime);
+                                currentTimeDisplay.textContent = formatTime(evt.seekTime);
+                                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
+                                    startProgressTimer();
+                                }
+                            }
+                        });
+					}
+				});
             });
 
-            /*const currentBank = new Map();
-            synth.eventHandler.removeEvent("controllerchange","controller-change-event");
-            synth.eventHandler.addEvent("controllerchange","controller-change-event", e => {
-                if (e.controllerNumber === 0) { // bank select
-                    console.log(`controller change to ${e.channel}:${e.controllerNumber}:${e.controllerValue}`);
-                    currentBank.set(e.channel, e.controllerValue);
-                }
-            });*/
             
             function createChannelControl(channel, instrumentControls, lastChannel) {
                 const container = document.createElement('div');
@@ -529,48 +542,19 @@ async function activateApplication(instruments)
         document.getElementById("pause").onclick = () => {
             if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+				audioElement.play();
                 if ("mediaSession" in navigator) {
-                    audioElement.play()
-                    .then(() => {
-                        navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
-                        navigator.mediaSession.setActionHandler("pause", () => {
-                            document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                            audioElement.pause();
-                            navigator.mediaSession.playbackState = "paused";
-                            clearProgressTimer();
-                        });
-                        navigator.mediaSession.setActionHandler("play", () => {
-                            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-                            audioElement.play();
-                            navigator.mediaSession.playbackState = "playing";
-                            startProgressTimer();
-                        });
-                        navigator.mediaSession.setActionHandler("seekto", (evt) => {
-                            if(!evt?.fastSeek)
-                            {
-                                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                                    clearProgressTimer();
-                                }
-                                audioElement.currentTime = evt.seekTime / settings.playbackRate;
-                                slider.value = Math.floor(evt.seekTime);
-                                currentTimeDisplay.textContent = formatTime(evt.seekTime);
-                                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                                    startProgressTimer();
-                                }
-                            }
-                        });
-                        navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime*settings.playbackRate});
-                    });
+ 					navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime*settings.playbackRate});
                     navigator.mediaSession.playbackState = "playing";
                 }
-				else {audioElement.play();}
-                startProgressTimer();                
+                startProgressTimer();
             }
             else {
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                 audioElement.pause();
                 if ("mediaSession" in navigator) {
-                    navigator.mediaSession.playbackState = "paused";
+					navigator.mediaSession.playbackState = "paused";
+					navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime*settings.playbackRate});
                 }
                 clearProgressTimer();
             }
