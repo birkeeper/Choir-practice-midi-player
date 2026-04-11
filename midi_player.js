@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1cu"
+const VERSION = "v2.0.1cv"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -74,26 +74,33 @@ navigator.serviceWorker.addEventListener("message", (event) => {
 // Function to store settings
 async function storeSettings(key, settings) {
     if (navigator.serviceWorker.controller) {
-        console.log(`storing settings (key: ${key}`);
-        if (key === "current_midi_file") {
-            const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
-            postStoreSettingsMessage(key, fileURL);
-            postStoreSettingsMessage("current_midi_file_name", settings.name); // file info is not stored in objectURL, only the blob info.
-        }
-        else if (key.startsWith("blob_")) { // store file
-            const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
-            postStoreSettingsMessage(key, fileURL);
-        }
-        else {
-            postStoreSettingsMessage(key, settings);
-        }
-        async function postStoreSettingsMessage(key, settings) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'storeSettings',
-                key: `./settings/${key}`,
-                settings: settings
-            });
-        }
+		return new Promise((resolve, reject) => {
+			const messageChannel = new MessageChannel();
+			messageChannel.port1.onmessage = async (e) => {
+				console.log(`main: ${e.data}`);
+				resolve();
+			}
+			console.log(`storing settings (key: ${key}`);
+			if (key === "current_midi_file") {
+				const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
+				postStoreSettingsMessage(key, fileURL);
+				postStoreSettingsMessage("current_midi_file_name", settings.name); // file info is not stored in objectURL, only the blob info.
+			}
+			else if (key.startsWith("blob_")) { // store file
+				const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
+				postStoreSettingsMessage(key, fileURL);
+			}
+			else {
+				postStoreSettingsMessage(key, settings);
+			}
+			function postStoreSettingsMessage(key, settings) {
+				navigator.serviceWorker.controller.postMessage({
+					type: 'storeSettings',
+					key: `./settings/${key}`,
+					settings: settings
+				}, [messageChannel.port2,]);
+			}
+		});
     }
 }
 
@@ -302,7 +309,7 @@ async function activateApplication(instruments)
 
 		// make a slider to set the playback rate
 		playbackRateInput.addEventListener('input',playbackRateCallback);
-		function playbackRateCallback() {
+		async function playbackRateCallback() {
 			//seq.playbackRate = playbackRateInput.value; // TO BE REPLACED with new code
 			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
 			dedicatedWorker.postMessage({type: 'playbackRate', value: playbackRateInput.value});
@@ -310,7 +317,7 @@ async function activateApplication(instruments)
 			if (settings?.midiFileHash !== undefined) {
 				settings.playbackRate = playbackRateInput.value;
 				settings.wavLength_bytes = Math.floor(settings.duration_s / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
-				storeSettings(settings.midiFileHash, settings);
+				await storeSettings(settings.midiFileHash, settings);
 			}
 			updateAudioElement(currentPlaybackRate);
 		}
@@ -436,11 +443,11 @@ async function activateApplication(instruments)
                 volumeSlider.max = 127;
                 volumeSlider.value = channel.volume;
 				dedicatedWorker.postMessage({type: 'SetMainVolume', channel: channel.number, value: volumeSlider.value});
-                volumeSlider.onchange = () => {
+                volumeSlider.onchange = async () => {
                     dedicatedWorker.postMessage({type: 'SetMainVolume', channel: channel.number, value: volumeSlider.value});
                     channel.volume = parseInt(volumeSlider.value);
                     if (settings?.midiFileHash !== undefined) {
-                        storeSettings(settings.midiFileHash, settings);
+                        await storeSettings(settings.midiFileHash, settings);
                     }
 					updateAudioElement(settings.playbackRate);					
                 }
@@ -479,7 +486,7 @@ async function activateApplication(instruments)
                         } else {option.selected = false;}
                         instrumentSelect.appendChild(option);
                     }
-                    instrumentSelect.addEventListener('change', function(event) {
+                    instrumentSelect.addEventListener('change', async function(event) {
                         let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
                         for (const option of event.target.options){
                             if (option.selected == true) {
@@ -496,7 +503,7 @@ async function activateApplication(instruments)
                         //currentBank.set(channel.number, data[0]);
 						console.log(`changing channel ${channel.number} to instrument ${event.target.value}`);
                         if (settings?.midiFileHash !== undefined) {
-                            storeSettings(settings.midiFileHash, settings);
+                            await storeSettings(settings.midiFileHash, settings);
                         }
 						updateAudioElement(settings.playbackRate);
                     });

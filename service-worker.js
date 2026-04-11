@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v9.101"; 
+const CACHE_NAME = "v9.102"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -231,6 +231,7 @@ const putInCache = async (request, response) => {
   });
 
 self.addEventListener('message', async (event) => {
+  const port = event.ports[0]; // MessagePort for response
   const { type, key, settings } = event.data;
   if (type === 'storeSettings') {
       const cache = await caches.open(CACHE_NAME);
@@ -247,7 +248,8 @@ self.addEventListener('message', async (event) => {
         });
       }
       await cache.put(key, response);
-      console.log(`settings (key: ${key}) saved to cache ${CACHE_NAME}`);   
+	  port.postMessage(`settings (key: ${key}) saved to cache ${CACHE_NAME}`);
+      console.log(`service worker: settings (key: ${key}) saved to cache ${CACHE_NAME}`);   
   } 
   if (type === 'skipWaiting') {
     self.skipWaiting();
