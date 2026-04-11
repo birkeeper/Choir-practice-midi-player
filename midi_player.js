@@ -290,6 +290,8 @@ async function activateApplication(instruments)
 		};
 		slider.addEventListener("pointerdown", handleClickProgressSlider, { capture: true});
 		slider.addEventListener("pointerup", handleReleaseProgressSlider, { capture: false});
+		slider.addEventListener("touchstart", handleClickProgressSlider, { capture: true}); // else it won't work on touch devices when dragging the slider
+		slider.addEventListener("touchcancel", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
 		slider.addEventListener("touchend", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
 	
 		function handleClickProgressSlider() {
