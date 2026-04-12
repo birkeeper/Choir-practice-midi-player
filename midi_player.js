@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc11"
+const VERSION = "v3.0.0rc12"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -601,15 +601,17 @@ async function activateApplication(instruments)
 
 	function updateAudioElement(currentPlaybackRate) { // 
 		const currentTime = audioElement.currentTime * currentPlaybackRate;
-		const paused = audioElement.paused; 
+		const paused = document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX); // audioElement.paused is unrealiable when buttons are bashed.
 		audioElement.pause();
 		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
 		audioElement.load();
 		audioElement.currentTime = currentTime / settings.playbackRate;
 		if (paused) { // first start it before pausing, else mediaSession element will be closed
-			audioElement.play().then(()=>{
+			audioElement.play()
+			.then(()=>{
 				audioElement.pause();
 				if ("mediaSession" in navigator) { // else the mediaSession in the notification screen will be closed
+					navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
 					navigator.mediaSession.playbackState = "paused";
 					navigator.mediaSession.setPositionState({duration: settings.duration_s, position: currentTime});
 				}
@@ -620,7 +622,15 @@ async function activateApplication(instruments)
 			});
 		}
 		else { 
-			audioElement.play().catch((err)=>{
+			audioElement.play()
+			.then(()=>{
+				if ("mediaSession" in navigator) { // else the mediaSession in the notification screen will be closed
+					navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
+					navigator.mediaSession.playbackState = "playing";
+					navigator.mediaSession.setPositionState({duration: settings.duration_s, position: currentTime});
+				}
+			})
+			.catch((err)=>{
 				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
 				else { throw err;}
 			});
