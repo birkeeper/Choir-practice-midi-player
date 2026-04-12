@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc6"
+const VERSION = "v3.0.0rc7"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -288,6 +288,7 @@ async function activateApplication(instruments)
 		function handleReleaseProgressSlider() {
 			audioElement.currentTime = Number(progressSlider.value) / settings.playbackRate;
 			progressSlider.BeingDragged = false;
+			if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {audioElement.pause();} // for some unclear reason this is needed. Else the player will start playing when paused and the progress bar is dragged.
 			updateAudioElement(settings.playbackRate);
 			console.log("progress slider released");
 		}
