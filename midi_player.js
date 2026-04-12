@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1cy"
+const VERSION = "v2.0.1cz"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -239,7 +239,6 @@ async function activateApplication(instruments)
 	document.getElementById("message").innerText = "open midi file";
 
     let settings;
-    let timerID;
     
     async function setupApplication() {
         // parse all the files
@@ -249,7 +248,8 @@ async function activateApplication(instruments)
 		const midi = new MIDI(buffer, file.name);
         dedicatedWorker.postMessage({type: 'LOAD_MIDI', midi: midi});
         
-        const slider = document.getElementById("progress");
+        const progressSlider = document.getElementById("progress");
+		progressSlider.BeingDragged = false;
         const totalTimeDisplay = document.getElementById('totalTime');
         const playbackRateInput = document.getElementById('playbackRate');
         const playbackRateValue = document.getElementById('playbackRateValue');
@@ -261,49 +261,36 @@ async function activateApplication(instruments)
             return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         }
 
-        function clearProgressTimer() {
-            if (timerID) {
-                clearInterval(timerID);
-                console.log(`progress slider timer cleared: ${timerID}`);
-                timerID = undefined;
-            }
-        }
-
-        function startProgressTimer() {
-            if (!timerID) {
-                timerID = setInterval(timerCallback, 500);
-                console.log(`progress slider timer started: ${timerID}`);
-            }
-        }
-
-        function timerCallback() {
-			slider.value = Math.floor(audioElement.currentTime * settings.playbackRate);
-			currentTimeDisplay.textContent = formatTime(audioElement.currentTime * settings.playbackRate);    
-			if (("mediaSession" in navigator) && (audioElement.duration >= audioElement.currentTime)) {
-				navigator.mediaSession.setPositionState({duration: audioElement.duration * settings.playbackRate, position: audioElement.currentTime * settings.playbackRate});
-			}   
-        }
-
 		// make the slider move with the song and define what happens when the user moves the slider
-		slider.oninput = () => {
-			currentTimeDisplay.textContent = formatTime(Number(slider.value));
+		progressSlider.oninput = () => {
+			currentTimeDisplay.textContent = formatTime(Number(progressSlider.value));
 		};
-		slider.addEventListener("pointerdown", handleClickProgressSlider, { capture: true});
-		slider.addEventListener("pointerup", handleReleaseProgressSlider, { capture: false});
-		slider.addEventListener("touchstart", handleClickProgressSlider, { capture: true}); // else it won't work on touch devices when dragging the slider
-		slider.addEventListener("touchcancel", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
-		slider.addEventListener("touchend", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
-	
+		progressSlider.addEventListener("pointerdown", handleClickProgressSlider, { capture: true});
+		progressSlider.addEventListener("pointerup", handleReleaseProgressSlider, { capture: false});
+		progressSlider.addEventListener("touchstart", handleClickProgressSlider, { capture: true}); // else it won't work on touch devices when dragging the slider
+		progressSlider.addEventListener("touchcancel", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
+		progressSlider.addEventListener("touchend", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
+		
 		function handleClickProgressSlider() {
-			clearProgressTimer();
+			progressSlider.BeingDragged = true;
 			console.log("progress slider clicked");
 		}
 	
 		function handleReleaseProgressSlider() {
-			audioElement.currentTime = Number(slider.value) / settings.playbackRate;
-			startProgressTimer();
+			audioElement.currentTime = Number(progressSlider.value) / settings.playbackRate;
+			progressSlider.BeingDragged = false;
 			console.log("progress slider released");
 		}
+
+		audioElement.addEventListener("progress", () => { 
+			if (!progressSlider.BeingDragged) {
+				progressSlider.value = Math.floor(audioElement.currentTime * settings.playbackRate);
+				currentTimeDisplay.textContent = formatTime(audioElement.currentTime * settings.playbackRate);    
+				if (("mediaSession" in navigator) && (audioElement.duration >= audioElement.currentTime)) {
+					navigator.mediaSession.setPositionState({duration: audioElement.duration * settings.playbackRate, position: audioElement.currentTime * settings.playbackRate});
+				} 
+			}
+		});
 
 		// make a slider to set the playback rate
 		playbackRateInput.addEventListener('change',playbackRateCallback);
@@ -323,9 +310,8 @@ async function activateApplication(instruments)
 		audioElement.onended = () => {
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
             audioElement.pause();
-            clearProgressTimer();
             audioElement.currentTime = 0.0;
-            slider.value = Math.floor(0.0);
+            progressSlider.value = Math.floor(0.0);
             currentTimeDisplay.textContent = formatTime(0.0);
             if ("mediaSession" in navigator) {
                 navigator.mediaSession.playbackState = "paused";
@@ -339,7 +325,7 @@ async function activateApplication(instruments)
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 
             //update progress slider
-            slider.max = Math.floor(midi.duration);
+            progressSlider.max = Math.floor(midi.duration);
             totalTimeDisplay.textContent = formatTime(midi.duration);
             
             // create channel controls
@@ -402,9 +388,8 @@ async function activateApplication(instruments)
                 	audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`; // point to file that will be generated on the fly
 					console.log(`generated wave file loaded: ${audioElement.src}`);
 					audioElement.pause();
-					clearProgressTimer();
 					audioElement.currentTime = 0.0;
-					slider.value = Math.floor(0.0);
+					progressSlider.value = Math.floor(0.0);
 					currentTimeDisplay.textContent = formatTime(0.0);
 					if ("mediaSession" in navigator) {
 						navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
@@ -414,26 +399,18 @@ async function activateApplication(instruments)
                             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                             audioElement.pause();
                             navigator.mediaSession.playbackState = "paused";
-                            clearProgressTimer();
                         });
                         navigator.mediaSession.setActionHandler("play", () => {
                             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
                             audioElement.play();
                             navigator.mediaSession.playbackState = "playing";
-                            startProgressTimer();
                         });
                         navigator.mediaSession.setActionHandler("seekto", (evt) => {
                             if(!evt?.fastSeek)
                             {
-                                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                                    clearProgressTimer();
-                                }
                                 audioElement.currentTime = evt.seekTime / settings.playbackRate;
-                                slider.value = Math.floor(evt.seekTime);
+                                progressSlider.value = Math.floor(evt.seekTime);
                                 currentTimeDisplay.textContent = formatTime(evt.seekTime);
-                                if (document.getElementById("pause-label").innerHTML === getPauseSvg(ICON_SIZE_PX)) {
-                                    startProgressTimer();
-                                }
                             }
                         });
 					}
@@ -548,7 +525,6 @@ async function activateApplication(instruments)
  					navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime*settings.playbackRate});
                     navigator.mediaSession.playbackState = "playing";
                 }
-                startProgressTimer();
             }
             else {
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
@@ -557,7 +533,6 @@ async function activateApplication(instruments)
 					navigator.mediaSession.playbackState = "paused";
 					navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime*settings.playbackRate});
                 }
-                clearProgressTimer();
             }
         }
     }
