@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc4"
+const VERSION = "v3.0.0rc5"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -321,19 +321,8 @@ async function activateApplication(instruments)
             audioElement.currentTime = 0.0;
             progressSlider.value = Math.floor(0.0);
             currentTimeDisplay.textContent = formatTime(0.0);
+			audioElement.pause();
 			updateAudioElement(settings.playbackRate);
-			audioElement.play().then(()=>{
-				audioElement.pause();
-				document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-				if ("mediaSession" in navigator) {
-					navigator.mediaSession.playbackState = "paused";
-					navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime});
-            	}
-			})
-			.catch((err)=>{
-				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
-				else { throw err;}
-			});
         }
         
         // on song change, show the name
@@ -616,7 +605,20 @@ async function activateApplication(instruments)
 		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
 		audioElement.load();
 		audioElement.currentTime = currentTime / settings.playbackRate;
-		if (paused) { audioElement.pause(); }
+		if (paused) { // first start it before pausing, else mediaSession element will be closed
+			audioElement.play().then(()=>{
+				audioElement.pause();
+				document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+				if ("mediaSession" in navigator) {
+					navigator.mediaSession.playbackState = "paused";
+					navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime});
+            	}
+			})
+			.catch((err)=>{
+				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
+				else { throw err;}
+			});
+		}
 		else { 
 			audioElement.play().catch((err)=>{
 				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
