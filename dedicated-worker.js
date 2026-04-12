@@ -26,8 +26,6 @@ synth.setMasterParameter(0, MAINVOLUME);
 console.log("worker: synthProcessor initialised");
 const seq = new SpessaSynthSequencer(synth);
 seq.skipToFirstNoteOn = false;
-/*seq.loop = false; // the sequencer loops a single song by default
-seq.preservePlaybackState = true;*/
 console.log("worker: synthSequencer initialised");
 
 let midi;
