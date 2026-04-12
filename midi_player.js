@@ -282,7 +282,7 @@ async function activateApplication(instruments)
 			console.log("progress slider released");
 		}
 
-		audioElement.addEventListener("progress", () => { 
+		audioElement.addEventListener("timeupdate", () => { 
 			if (!progressSlider.BeingDragged) {
 				progressSlider.value = Math.floor(audioElement.currentTime * settings.playbackRate);
 				currentTimeDisplay.textContent = formatTime(audioElement.currentTime * settings.playbackRate);    
