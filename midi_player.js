@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc3"
+const VERSION = "v3.0.0rc4"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -78,31 +78,34 @@ navigator.serviceWorker.addEventListener("message", (event) => {
 // Function to store settings
 async function storeSettings(key, settings) {
     if (navigator.serviceWorker.controller) {
-		return new Promise((resolve, reject) => {
-			const messageChannel = new MessageChannel();
-			messageChannel.port1.onmessage = async (e) => {
-				console.log(`main: ${e.data}`);
-				resolve();
-			}
+		return new Promise(async (resolve, reject) => {
 			console.log(`storing settings (key: ${key}`);
 			if (key === "current_midi_file") {
 				const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
-				postStoreSettingsMessage(key, fileURL);
-				postStoreSettingsMessage("current_midi_file_name", settings.name); // file info is not stored in objectURL, only the blob info.
+				await postStoreSettingsMessage(key, fileURL);
+				await postStoreSettingsMessage("current_midi_file_name", settings.name); // file info is not stored in objectURL, only the blob info.
 			}
 			else if (key.startsWith("blob_")) { // store file
 				const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
-				postStoreSettingsMessage(key, fileURL);
+				await postStoreSettingsMessage(key, fileURL);
 			}
 			else {
-				postStoreSettingsMessage(key, settings);
+				await postStoreSettingsMessage(key, settings);
 			}
+			resolve();
 			function postStoreSettingsMessage(key, settings) {
-				navigator.serviceWorker.controller.postMessage({
-					type: 'storeSettings',
-					key: `./settings/${key}`,
-					settings: settings
-				}, [messageChannel.port2,]);
+				return new Promise((resolve, reject) => {
+					const messageChannel = new MessageChannel();
+					messageChannel.port1.onmessage = async (e) => {
+						console.log(`main: ${e.data}`);
+						resolve();
+					}
+					navigator.serviceWorker.controller.postMessage({
+						type: 'storeSettings',
+						key: `./settings/${key}`,
+						settings: settings
+					}, [messageChannel.port2,]);
+				});
 			}
 		});
     }
@@ -326,6 +329,10 @@ async function activateApplication(instruments)
 					navigator.mediaSession.playbackState = "paused";
 					navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime});
             	}
+			})
+			.catch((err)=>{
+				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
+				else { throw err;}
 			});
         }
         
@@ -412,7 +419,10 @@ async function activateApplication(instruments)
                         });
                         navigator.mediaSession.setActionHandler("play", () => {
                             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-                            audioElement.play();
+                            audioElement.play().catch((err)=>{
+								if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
+								else { throw err;}
+							});
                             navigator.mediaSession.playbackState = "playing";
                         });
                         navigator.mediaSession.setActionHandler("seekto", (evt) => {
@@ -543,7 +553,10 @@ async function activateApplication(instruments)
         document.getElementById("pause").onclick = () => {
             if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-				audioElement.play();
+				audioElement.play().catch((err)=>{
+					if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
+					else { throw err;}
+				});
                 if ("mediaSession" in navigator) {
  					navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime*settings.playbackRate});
                     navigator.mediaSession.playbackState = "playing";
@@ -604,7 +617,12 @@ async function activateApplication(instruments)
 		audioElement.load();
 		audioElement.currentTime = currentTime / settings.playbackRate;
 		if (paused) { audioElement.pause(); }
-		else { audioElement.play();}
+		else { 
+			audioElement.play().catch((err)=>{
+				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
+				else { throw err;}
+			});
+		}
 	}
 
     // add an event listener for the recently opened files
