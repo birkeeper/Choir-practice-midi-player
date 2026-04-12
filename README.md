@@ -12,7 +12,7 @@ The first time you run it, it takes some time to download the soundfont before y
 It is possible to install the app to your home screen of your smartphone by using "Add to Home Screen". When you do that, it will behave more like a full screen app.
 
 <p align='center'>
-    <img src="./icons/screenshot.png" style="display: block; margin: auto; width: 75%;" />
+    <img src="./icons/screenshot.png" style="display: block; margin: auto; width: 50%;" />
 </p>
 
 <p align='center'>
