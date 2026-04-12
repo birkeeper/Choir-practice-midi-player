@@ -43,8 +43,12 @@
             </div>
             <div id="playback_control_box" class="d-flex flex-row align-items-center my-2 flex-shrink-1 flex-grow-0">
                 <button id="pause" class="d-none">Pause</button>
-                <label id="pause-label" for="pause" class="button-label flex-grow-0 flex-shrink-0 align-items-center ms-2"></label>
-                <input type="range" class="form-range flex-grow-0 flex-shrink-1 ms-2" id="playbackRate" name="playbackRate" min="0.7" max="1.0" step="0.05" value="1.0">
+				<label id="pause-label" for="pause" class="button-label flex-grow-0 flex-shrink-0 align-items-center ms-2"></label>
+				<button id="backward" class="d-none">Backward</button>
+				<label id="backward-label" for="backward" class="button-label flex-grow-0 flex-shrink-0 align-items-center ms-2"></label>
+				<button id="forward" class="d-none">Forward</button>
+				<label id="forward-label" for="forward" class="button-label flex-grow-0 flex-shrink-0 align-items-center ms-2"></label>
+                <input type="range" class="form-range flex-grow-0 flex-shrink-1 ms-2" id="playbackRate" name="playbackRate" min="0.5" max="1.0" step="0.05" value="1.0">
                 <span id="playbackRateValue" class="flex-grow-0 flex-shrink-0 mx-2">1.00x</span>
             </div>
         </div>

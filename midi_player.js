@@ -1,12 +1,15 @@
 // import the modules
 import { MIDI } from './libraries/spessasynth_core/index.js';
-import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg } from './js/icons.js';
+import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v2.0.1cz"
+const VERSION = "v2.0.1da"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
+const SKIPFORWARD_SECONDS = 10; // skip audio forwards in seconds
+const SKIPBACKWARD_SECONDS = 10; // skip audio backwards in seconds
+
 
 async function generateHash(fileBuffer) {
     const hashBuffer = await crypto.subtle.digest('SHA-1', fileBuffer);
@@ -205,6 +208,9 @@ document.getElementById('version').textContent = VERSION;
 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
 document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE_PX);
+document.getElementById("forward-label").innerHTML = getForwardSvg(ICON_SIZE_PX);
+document.getElementById("backward-label").innerHTML = getBackwardSvg(ICON_SIZE_PX);
+
 const audioElement = new Audio();
 audioElement.addEventListener("error",(event) => {
 	console.log(`main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`);
@@ -408,10 +414,20 @@ async function activateApplication(instruments)
                         navigator.mediaSession.setActionHandler("seekto", (evt) => {
                             if(!evt?.fastSeek)
                             {
-                                audioElement.currentTime = evt.seekTime / settings.playbackRate;
+                                progressSlider.BeingDragged = false;
+								audioElement.currentTime = evt.seekTime / settings.playbackRate;
                                 progressSlider.value = Math.floor(evt.seekTime);
                                 currentTimeDisplay.textContent = formatTime(evt.seekTime);
                             }
+							else {
+								progressSlider.BeingDragged = true;
+							}
+                        });
+						navigator.mediaSession.setActionHandler("seekforward", () => {
+                            audioElement.currentTime = Math.min((audioElement.currentTime*settings.playbackRate + SKIPFORWARD_SECONDS)/settings.playbackRate, audioElement.duration);
+                        });
+						navigator.mediaSession.setActionHandler("seekbackward", () => {
+                            audioElement.currentTime = Math.max((audioElement.currentTime*settings.playbackRate - SKIPBACKWARD_SECONDS)/settings.playbackRate, 0);
                         });
 					}
 				});
@@ -534,6 +550,16 @@ async function activateApplication(instruments)
 					navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime*settings.playbackRate});
                 }
             }
+        }
+
+		// on forward click
+        document.getElementById("forward").onclick = () => {
+			audioElement.currentTime = Math.min((audioElement.currentTime*settings.playbackRate + SKIPFORWARD_SECONDS)/settings.playbackRate, audioElement.duration);
+        }
+
+		// on backward click
+        document.getElementById("backward").onclick = () => {
+			audioElement.currentTime = Math.max((audioElement.currentTime*settings.playbackRate - SKIPBACKWARD_SECONDS)/settings.playbackRate, 0);
         }
     }
 
