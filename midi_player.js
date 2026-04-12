@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc"
+const VERSION = "v3.0.0rc2"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -285,6 +285,7 @@ async function activateApplication(instruments)
 		function handleReleaseProgressSlider() {
 			audioElement.currentTime = Number(progressSlider.value) / settings.playbackRate;
 			progressSlider.BeingDragged = false;
+			updateAudioElement(settings.playbackRate);
 			console.log("progress slider released");
 		}
 
@@ -314,15 +315,18 @@ async function activateApplication(instruments)
         
         // on song ended reset the current time and pause the song
 		audioElement.onended = () => {
-            document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-            audioElement.pause();
             audioElement.currentTime = 0.0;
             progressSlider.value = Math.floor(0.0);
             currentTimeDisplay.textContent = formatTime(0.0);
-            if ("mediaSession" in navigator) {
-                navigator.mediaSession.playbackState = "paused";
-                navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: 0.0});
-            }
+			updateAudioElement(currentPlaybackRate);
+			audioElement.play().then(()=>{
+				audioElement.pause();
+				document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+				if ("mediaSession" in navigator) {
+					navigator.mediaSession.playbackState = "paused";
+					navigator.mediaSession.setPositionState({duration: audioElement.duration*settings.playbackRate, position: audioElement.currentTime});
+            	}
+			});
         }
         
         // on song change, show the name
@@ -418,6 +422,7 @@ async function activateApplication(instruments)
 								audioElement.currentTime = evt.seekTime / settings.playbackRate;
                                 progressSlider.value = Math.floor(evt.seekTime);
                                 currentTimeDisplay.textContent = formatTime(evt.seekTime);
+								updateAudioElement(settings.playbackRate);
                             }
 							else {
 								progressSlider.BeingDragged = true;
@@ -425,9 +430,11 @@ async function activateApplication(instruments)
                         });
 						navigator.mediaSession.setActionHandler("nexttrack", () => {
                             audioElement.currentTime = Math.min((audioElement.currentTime*settings.playbackRate + SKIPFORWARD_SECONDS)/settings.playbackRate, audioElement.duration-1);
+							updateAudioElement(settings.playbackRate);
                         });
 						navigator.mediaSession.setActionHandler("previoustrack", () => {
                             audioElement.currentTime = Math.max((audioElement.currentTime*settings.playbackRate - SKIPBACKWARD_SECONDS)/settings.playbackRate, 0);
+							updateAudioElement(settings.playbackRate);
                         });
 					}
 				});
@@ -555,11 +562,13 @@ async function activateApplication(instruments)
 		// on forward click
         document.getElementById("forward").onclick = () => {
 			audioElement.currentTime = Math.min((audioElement.currentTime*settings.playbackRate + SKIPFORWARD_SECONDS)/settings.playbackRate, audioElement.duration-1);
+			updateAudioElement(settings.playbackRate);
         }
 
 		// on backward click
         document.getElementById("backward").onclick = () => {
 			audioElement.currentTime = Math.max((audioElement.currentTime*settings.playbackRate - SKIPBACKWARD_SECONDS)/settings.playbackRate, 0);
+			updateAudioElement(settings.playbackRate);
         }
     }
 
