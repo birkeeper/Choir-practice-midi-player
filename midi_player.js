@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc14"
+const VERSION = "v3.0.0rc15"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -244,7 +244,13 @@ console.log("dedicate worker's onmessage defined");
 
 async function activateApplication(instruments) 
 {
-    document.getElementById("midi_input").disabled = false;
+    const progressSlider = document.getElementById("progress");
+	progressSlider.BeingDragged = false;
+	const totalTimeDisplay = document.getElementById('totalTime');
+	const playbackRateInput = document.getElementById('playbackRate');
+	const playbackRateValue = document.getElementById('playbackRateValue');
+	const currentTimeDisplay = document.getElementById('currentTime');
+	document.getElementById("midi_input").disabled = false;
 	document.getElementById("message").innerText = "open midi file";
 
     let settings;
@@ -256,14 +262,9 @@ async function activateApplication(instruments)
         const midiFileHash = await generateHash(buffer);
 		const midi = new MIDI(buffer, file.name);
         dedicatedWorker.postMessage({type: 'LOAD_MIDI', midi: midi});
-        
-        const progressSlider = document.getElementById("progress");
-		progressSlider.BeingDragged = false;
-        const totalTimeDisplay = document.getElementById('totalTime');
-        const playbackRateInput = document.getElementById('playbackRate');
-        const playbackRateValue = document.getElementById('playbackRateValue');
-        const currentTimeDisplay = document.getElementById('currentTime');
 
+		setEventListenersAudioElement();
+        
         function formatTime(seconds) {// for displaying song progress
             const minutes = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
@@ -292,16 +293,6 @@ async function activateApplication(instruments)
 			console.log("progress slider released");
 		}
 
-		audioElement.addEventListener("timeupdate", () => { 
-			if (!progressSlider.BeingDragged) {
-				progressSlider.value = Math.floor(audioElement.currentTime * settings.playbackRate);
-				currentTimeDisplay.textContent = formatTime(audioElement.currentTime * settings.playbackRate);    
-				if (("mediaSession" in navigator) && (audioElement.duration >= audioElement.currentTime)) {
-					navigator.mediaSession.setPositionState({duration: settings.duration_s, position: audioElement.currentTime * settings.playbackRate});
-				} 
-			}
-		});
-
 		// make a slider to set the playback rate
 		playbackRateInput.oninput = ()=> { 
 			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
@@ -319,16 +310,7 @@ async function activateApplication(instruments)
 			updateAudioElement(currentPlaybackRate);
 		}
         
-        // on song ended reset the current time and pause the song
-		audioElement.onended = () => {
-            audioElement.currentTime = 0.0;
-            progressSlider.value = Math.floor(0.0);
-            currentTimeDisplay.textContent = formatTime(0.0);
-			document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-			audioElement.pause();
-			updateAudioElement(settings.playbackRate);
-        }
-        
+		
         // on song change, show the name
         {
             console.log("song changed");
@@ -606,39 +588,34 @@ async function activateApplication(instruments)
 	function updateAudioElement(currentPlaybackRate) { // 
 		const currentTime = audioElement.currentTime * currentPlaybackRate;
 		const paused = document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX); // audioElement.paused is unrealiable when buttons are bashed.
+		const newAudioElement = Audio();
+		console.log("audioElement created");
 		audioElement.pause();
+		audioElement.replaceWith(newAudioElement);
+		setEventListenersAudioElement();
 		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
-		audioElement.load();
+		//audioElement.load();
 		audioElement.currentTime = currentTime / settings.playbackRate;
-		audioElement.pause();
 		if (paused) { // first start it before pausing, else mediaSession element will not be shown
+			audioElement.pause();
 			audioElement.play()
-			.then(()=>{
-				if ("mediaSession" in navigator) { // else the mediaSession in the notification screen will be closed
-					navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
-					navigator.mediaSession.playbackState = "paused";
-					navigator.mediaSession.setPositionState({duration: settings.duration_s, position: currentTime});
-				}
-				audioElement.pause();
-			})
-			.catch((err)=>{
-				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
-				else { throw err;}
-			});
+			if ("mediaSession" in navigator) { // else the mediaSession in the notification screen will be closed
+				navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
+				navigator.mediaSession.playbackState = "paused";
+				navigator.mediaSession.setPositionState({duration: settings.duration_s, position: currentTime});
+			}
 		}
 		else { 
 			audioElement.play()
-			.then(()=>{
-				if ("mediaSession" in navigator) { // else the mediaSession in the notification screen will be closed
-					navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
-					navigator.mediaSession.playbackState = "playing";
-					navigator.mediaSession.setPositionState({duration: settings.duration_s, position: currentTime});
-				}
-			})
 			.catch((err)=>{
 				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
 				else { throw err;}
 			});
+			if ("mediaSession" in navigator) { // else the mediaSession in the notification screen will be closed
+				navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
+				navigator.mediaSession.playbackState = "playing";
+				navigator.mediaSession.setPositionState({duration: settings.duration_s, position: currentTime});
+			}
 		}
 	}
 
@@ -688,6 +665,36 @@ async function activateApplication(instruments)
             historyDropdown.appendChild(li);
         });
     });
+
+	function setEventListenersAudioElement() {
+		audioElement.addEventListener("error", (event) => {
+			console.log(`main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`);
+		});
+		audioElement.addEventListener("stalled", (event) => {
+			console.log(`main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
+		});
+		audioElement.addEventListener("suspend", (event) => {
+			console.log(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
+		});
+		audioElement.addEventListener("timeupdate", () => {
+			if (!progressSlider.BeingDragged) {
+				progressSlider.value = Math.floor(audioElement.currentTime * settings.playbackRate);
+				currentTimeDisplay.textContent = formatTime(audioElement.currentTime * settings.playbackRate);
+				if (("mediaSession" in navigator) && (audioElement.duration >= audioElement.currentTime)) {
+					navigator.mediaSession.setPositionState({ duration: settings.duration_s, position: audioElement.currentTime * settings.playbackRate });
+				}
+			}
+		});
+		audioElement.addEventListener("ended", (event) => {
+			console.log(`main: playing of source AudioElement ended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
+			audioElement.currentTime = 0.0;
+			progressSlider.value = Math.floor(0.0);
+			currentTimeDisplay.textContent = formatTime(0.0);
+			document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+			audioElement.pause();
+			updateAudioElement(settings.playbackRate);
+		});
+	}
 }
 
 function getTrackNames(parsedMIDI) { // returns the tracknames from the midifile represented in the arrayBuffer
