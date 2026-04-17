@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc16"
+const VERSION = "v3.0.0rc17"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -588,7 +588,7 @@ async function activateApplication(instruments)
 	function updateAudioElement(currentPlaybackRate) { // 
 		const currentTime = audioElement.currentTime * currentPlaybackRate;
 		const paused = document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX); // audioElement.paused is unrealiable when buttons are bashed.
-		const newAudioElement = Audio();
+		const newAudioElement = new Audio();
 		console.log("audioElement created");
 		audioElement.pause();
 		audioElement.replaceWith(newAudioElement);
