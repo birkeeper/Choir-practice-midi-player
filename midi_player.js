@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc15"
+const VERSION = "v3.0.0rc16"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -264,12 +264,6 @@ async function activateApplication(instruments)
         dedicatedWorker.postMessage({type: 'LOAD_MIDI', midi: midi});
 
 		setEventListenersAudioElement();
-        
-        function formatTime(seconds) {// for displaying song progress
-            const minutes = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-        }
 
 		// make the slider move with the song and define what happens when the user moves the slider
 		progressSlider.oninput = () => {
@@ -584,6 +578,12 @@ async function activateApplication(instruments)
         storeSettings(`blob_${midiFileHash}`,file);
         setupApplication();
     });
+
+	function formatTime(seconds) {// for displaying song progress
+		const minutes = Math.floor(seconds / 60);
+		const secs = Math.floor(seconds % 60);
+		return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+	}
 
 	function updateAudioElement(currentPlaybackRate) { // 
 		const currentTime = audioElement.currentTime * currentPlaybackRate;
