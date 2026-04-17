@@ -4,7 +4,7 @@ import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } f
 const MAINVOLUME = 1.5;
 
 console.log("worker: initalising dedicated worker...");
-const CHUNCKSIZE = 128 * 100; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
+const CHUNCKSIZE = 128 * 50; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
 // load the soundfonts
 const [responseSecondary, responsePrimary] = await Promise.all([fetch(SOUNTFONT_SPECIAL), fetch(SOUNDFONT_GM)]);
 // load the soundfonts into array buffers
