@@ -29,7 +29,7 @@ if ("serviceWorker" in navigator) {
                 console.log(`A new service worker is being installed: ${installingWorker}`);
                 installingWorker.addEventListener("statechange", (e) => {
                     if(e.target.state === "installed") {
-                        console.log("Service worker installed");
+                        console.log("main: Service worker installed");
                         appendAlert(
                             `A new update of the app is available. When you dismiss this message or restart the app, the update is installed.`,
                             'warning', "update",

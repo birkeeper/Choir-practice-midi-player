@@ -183,7 +183,8 @@ const putInCache = async (request, response) => {
           });
         })
         .catch(() => {return Promise.resolve(undefined);}),
-    ]));  
+    ])); 
+	console.log("SW: Service worker installed");
   });
 
   self.addEventListener("fetch", (event) => {
