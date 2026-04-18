@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.22"; 
+const CACHE_NAME = "v10.23"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -80,10 +80,10 @@ const putInCache = async (request, response) => {
 			return oldCache.keys().then(requests => {
 				const settingsRequests = requests.filter(request => request.url.includes('/settings/'));
 				return Promise.all(settingsRequests.map(request => {
-					oldCache.match(request).then(response => {
-					if (response) {
-						return putInCache(request, response);
-					}
+					return oldCache.match(request).then(response => {
+						if (response) {
+							return putInCache(request, response);
+						}
 					});
 				}));
 			});
@@ -95,7 +95,7 @@ const putInCache = async (request, response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
-            response.blob().then(blob => {
+            return response.blob().then(blob => {
               const blobResponse = new Response(blob, {
                 status: response.status,
                 statusText: response.statusText,
@@ -112,7 +112,7 @@ const putInCache = async (request, response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
-            response.blob().then(blob => {
+            return response.blob().then(blob => {
               const blobResponse = new Response(blob, {
                 status: response.status,
                 statusText: response.statusText,
@@ -183,8 +183,7 @@ const putInCache = async (request, response) => {
           });
         })
         .catch(() => {return Promise.resolve(undefined);}),
-    ])); 
-	console.log("SW: Service worker installed");
+    ]).then(() => {console.log("SW: Service worker installed");})); 
   });
 
   self.addEventListener("fetch", (event) => {
