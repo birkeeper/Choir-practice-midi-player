@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.20"; 
+const CACHE_NAME = "v10.21"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -74,27 +74,24 @@ const putInCache = async (request, response) => {
         // Get the latest cache name
         const latestCacheName = oldCacheNames[oldCacheNames.length - 1];
                 
-        if (latestCacheName) {
-          if (Number(latestCacheName.slice(1))>7.0) {//settings of caches of versions <=7.0 are not compatible
-            caches.open(latestCacheName).then(oldCache => {
-              oldCache.keys().then(requests => {
-                const settingsRequests = requests.filter(request => request.url.includes('/settings/'));
-                settingsRequests.map(request => {
-                  oldCache.match(request).then(response => {
-                    if (response) {
-                      putInCache(request, response);
-                    }
-                  });
-                })
-              });
-            });
-          }
-        }
-        return Promise.resolve(undefined);
+        if (!latestCacheName) { return; }
+		if (Number(latestCacheName.slice(1))<=7.0) { return; }//settings of caches of versions <=7.0 are not compatible
+		return caches.open(latestCacheName).then(oldCache => {
+			return oldCache.keys().then(requests => {
+				const settingsRequests = requests.filter(request => request.url.includes('/settings/'));
+				return Promise.all(settingsRequests.map(request => {
+					oldCache.match(request).then(response => {
+					if (response) {
+						return putInCache(request, response);
+					}
+					});
+				}));
+			});
+		});
       }),
       caches.open(CACHE_NAME)
         .then((cache) => {
-          fetch(SOUNDFONT_GM, {cache: "reload"}).then((response) => {
+          return fetch(SOUNDFONT_GM, {cache: "reload"}).then((response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
@@ -111,7 +108,7 @@ const putInCache = async (request, response) => {
         .catch(() => {return Promise.resolve(undefined);}),
       caches.open(CACHE_NAME)
         .then((cache) => {
-          fetch(SOUNTFONT_SPECIAL, {cache: "reload"}).then((response) => {
+          return fetch(SOUNTFONT_SPECIAL, {cache: "reload"}).then((response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
@@ -128,7 +125,7 @@ const putInCache = async (request, response) => {
         .catch(() => {return Promise.resolve(undefined);}),
       caches.open(CACHE_NAME)
         .then((cache) => {
-          fetch('./midi_player.js', {cache: "reload"}).then((response) => {
+          return fetch('./midi_player.js', {cache: "reload"}).then((response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
@@ -138,7 +135,7 @@ const putInCache = async (request, response) => {
         .catch(() => {return Promise.resolve(undefined);}),
       caches.open(CACHE_NAME)
         .then((cache) => {
-          fetch('./midi_player.html', {cache: "reload"}).then((response) => {
+          return fetch('./midi_player.html', {cache: "reload"}).then((response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
@@ -148,7 +145,7 @@ const putInCache = async (request, response) => {
         .catch(() => {return Promise.resolve(undefined);}),
       caches.open(CACHE_NAME)
         .then((cache) => {
-          fetch('./midi_player.css', {cache: "reload"}).then((response) => {
+          return fetch('./midi_player.css', {cache: "reload"}).then((response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
@@ -158,7 +155,7 @@ const putInCache = async (request, response) => {
         .catch(() => {return Promise.resolve(undefined);}),
       caches.open(CACHE_NAME)
         .then((cache) => {
-          fetch('./js/icons.js', {cache: "reload"}).then((response) => {
+          return fetch('./js/icons.js', {cache: "reload"}).then((response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
@@ -168,7 +165,7 @@ const putInCache = async (request, response) => {
         .catch(() => {return Promise.resolve(undefined);}),
       caches.open(CACHE_NAME)
         .then((cache) => {
-          fetch('./constants.js', {cache: "reload"}).then((response) => {
+          return fetch('./constants.js', {cache: "reload"}).then((response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
@@ -178,7 +175,7 @@ const putInCache = async (request, response) => {
         .catch(() => {return Promise.resolve(undefined);}),
 	  caches.open(CACHE_NAME)
         .then((cache) => {
-          fetch('./dedicated-worker.js', {cache: "reload"}).then((response) => {
+          return fetch('./dedicated-worker.js', {cache: "reload"}).then((response) => {
             if (!response.ok) {
               throw new TypeError("bad response status");
             }
