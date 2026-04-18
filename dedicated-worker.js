@@ -1,10 +1,10 @@
 import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor, midiControllers } from './libraries/spessasynth_core/index.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
-const MAINVOLUME = 1.5;
+const MAINVOLUME = 1.0;
 
 console.log("worker: initalising dedicated worker...");
-const CHUNCKSIZE = 128 * 50; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
+const CHUNCKSIZE = 128 * 25; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
 // load the soundfonts
 const [responseSecondary, responsePrimary] = await Promise.all([fetch(SOUNTFONT_SPECIAL), fetch(SOUNDFONT_GM)]);
 // load the soundfonts into array buffers
