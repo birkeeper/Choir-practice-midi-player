@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc25"
+const VERSION = "v3.0.0rc26"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -591,11 +591,14 @@ async function activateApplication(instruments)
 		const newAudioElement = new Audio();
 		console.log("audioElement created");
 		audioElement.pause();
+        const old_wav = audioElement.src;
 		audioElement.replaceWith(newAudioElement);
 		setEventListenersAudioElement();
 		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
+        const new_wav = audioElement.src;
 		//audioElement.load();
 		audioElement.currentTime = currentTime / settings.playbackRate;
+        appendAlert( `main: AudioElement ${old_wav} has been replaced with ${new_wav}`, 'info', 'DEBUG');
 		if (paused) { // first start it before pausing, else mediaSession element will not be shown
 			audioElement.play()
 			.then(() => {
@@ -605,8 +608,10 @@ async function activateApplication(instruments)
 					navigator.mediaSession.playbackState = "paused";
 					navigator.mediaSession.setPositionState({duration: settings.duration_s, position: currentTime});
 				}
+                appendAlert( `main: ${audioElement.src} paused`, 'info', 'DEBUG');
 			})
 			.catch((err)=>{
+                appendAlert( `main: ${err.name}`, 'error', 'DEBUG');
 				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
 				else { throw err;}
 			});
@@ -615,6 +620,7 @@ async function activateApplication(instruments)
 		else { 
 			audioElement.play()
 			.catch((err)=>{
+                appendAlert( `main: ${err.name}`, 'error', 'DEBUG');
 				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
 				else { throw err;}
 			});
@@ -623,6 +629,7 @@ async function activateApplication(instruments)
 				navigator.mediaSession.playbackState = "playing";
 				navigator.mediaSession.setPositionState({duration: settings.duration_s, position: currentTime});
 			}
+            appendAlert( `main: ${audioElement.src} playing`, 'info', 'DEBUG');
 		}
 	}
 
@@ -676,12 +683,15 @@ async function activateApplication(instruments)
 	function setEventListenersAudioElement() {
 		audioElement.addEventListener("error", (event) => {
 			console.log(`main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`);
+            appendAlert( `main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`, 'error', 'DEBUG');
 		});
 		audioElement.addEventListener("stalled", (event) => {
 			console.log(`main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
+            appendAlert( `main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`, 'warning', 'DEBUG');
 		});
 		audioElement.addEventListener("suspend", (event) => {
 			console.log(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
+            appendAlert( `main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`, 'info', 'DEBUG');
 		});
 		audioElement.addEventListener("timeupdate", () => {
 			if (!progressSlider.BeingDragged) {
