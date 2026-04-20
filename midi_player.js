@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc26"
+const VERSION = "v3.0.0rc27"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -691,7 +691,6 @@ async function activateApplication(instruments)
 		});
 		audioElement.addEventListener("suspend", (event) => {
 			console.log(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-            appendAlert( `main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`, 'info', 'DEBUG');
 		});
 		audioElement.addEventListener("timeupdate", () => {
 			if (!progressSlider.BeingDragged) {
