@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc27"
+const VERSION = "v3.0.0rc28"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -215,18 +215,6 @@ document.getElementById("forward-label").innerHTML = getForwardSvg(ICON_SIZE_PX)
 document.getElementById("backward-label").innerHTML = getBackwardSvg(ICON_SIZE_PX);
 
 const audioElement = new Audio();
-audioElement.addEventListener("error",(event) => {
-	console.log(`main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`);
-});
-audioElement.addEventListener("stalled", (event) => {
-	console.log(`main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-});
-audioElement.addEventListener("suspend", (event) => {
-	console.log(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-});
-audioElement.addEventListener("ended", (event) => {
-	console.log(`main: playing of source AudioElement ended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-});
 console.log("audioElement created");
 
 dedicatedWorker.onmessage = (e) => {
@@ -254,6 +242,7 @@ async function activateApplication(instruments)
 	document.getElementById("message").innerText = "open midi file";
 
     let settings;
+    setEventListenersAudioElement();
     
     async function setupApplication() {
         // parse all the files
@@ -611,7 +600,7 @@ async function activateApplication(instruments)
                 appendAlert( `main: ${audioElement.src} paused`, 'info', 'DEBUG');
 			})
 			.catch((err)=>{
-                appendAlert( `main: ${err.name}`, 'error', 'DEBUG');
+                appendAlert( `main: ${err.name}`, 'danger', 'DEBUG');
 				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
 				else { throw err;}
 			});
@@ -620,7 +609,7 @@ async function activateApplication(instruments)
 		else { 
 			audioElement.play()
 			.catch((err)=>{
-                appendAlert( `main: ${err.name}`, 'error', 'DEBUG');
+                appendAlert( `main: ${err.name}`, 'danger', 'DEBUG');
 				if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
 				else { throw err;}
 			});
@@ -683,7 +672,7 @@ async function activateApplication(instruments)
 	function setEventListenersAudioElement() {
 		audioElement.addEventListener("error", (event) => {
 			console.log(`main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`);
-            appendAlert( `main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`, 'error', 'DEBUG');
+            appendAlert( `main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`, 'danger', 'DEBUG');
 		});
 		audioElement.addEventListener("stalled", (event) => {
 			console.log(`main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
