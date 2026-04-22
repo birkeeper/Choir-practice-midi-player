@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.29"; 
+const CACHE_NAME = "v10.30"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -190,14 +190,22 @@ const putInCache = async (request, response) => {
 	const url = new URL(event.request.url);
  	if (url.pathname.includes('/generatedWav/') && url.pathname.endsWith('.wav')) {
     	console.log(`received fetch for: ${url}`);
-		const id = url.pathname.match(/\/generatedWav\/(.+)\.wav$/);
-		const split = id[1].split('_'); // format: songID_randomUUID
-		event.respondWith(handleSongRequest(event.request, split[0], split[1]));
-		let debugStringArray = [`service worker: UUID: ${split[1]}`]; //DEBUG
-		for (const pair of event.request.headers.entries()) {
-			debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
-		}
-		console.log(debugStringArray.join(" | "));
+      const id = url.pathname.match(/\/generatedWav\/(.+)\.wav$/);
+      const split = id[1].split('_'); // format: songID_randomUUID
+      event.respondWith(handleSongRequest(event.request, split[0], split[1]));
+      let debugStringArray = [`service worker: UUID: ${split[1]}`]; //DEBUG
+      for (const pair of event.request.headers.entries()) {
+        debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
+      }
+      console.log(debugStringArray.join(" | ")); //DEBUG
+      const clientList = await self.clients.matchAll(); //DEBUG
+      let client; //DEBUG
+      for (const clientItem of clientList) { //DEBUG
+          if (clientItem.url.includes("midi_player.html")) { //DEBUG
+              client = clientItem; //DEBUG
+        }
+      }
+      client.postMessage({type:'DEBUG', message: debugStringArray.join(" | ")}); //DEBUG
   	} else {
 		event.respondWith(	
       		cacheFirst({
