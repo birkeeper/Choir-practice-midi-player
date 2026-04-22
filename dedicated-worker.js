@@ -1,7 +1,7 @@
 import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor, midiControllers } from './libraries/spessasynth_core/index.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
-const MAINVOLUME = 1.5; //NOTE: clipping possible when >1.0
+const MASTERGAIN = 20*Math.log10(6); //NOTE: clipping possible when >1.0
 
 console.log("worker: initalising dedicated worker...");
 const CHUNCKSIZE = 128 * 25; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
@@ -162,7 +162,7 @@ function sendPCMchunk(chunkPort_, sampleCount) { // generates  a chunk of PCM da
 		for (const d of outputArray) {
 			const sample = Math.min(
 				32767,
-				Math.max(-32768, d[i] * MAINVOLUME * 32767)
+				Math.max(-32768, d[i] * MASTERGAIN * 32767)
 			);
 			// Convert to 16-bit
 			outputPCM[offset++] = sample & 0xff;
