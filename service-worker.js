@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.28"; 
+const CACHE_NAME = "v10.29"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -329,22 +329,24 @@ async function handleSongRequest(request, songID, randomUUID) {
 	let port;
 	const stream = new ReadableStream({
     	start(controller){
-        	const channel = new MessageChannel();
-			port = channel.port1;
-			port.onmessage = (e) => {
-				const msg = e.data;
-				if (msg.type == 'chunk') {
-					// Transferable ArrayBuffer to avoid copies
-					controller.enqueue(new Uint8Array(msg.data));
-				} else if (msg.type === 'end') {
-					controller.close();
-					port.close();
-				} else if (msg.type === 'error') {
-					controller.error(new Error(msg.reason || 'gen failed'));
-					port.close();
-				}
-			}
-        	client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, start: start, end: end },[channel.port2]);
+        const channel = new MessageChannel();
+        port = channel.port1;
+        port.onmessage = (e) => {
+          const msg = e.data;
+          if (msg.type == 'chunk') {
+            // Transferable ArrayBuffer to avoid copies
+            controller.enqueue(new Uint8Array(msg.data));
+          } else if (msg.type === 'end') {
+            controller.close();
+            port.close();
+            client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}`});
+          } else if (msg.type === 'error') {
+            controller.error(new Error(msg.reason || 'gen failed'));
+            port.close();
+            client.postMessage({type:'DEBUG', message: `SW: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}`});
+          }
+        }
+        client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, start: start, end: end },[channel.port2]);
     	},
 		pull(controller){
 			return new Promise( async (resolve, reject) => {
@@ -367,6 +369,7 @@ async function handleSongRequest(request, songID, randomUUID) {
 			console.log(`service worker: ReadableStream canceled; UUID: ${randomUUID}`);
 			port.postMessage({type: 'cancel'});
 			port.close();
+      client.postMessage({type:'DEBUG', message: `SW: ReadableStream canceled; UUID: ${randomUUID}`});
 		}
     }, {highWaterMark: 13});
 

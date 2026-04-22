@@ -1,7 +1,7 @@
 import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor, midiControllers } from './libraries/spessasynth_core/index.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
-const MAINVOLUME = 1.0;
+const MAINVOLUME = 1.5; //NOTE: clipping possible when >1.0
 
 console.log("worker: initalising dedicated worker...");
 const CHUNCKSIZE = 128 * 25; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
@@ -22,7 +22,6 @@ for (const instrument of Object.values(instruments)) { //adjust soundfont preset
 	instrument.bank = SOUNDFONTBANK;
 }
 await synth.processorInitialized;
-synth.setMasterParameter(0, MAINVOLUME);
 console.log("worker: synthProcessor initialised");
 const seq = new SpessaSynthSequencer(synth);
 seq.skipToFirstNoteOn = false;
@@ -140,7 +139,7 @@ self.onmessage = (msg) => {
 	}
 };
 
-function sendPCMchunk(port, sampleCount) { // generates  a chunk of PCM data and send it through the port provided. Returns the sample count of the chunk
+function sendPCMchunk(chunkPort_, sampleCount) { // generates  a chunk of PCM data and send it through the port provided. Returns the sample count of the chunk
 	const outLeft = new Float32Array(sampleCount);
 	const outRight = new Float32Array(sampleCount);
 	const outputArray = [outLeft, outRight];
@@ -163,14 +162,14 @@ function sendPCMchunk(port, sampleCount) { // generates  a chunk of PCM data and
 		for (const d of outputArray) {
 			const sample = Math.min(
 				32767,
-				Math.max(-32768, d[i] * 32767)
+				Math.max(-32768, d[i] * MAINVOLUME * 32767)
 			);
 			// Convert to 16-bit
 			outputPCM[offset++] = sample & 0xff;
 			outputPCM[offset++] = (sample >> 8) & 0xff;
 		}
 	}
-	port.postMessage({ type: 'chunk', data: outputPCM.buffer },[outputPCM.buffer]);
+	chunkPort_.postMessage({ type: 'chunk', data: outputPCM.buffer },[outputPCM.buffer]);
 }
 
 function generateWavHeader() {
