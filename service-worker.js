@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.31"; 
+const CACHE_NAME = "v10.32"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -198,7 +198,7 @@ const putInCache = async (request, response) => {
         debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
       }
       console.log(debugStringArray.join(" | ")); //DEBUG
-      const clientList = self.clients.matchAll().then(() => {  //DEBUG
+      self.clients.matchAll().then((clientList) => {  //DEBUG
         let client; //DEBUG
         for (const clientItem of clientList) { //DEBUG
             if (clientItem.url.includes("midi_player.html")) { //DEBUG
