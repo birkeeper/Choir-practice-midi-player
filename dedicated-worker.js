@@ -1,7 +1,7 @@
 import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor, midiControllers } from './libraries/spessasynth_core/index.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
-const MASTERGAIN = 10^(6/20); //NOTE: clipping possible when >1.0
+const MASTERGAIN = Math.pow(10,6/20); //NOTE: clipping possible when >1.0
 
 console.log("worker: initalising dedicated worker...");
 const CHUNCKSIZE = 128 * 25; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
