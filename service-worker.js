@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.30"; 
+const CACHE_NAME = "v10.31"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -198,14 +198,15 @@ const putInCache = async (request, response) => {
         debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
       }
       console.log(debugStringArray.join(" | ")); //DEBUG
-      const clientList = await self.clients.matchAll(); //DEBUG
-      let client; //DEBUG
-      for (const clientItem of clientList) { //DEBUG
-          if (clientItem.url.includes("midi_player.html")) { //DEBUG
-              client = clientItem; //DEBUG
+      const clientList = self.clients.matchAll().then(() => {  //DEBUG
+        let client; //DEBUG
+        for (const clientItem of clientList) { //DEBUG
+            if (clientItem.url.includes("midi_player.html")) { //DEBUG
+                client = clientItem; //DEBUG
+          }
         }
-      }
-      client.postMessage({type:'DEBUG', message: debugStringArray.join(" | ")}); //DEBUG
+        client.postMessage({type:'DEBUG', message: debugStringArray.join(" | ")}); //DEBUG
+      }); //DEBUG     
   	} else {
 		event.respondWith(	
       		cacheFirst({
