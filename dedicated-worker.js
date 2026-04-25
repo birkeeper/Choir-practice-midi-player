@@ -28,8 +28,6 @@ seq.skipToFirstNoteOn = false;
 console.log("worker: synthSequencer initialised");
 
 let midi;
-let rangeRequestInProgress = false;
-let port; 
 let playbackRate = 1;
 
 self.onmessage = (msg) => {
@@ -79,13 +77,8 @@ self.onmessage = (msg) => {
 		playbackRate = msg.data.value;
 	}
 	else if (msg.data.type === 'AUDIO_RANGE_REQ') {
-		if (rangeRequestInProgress) { // stop current range request in progress when new one arrives
-			port.postMessage({ type: 'end' });
-			port.close();
-		}
-		port = msg.ports && msg.ports[0];
+		const port = msg.ports && msg.ports[0];
 		if (!port) {return;}
-		rangeRequestInProgress = true;
 		const start = msg.data.start;
 		const end = msg.data.end;
 		console.log(`dedicated worker: range request received. song hash: ${msg.data.songID}, random UUID: ${msg.data.UUID}, start: ${start}, end: ${end}`);
@@ -100,7 +93,6 @@ self.onmessage = (msg) => {
 			if (end < WAV_HEADERSIZE) { // only one chunk
 				port.postMessage({ type: 'end' });
       			port.close();
-				rangeRequestInProgress = false;
 			}
 
 			// Send PCM bytes if needed.
@@ -123,18 +115,15 @@ self.onmessage = (msg) => {
 					if (processedSamples >= dataLength_samples) { // all chuncks processed.
 						port.postMessage({ type: 'end' });
       					port.close();
-						rangeRequestInProgress = false;
 					}
 				}
 				else if (e.data.type === 'cancel') { //service worker cancels stream
 					port.close();
-					rangeRequestInProgress = false;
 				}
 			}
     	} catch (err) {
       		port.postMessage({ type: 'error', message: String(err?.message || err) });
       		port.close();
-			rangeRequestInProgress = false;
     	}
 	}
 };
