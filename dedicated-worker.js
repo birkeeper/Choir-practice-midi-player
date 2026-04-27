@@ -10,79 +10,51 @@ const [responseSecondary, responsePrimary] = await Promise.all([fetch(SOUNTFONT_
 // load the soundfonts into array buffers
 const [secondarySoundFontBuffer, primarySoundFontBuffer] = await Promise.all([responseSecondary.arrayBuffer(), responsePrimary.arrayBuffer()]);
 console.log("worker: soundfonts fetched");
-const synth = new SpessaSynthProcessor(WAV_SAMPLERATE, {
-    enableEventSystem: false,
-    effectsEnabled: false
-});
-synth.soundfontManager.reloadManager(loadSoundFont(primarySoundFontBuffer));
-synth.soundfontManager.addNewSoundFont(loadSoundFont(secondarySoundFontBuffer),"secondary",SOUNDFONTBANK);
-const soundFont = loadSoundFont(secondarySoundFontBuffer);
-const instruments = {...soundFont.presets}; // map of midi instruments to secondary soundfont preset numbers
+const primarySoundFont = loadSoundFont(primarySoundFontBuffer);
+const secondarySoundFont = loadSoundFont(secondarySoundFontBuffer);
+const instruments = {...secondarySoundFont.presets}; // map of midi instruments to secondary soundfont preset numbers
 for (const instrument of Object.values(instruments)) { //adjust soundfont presets to new bank
 	instrument.bank = SOUNDFONTBANK;
 }
-await synth.processorInitialized;
-console.log("worker: synthProcessor initialised");
-const seq = new SpessaSynthSequencer(synth);
-seq.skipToFirstNoteOn = false;
-console.log("worker: synthSequencer initialised");
 
 let midi;
 let playbackRate = 1;
+let settings;
 
-self.onmessage = (msg) => {
+self.onmessage = async (msg) => {
     console.log(`worker: message received of type: ${msg.data.type}`);
 	if (msg.data.type === 'LOAD_MIDI') {
-		console.log(`loading midi`);
+		console.log(`DW: oading midi`);
 		midi = msg.data.midi;
-		seq.loadNewSongList([midi]);
-    	seq.loop = false;
 	}
-	else if (msg.data.type === 'SetMainVolume') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.mainVolume] = false;
-		synth.controllerChange(msg.data.channel, midiControllers.mainVolume, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.mainVolume] = true;
-	}
-	else if (msg.data.type === 'isDrum') {
-		synth.midiAudioChannels[msg.data.channel].setDrums(msg.data.boolean);
-	}
-	else if (msg.data.type === 'bankSelect') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = false;
-		synth.controllerChange(msg.data.channel, midiControllers.bankSelect, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = true;
-	}
-	else if (msg.data.type === 'programChange') {
-		synth.midiAudioChannels[msg.data.channel].setPresetLock(false);
-		synth.programChange(msg.data.channel, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].setPresetLock(true);
-	}
-	else if (msg.data.type === 'releaseBankSelect') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.bankSelect] = false;
-	}
-	else if (msg.data.type === 'releasePreset') {
-		synth.midiAudioChannels[msg.data.channel].setPresetLock(false);
-	}
-	else if (msg.data.type === 'modulationWheel') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.modulationWheel] = false;
-		synth.controllerChange(msg.data.channel, midiControllers.modulationWheel, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.modulationWheel] = true;
-	}
-	else if (msg.data.type === 'pan') {
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.pan] = false;
-		synth.controllerChange(msg.data.channel, midiControllers.pan, msg.data.value);
-		synth.midiAudioChannels[msg.data.channel].lockedControllers[midiControllers.pan] = true;
-	}
-	else if (msg.data.type === 'playbackRate') {
-		seq.playbackRate = msg.data.value;
-		playbackRate = msg.data.value;
+	else if (msg.data.type === 'updateSettings') {
+		settings = msg.data.value;
+		console.log(`lDW: updating settings`);
 	}
 	else if (msg.data.type === 'AUDIO_RANGE_REQ') {
 		const port = msg.ports && msg.ports[0];
 		if (!port) {return;}
 		const start = msg.data.start;
 		const end = msg.data.end;
-		const seq_=structuredClone(seq); // make a local copy for this range request, so that range requested are seperate
 		console.log(`dedicated worker: range request received. song hash: ${msg.data.songID}, random UUID: ${msg.data.UUID}, sessionID: ${msg.data.sessionID} start: ${start}, end: ${end}`);
+		const synth = new SpessaSynthProcessor(WAV_SAMPLERATE, {
+			enableEventSystem: false,
+			effectsEnabled: false
+		});
+		synth.soundfontManager.reloadManager(primarySoundFont);
+		synth.soundfontManager.addNewSoundFont(secondarySoundFont,"secondary",SOUNDFONTBANK);
+		await synth.processorInitialized;
+		console.log("worker: synthProcessor initialised");
+		const seq = new SpessaSynthSequencer(synth);
+		seq.skipToFirstNoteOn = false;
+		seq.loadNewSongList([midi]);
+    	seq.loop = false;
+		console.log("worker: synthSequencer initialised");
+		for(const channel of settings.channels) {
+			setPan(synth, channel.number, channel.pan);
+			setMainVolume(synth, channel.number, channel.volume);
+			setModulationWheel(synth, channel.number, 0); //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
+		}
 
 		try {
 			// Send header slice if needed.
@@ -101,7 +73,7 @@ self.onmessage = (msg) => {
 			const dataStart_bytes = Math.max(start, WAV_HEADERSIZE) - WAV_HEADERSIZE;
 			const dataEndExclusive_bytes = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
 			const start_seconds = dataStart_bytes / WAV_SAMPLERATE / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS *playbackRate;
-			seq_.currentTime = start_seconds;
+			seq.currentTime = start_seconds;
 			const dataLength_samples = (dataEndExclusive_bytes - dataStart_bytes) / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS; // per channel
 			let processedSamples = 0;
 
@@ -133,7 +105,7 @@ self.onmessage = (msg) => {
 				while (filledSamples < sampleCount)
 				{
 					// process sequencer
-					seq_.processTick();
+					seq.processTick();
 					// render
 					const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
 					synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
@@ -163,6 +135,48 @@ self.onmessage = (msg) => {
 };
 
 
+
+function setPan(synth, channel, pan) {
+	synth.midiAudioChannels[channel].lockedControllers[midiControllers.pan] = false;
+	synth.controllerChange(channel, midiControllers.pan, pan);
+	synth.midiAudioChannels[channel].lockedControllers[midiControllers.pan] = true;
+}
+
+function setModulationWheel(synth, channel, modulation) {
+	synth.midiAudioChannels[channel].lockedControllers[midiControllers.modulationWheel] = false;
+	synth.controllerChange(channel, midiControllers.modulationWheel, modulation);
+	synth.midiAudioChannels[channel].lockedControllers[midiControllers.modulationWheel] = true;
+}
+
+function releasePreset(synth, channel) {
+	synth.midiAudioChannels[channel].setPresetLock(false);
+}
+
+function releaseBankSelect(synth, channel) {
+	synth.midiAudioChannels[channel].lockedControllers[midiControllers.bankSelect] = false;
+}
+
+function programChange(synth, channel, program) {
+	synth.midiAudioChannels[channel].setPresetLock(false);
+	synth.programChange(channel, program);
+	synth.midiAudioChannels[channel].setPresetLock(true);
+}
+
+function bankSelect(synth, channel, bank) {
+	synth.midiAudioChannels[channel].lockedControllers[midiControllers.bankSelect] = false;
+	synth.controllerChange(channel, midiControllers.bankSelect, bank);
+	synth.midiAudioChannels[channel].lockedControllers[midiControllers.bankSelect] = true;
+}
+
+function setDrums(synth, channel, isDrum) {
+	synth.midiAudioChannels[hannel].setDrums(isDrum);
+}
+
+function setMainVolume(synth, channel, mainVolume) {
+	synth.midiAudioChannels[channel].lockedControllers[midiControllers.mainVolume] = false;
+	synth.controllerChange(channel, midiControllers.mainVolume, mainVolume);
+	synth.midiAudioChannels[channel].lockedControllers[midiControllers.mainVolume] = true;
+}
 
 function generateWavHeader() {
 	const dataLength_bytes = Math.floor(midi.duration / playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file

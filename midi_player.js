@@ -281,13 +281,13 @@ async function activateApplication(instruments)
 		playbackRateInput.addEventListener('change',playbackRateCallback);
 		async function playbackRateCallback() {
 			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
-			dedicatedWorker.postMessage({type: 'playbackRate', value: playbackRateInput.value});
 			let currentPlaybackRate = settings.playbackRate;
 			if (settings?.midiFileHash !== undefined) {
 				settings.playbackRate = playbackRateInput.value;
 				settings.wavLength_bytes = Math.floor(settings.duration_s / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
 				await storeSettings(settings.midiFileHash, settings);
 			}
+            dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 			updateAudioElement(currentPlaybackRate);
 		}
         
@@ -347,7 +347,6 @@ async function activateApplication(instruments)
                                
                 //set up playback rate control based on settings
                 playbackRateInput.value = settings.playbackRate;
-                dedicatedWorker.postMessage({type: 'playbackRate', value: settings.playbackRate});
                 playbackRateValue.textContent = `${Number(settings.playbackRate).toFixed(2)}x`;
 
                 const instrumentControls = new Map(); // array of instrument controls to be able to control them
@@ -423,13 +422,12 @@ async function activateApplication(instruments)
                 volumeSlider.min = 0;
                 volumeSlider.max = 127;
                 volumeSlider.value = channel.volume;
-				dedicatedWorker.postMessage({type: 'SetMainVolume', channel: channel.number, value: volumeSlider.value});
                 volumeSlider.onchange = async () => {
-                    dedicatedWorker.postMessage({type: 'SetMainVolume', channel: channel.number, value: volumeSlider.value});
                     channel.volume = parseInt(volumeSlider.value);
                     if (settings?.midiFileHash !== undefined) {
                         await storeSettings(settings.midiFileHash, settings);
                     }
+                    dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 					updateAudioElement(settings.playbackRate);					
                 }
             
@@ -446,13 +444,10 @@ async function activateApplication(instruments)
                 option.textContent = "Default"
                 if (channel.selectedInstrument === "Default") {
                     option.selected = true;
-					dedicatedWorker.postMessage({type: 'releaseBankSelect', channel: channel.number}); // bankselect controller is released
-					dedicatedWorker.postMessage({type: 'releasePreset', channel: channel.number}); // preset is released
                 } else {option.selected = false;}
                 instrumentSelect.appendChild(option);
                 
                 if (channel.number === DEFAULT_PERCUSSION_CHANNEL) { 
-                    dedicatedWorker.postMessage({type: 'isDrum', channel: channel.number, boolean: true});
 					instrumentSelect.disabled = true;
                 }
                 else { // do not have interactive drop-down menu when the channel is used for percussion.
@@ -462,27 +457,26 @@ async function activateApplication(instruments)
                         option.textContent = instrument.presetName;
                         if (channel.selectedInstrument === instrument.presetName) { // activate selected instrument
                             option.selected = true;
-							dedicatedWorker.postMessage({type: 'bankSelect', channel: channel.number, value: instrument.bank});
-							dedicatedWorker.postMessage({type: 'programChange', channel: channel.number, value: instrument.program});
                         } else {option.selected = false;}
                         instrumentSelect.appendChild(option);
                     }
                     instrumentSelect.addEventListener('change', async function(event) {
-                        let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
+                        // let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
                         for (const option of event.target.options){
                             if (option.selected == true) {
                                 channel.selectedInstrument = option.textContent;
                             }
                         }
-                        if (data[0] === -1) { // default instrument selected
-							dedicatedWorker.postMessage({type: 'releaseBankSelect', channel: channel.number}); // bankselect controller is released
-							dedicatedWorker.postMessage({type: 'releasePreset', channel: channel.number}); // preset is released
-						} else {
-							dedicatedWorker.postMessage({type: 'bankSelect', channel: channel.number, value:  data[0]});
-							dedicatedWorker.postMessage({type: 'programChange', channel: channel.number, value:  data[1]});
-						}
+                        // if (data[0] === -1) { // default instrument selected
+						// 	dedicatedWorker.postMessage({type: 'releaseBankSelect', channel: channel.number}); // bankselect controller is released
+						// 	dedicatedWorker.postMessage({type: 'releasePreset', channel: channel.number}); // preset is released
+						// } else {
+						// 	dedicatedWorker.postMessage({type: 'bankSelect', channel: channel.number, value:  data[0]});
+						// 	dedicatedWorker.postMessage({type: 'programChange', channel: channel.number, value:  data[1]});
+						// }
                         //currentBank.set(channel.number, data[0]);
 						console.log(`changing channel ${channel.number} to instrument ${event.target.value}`);
+                        dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
                         if (settings?.midiFileHash !== undefined) {
                             await storeSettings(settings.midiFileHash, settings);
                         }
@@ -495,12 +489,6 @@ async function activateApplication(instruments)
                 column.appendChild(instrumentSelect);
                 container.appendChild(column);
 
-                            
-                //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
-                dedicatedWorker.postMessage({type: 'modulationWheel', channel: channel.number, value: 0});
-            
-                //set and lock the pan of the channel
-				dedicatedWorker.postMessage({type: 'pan', channel: channel.number, value: channel.pan});            
                 return container;
             }
         }
