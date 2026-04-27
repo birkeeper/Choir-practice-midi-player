@@ -81,7 +81,8 @@ self.onmessage = (msg) => {
 		if (!port) {return;}
 		const start = msg.data.start;
 		const end = msg.data.end;
-		console.log(`dedicated worker: range request received. song hash: ${msg.data.songID}, random UUID: ${msg.data.UUID}, start: ${start}, end: ${end}`);
+		const seq_=structuredClone(seq); // make a local copy for this range request, so that range requested are seperate
+		console.log(`dedicated worker: range request received. song hash: ${msg.data.songID}, random UUID: ${msg.data.UUID}, sessionID: ${msg.data.sessionID} start: ${start}, end: ${end}`);
 
 		try {
 			// Send header slice if needed.
@@ -100,7 +101,7 @@ self.onmessage = (msg) => {
 			const dataStart_bytes = Math.max(start, WAV_HEADERSIZE) - WAV_HEADERSIZE;
 			const dataEndExclusive_bytes = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
 			const start_seconds = dataStart_bytes / WAV_SAMPLERATE / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS *playbackRate;
-			seq.currentTime = start_seconds;
+			seq_.currentTime = start_seconds;
 			const dataLength_samples = (dataEndExclusive_bytes - dataStart_bytes) / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS; // per channel
 			let processedSamples = 0;
 
@@ -121,6 +122,39 @@ self.onmessage = (msg) => {
 					port.close();
 				}
 			}
+
+			function sendPCMchunk(chunkPort_, sampleCount) { // generates  a chunk of PCM data and send it through the port provided. Returns the sample count of the chunk
+				const outLeft = new Float32Array(sampleCount);
+				const outRight = new Float32Array(sampleCount);
+				const outputArray = [outLeft, outRight];
+				const outputPCM = new Uint8Array(sampleCount * WAV_NROFCHANNELS * (WAV_BITSPERSAMPLE/8));
+				const BUFFER_SIZE = 128; // note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
+				let filledSamples = 0;
+				while (filledSamples < sampleCount)
+				{
+					// process sequencer
+					seq_.processTick();
+					// render
+					const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
+					synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
+					filledSamples += bufferSize;
+				}
+
+				let offset = 0;
+				for (let i = 0; i < sampleCount; i++) {
+					// Interleave both channels
+					for (const d of outputArray) {
+						const sample = Math.min(
+							32767,
+							Math.max(-32768, d[i] * MASTERGAIN * 32767)
+						);
+						// Convert to 16-bit
+						outputPCM[offset++] = sample & 0xff;
+						outputPCM[offset++] = (sample >> 8) & 0xff;
+					}
+				}
+				chunkPort_.postMessage({ type: 'chunk', data: outputPCM.buffer },[outputPCM.buffer]);
+			}
     	} catch (err) {
       		port.postMessage({ type: 'error', message: String(err?.message || err) });
       		port.close();
@@ -128,38 +162,7 @@ self.onmessage = (msg) => {
 	}
 };
 
-function sendPCMchunk(chunkPort_, sampleCount) { // generates  a chunk of PCM data and send it through the port provided. Returns the sample count of the chunk
-	const outLeft = new Float32Array(sampleCount);
-	const outRight = new Float32Array(sampleCount);
-	const outputArray = [outLeft, outRight];
-	const outputPCM = new Uint8Array(sampleCount * WAV_NROFCHANNELS * (WAV_BITSPERSAMPLE/8));
-	const BUFFER_SIZE = 128; // note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
-	let filledSamples = 0;
-	while (filledSamples < sampleCount)
-	{
-		// process sequencer
-		seq.processTick();
-		// render
-		const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
-		synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
-		filledSamples += bufferSize;
-	}
 
-	let offset = 0;
-	for (let i = 0; i < sampleCount; i++) {
-		// Interleave both channels
-		for (const d of outputArray) {
-			const sample = Math.min(
-				32767,
-				Math.max(-32768, d[i] * MASTERGAIN * 32767)
-			);
-			// Convert to 16-bit
-			outputPCM[offset++] = sample & 0xff;
-			outputPCM[offset++] = (sample >> 8) & 0xff;
-		}
-	}
-	chunkPort_.postMessage({ type: 'chunk', data: outputPCM.buffer },[outputPCM.buffer]);
-}
 
 function generateWavHeader() {
 	const dataLength_bytes = Math.floor(midi.duration / playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file

@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.44"; 
+const CACHE_NAME = "v10.45"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -192,7 +192,8 @@ const putInCache = async (request, response) => {
     	console.log(`received fetch for: ${url}`);
       const id = url.pathname.match(/\/generatedWav\/(.+)\.wav$/);
       const split = id[1].split('_'); // format: songID_randomUUID
-      event.respondWith(handleSongRequest(event.request, split[0], split[1]));
+      const sessionID = self.crypto.randomUUID();
+      event.respondWith(handleSongRequest(event.request, split[0], split[1], sessionID));
       let debugStringArray = [`service worker: UUID: ${split[1]}`]; //DEBUG
       for (const pair of event.request.headers.entries()) {
         debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
@@ -297,7 +298,7 @@ self.addEventListener('message', async (event) => {
 });
 
 
-async function handleSongRequest(request, songID, randomUUID) {
+async function handleSongRequest(request, songID, randomUUID, sessionID) {
 	const cache = await caches.open(CACHE_NAME);
 	const response = await cache.match(`./settings/${songID}`);
 	if (!response.ok) { 
@@ -314,10 +315,10 @@ async function handleSongRequest(request, songID, randomUUID) {
       		client = clientItem;
 		}
 	}
-	const total = settings.wavLength_bytes;
+  const total = settings.wavLength_bytes;
 	const rangeHdr = request.headers.get('Range');
-  	let isPartial = false;
-  	let start = 0, end = total - 1;
+  let isPartial = false;
+  let start = 0, end = total - 1;
 
 	
 	if (rangeHdr) {
@@ -348,14 +349,16 @@ async function handleSongRequest(request, songID, randomUUID) {
         } else if (msg.type === 'end') {
           controller.close();
           port.close();
-          client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}`});
+          console.log(`service worker: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`);
+          client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`});
         } else if (msg.type === 'error') {
           controller.error(new Error(msg.reason || 'gen failed'));
           port.close();
-          client.postMessage({type:'DEBUG', message: `SW: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}`});
+          console.log(`service worker: 'error' received; Ureason: ${msg.reason}; UID: ${randomUUID}; sessionID: ${sessionID}`);
+          client.postMessage({type:'DEBUG', message: `SW: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}; sessionID: ${sessionID}`});
         }
       }
-      client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, start: start, end: end },[channel.port2]);
+      client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, sessionID: sessionID, start: start, end: end },[channel.port2]);
     },
 		pull(controller){
 			return new Promise( async (resolve, reject) => {
@@ -375,10 +378,10 @@ async function handleSongRequest(request, songID, randomUUID) {
 			});
 		},
 		cancel(reason) {
-			console.log(`service worker: ReadableStream canceled; UUID: ${randomUUID}`);
+			console.log(`service worker: ReadableStream canceled; UUID: ${randomUUID}; sessionID: ${sessionID}`);
 			port.postMessage({type: 'cancel'});
 			port.close();
-      client.postMessage({type:'DEBUG', message: `SW: ReadableStream canceled; UUID: ${randomUUID}`});
+      client.postMessage({type:'DEBUG', message: `SW: ReadableStream canceled; UUID: ${randomUUID}; sessionID: ${sessionID}`});
 		}
   }, {highWaterMark: 13});
 
