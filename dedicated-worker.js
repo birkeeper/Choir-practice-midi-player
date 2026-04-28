@@ -54,6 +54,18 @@ self.onmessage = async (msg) => {
 			setPan(synth, channel.number, channel.pan);
 			setMainVolume(synth, channel.number, channel.volume);
 			setModulationWheel(synth, channel.number, 0); //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant
+			if (channel.selectedInstrument === "Default") {
+				releaseBankSelect(synth, channel.number);
+				releasePreset(synth, channel.number);
+			}
+			else {
+				for (const instrument of Object.values(instruments)) {
+					if (channel.selectedInstrument === instrument.presetName) {
+						bankSelect(synth, channel.number, instrument.bank);
+						programChange(synth, channel.number, instrument.program);
+					}
+				}
+			}
 		}
 
 		try {
