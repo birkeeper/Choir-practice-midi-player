@@ -282,12 +282,12 @@ async function activateApplication(instruments)
 		async function playbackRateCallback() {
 			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
 			let currentPlaybackRate = settings.playbackRate;
+			dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 			if (settings?.midiFileHash !== undefined) {
 				settings.playbackRate = playbackRateInput.value;
 				settings.wavLength_bytes = Math.floor(settings.duration_s / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
 				await storeSettings(settings.midiFileHash, settings);
 			}
-            dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 			updateAudioElement(currentPlaybackRate);
 		}
         
@@ -355,6 +355,7 @@ async function activateApplication(instruments)
                     channelControlsContainer.appendChild(channelControl);
                 }
 				
+				dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 				storeSettings(settings.midiFileHash,settings)
 				.then( () => { // setup audioElement
                 	audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`; // point to file that will be generated on the fly
@@ -424,10 +425,10 @@ async function activateApplication(instruments)
                 volumeSlider.value = channel.volume;
                 volumeSlider.onchange = async () => {
                     channel.volume = parseInt(volumeSlider.value);
+					dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
                     if (settings?.midiFileHash !== undefined) {
                         await storeSettings(settings.midiFileHash, settings);
                     }
-                    dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 					updateAudioElement(settings.playbackRate);					
                 }
             
@@ -461,20 +462,11 @@ async function activateApplication(instruments)
                         instrumentSelect.appendChild(option);
                     }
                     instrumentSelect.addEventListener('change', async function(event) {
-                        // let data = event.target.value.split(":").map(value => parseInt(value, 10)); // bank:program
                         for (const option of event.target.options){
                             if (option.selected == true) {
                                 channel.selectedInstrument = option.textContent;
                             }
                         }
-                        // if (data[0] === -1) { // default instrument selected
-						// 	dedicatedWorker.postMessage({type: 'releaseBankSelect', channel: channel.number}); // bankselect controller is released
-						// 	dedicatedWorker.postMessage({type: 'releasePreset', channel: channel.number}); // preset is released
-						// } else {
-						// 	dedicatedWorker.postMessage({type: 'bankSelect', channel: channel.number, value:  data[0]});
-						// 	dedicatedWorker.postMessage({type: 'programChange', channel: channel.number, value:  data[1]});
-						// }
-                        //currentBank.set(channel.number, data[0]);
 						console.log(`changing channel ${channel.number} to instrument ${event.target.value}`);
                         dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
                         if (settings?.midiFileHash !== undefined) {
