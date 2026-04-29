@@ -92,6 +92,7 @@ self.onmessage = async (msg) => {
 			const dataEndExclusive_bytes = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
 			const start_seconds = dataStart_bytes / WAV_SAMPLERATE / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS *playbackRate;
 			seq.currentTime = start_seconds;
+			seq.playbackRate = playbackRate;
 			const dataLength_samples = (dataEndExclusive_bytes - dataStart_bytes) / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS; // per channel
 			let processedSamples = 0;
 
