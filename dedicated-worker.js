@@ -51,6 +51,7 @@ self.onmessage = async (msg) => {
     	seq.loop = false;
 		console.log("worker: synthSequencer initialised");
 		const playbackRate = settings.playbackRate;
+		const duration = settings.duration_s;
 		for(const channel of settings.channels) {
 			setPan(synth, channel.number, channel.pan);
 			setMainVolume(synth, channel.number, channel.volume);
@@ -75,7 +76,7 @@ self.onmessage = async (msg) => {
 		try {
 			// Send header slice if needed.
 			if (start < WAV_HEADERSIZE) {
-				const hdr = generateWavHeader();
+				const hdr = generateWavHeader(duration, playbackRate);
 				const hdrSlice = hdr.slice(start, Math.min(end + 1, WAV_HEADERSIZE));
 				port.postMessage({ type: 'chunk', data: hdrSlice.buffer }, [hdrSlice.buffer]);
 			}
@@ -85,7 +86,7 @@ self.onmessage = async (msg) => {
 			}
 
 			// Send PCM bytes if needed.
-			const dataLength_bytes = Math.floor(midi.duration / playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
+			const dataLength_bytes = Math.floor(duration / playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
 			const dataStart_bytes = Math.max(start, WAV_HEADERSIZE) - WAV_HEADERSIZE;
 			const dataEndExclusive_bytes = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
 			const start_seconds = dataStart_bytes / WAV_SAMPLERATE / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS *playbackRate;
@@ -150,8 +151,6 @@ self.onmessage = async (msg) => {
 	}
 };
 
-
-
 function setPan(synth, channel, pan) {
 	synth.midiAudioChannels[channel].lockedControllers[midiControllers.pan] = false;
 	synth.controllerChange(channel, midiControllers.pan, pan);
@@ -194,8 +193,8 @@ function setMainVolume(synth, channel, mainVolume) {
 	synth.midiAudioChannels[channel].lockedControllers[midiControllers.mainVolume] = true;
 }
 
-function generateWavHeader() {
-	const dataLength_bytes = Math.floor(midi.duration / playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
+function generateWavHeader(duration, playbackRate) {
+	const dataLength_bytes = Math.floor(duration / playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
 	const fileSize_bytes = dataLength_bytes + WAV_HEADERSIZE -8; // [bytes] file size -8
 	const header = new Uint8Array(WAV_HEADERSIZE);
 
