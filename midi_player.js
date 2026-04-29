@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc47"
+const VERSION = "v3.0.0rc48"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -282,10 +282,10 @@ async function activateApplication(instruments)
 		async function playbackRateCallback() {
 			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
 			let currentPlaybackRate = settings.playbackRate;
-			dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 			if (settings?.midiFileHash !== undefined) {
 				settings.playbackRate = playbackRateInput.value;
 				settings.wavLength_bytes = Math.floor(settings.duration_s / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
+                dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 				await storeSettings(settings.midiFileHash, settings);
 			}
 			updateAudioElement(currentPlaybackRate);

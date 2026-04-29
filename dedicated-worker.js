@@ -24,12 +24,12 @@ let settings;
 self.onmessage = async (msg) => {
     console.log(`worker: message received of type: ${msg.data.type}`);
 	if (msg.data.type === 'LOAD_MIDI') {
-		console.log(`DW: oading midi`);
+		console.log(`DW: loading midi`);
 		midi = msg.data.midi;
 	}
 	else if (msg.data.type === 'updateSettings') {
 		settings = msg.data.value;
-		console.log(`lDW: updating settings`);
+		console.log(`DW: updating settings to ${settings}`);
 	}
 	else if (msg.data.type === 'AUDIO_RANGE_REQ') {
 		const port = msg.ports && msg.ports[0];
@@ -50,6 +50,7 @@ self.onmessage = async (msg) => {
 		seq.loadNewSongList([midi]);
     	seq.loop = false;
 		console.log("worker: synthSequencer initialised");
+		console.log(`DW: using following settings: ${settings}`);
 		const playbackRate = settings.playbackRate;
 		const duration = settings.duration_s;
 		for(const channel of settings.channels) {
@@ -184,7 +185,7 @@ function bankSelect(synth, channel, bank) {
 }
 
 function setDrums(synth, channel, isDrum) {
-	synth.midiAudioChannels[hannel].setDrums(isDrum);
+	synth.midiAudioChannels[channel].setDrums(isDrum);
 }
 
 function setMainVolume(synth, channel, mainVolume) {

@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.47"; 
+const CACHE_NAME = "v10.48"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -194,7 +194,7 @@ const putInCache = async (request, response) => {
       const split = id[1].split('_'); // format: songID_randomUUID
       const sessionID = self.crypto.randomUUID();
       event.respondWith(handleSongRequest(event.request, split[0], split[1], sessionID));
-      let debugStringArray = [`service worker: UUID: ${split[1]}`]; //DEBUG
+      let debugStringArray = [`service worker: UUID: ${split[1]}`, `sessionID: ${sessionID}`]; //DEBUG
       for (const pair of event.request.headers.entries()) {
         debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
       }
@@ -354,7 +354,7 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
         } else if (msg.type === 'error') {
           controller.error(new Error(msg.reason || 'gen failed'));
           port.close();
-          console.log(`service worker: 'error' received; Ureason: ${msg.reason}; UID: ${randomUUID}; sessionID: ${sessionID}`);
+          console.log(`service worker: 'error' received; reason: ${msg.reason}; UID: ${randomUUID}; sessionID: ${sessionID}`);
           client.postMessage({type:'DEBUG', message: `SW: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}; sessionID: ${sessionID}`});
         }
       }
