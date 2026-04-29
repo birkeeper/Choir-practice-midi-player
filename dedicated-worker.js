@@ -19,7 +19,6 @@ for (const instrument of Object.values(instruments)) { //adjust soundfont preset
 }
 
 let midi;
-let playbackRate = 1;
 let settings;
 
 self.onmessage = async (msg) => {
@@ -51,6 +50,7 @@ self.onmessage = async (msg) => {
 		seq.loadNewSongList([midi]);
     	seq.loop = false;
 		console.log("worker: synthSequencer initialised");
+		const playbackRate = settings.playbackRate;
 		for(const channel of settings.channels) {
 			setPan(synth, channel.number, channel.pan);
 			setMainVolume(synth, channel.number, channel.volume);
