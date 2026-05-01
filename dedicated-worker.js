@@ -150,6 +150,7 @@ self.onmessage = async (msg) => {
       		port.postMessage({ type: 'error', message: String(err?.message || err) });
       		port.close();
     	}
+		port.postMessage({ type: 'ready' }); // signal that the code is ready to receive requests for chunks
 	}
 };
 

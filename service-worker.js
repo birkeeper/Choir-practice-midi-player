@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.49"; 
+const CACHE_NAME = "v10.50"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -339,26 +339,33 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
 	let port;
 	const stream = new ReadableStream({
     start(controller){
-      const channel = new MessageChannel();
-      port = channel.port1;
-      port.onmessage = (e) => {
-        const msg = e.data;
-        if (msg.type == 'chunk') {
-          // Transferable ArrayBuffer to avoid copies
-          controller.enqueue(new Uint8Array(msg.data));
-        } else if (msg.type === 'end') {
-          controller.close();
-          port.close();
-          console.log(`service worker: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`);
-          client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`});
-        } else if (msg.type === 'error') {
-          controller.error(new Error(msg.reason || 'gen failed'));
-          port.close();
-          console.log(`service worker: 'error' received; reason: ${msg.reason}; UID: ${randomUUID}; sessionID: ${sessionID}`);
-          client.postMessage({type:'DEBUG', message: `SW: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}; sessionID: ${sessionID}`});
+      return new Promise((resolve) => {
+        const channel = new MessageChannel();
+        port = channel.port1;
+        port.onmessage = (e) => {
+          const msg = e.data;
+          if (msg.type == 'chunk') {
+            // Transferable ArrayBuffer to avoid copies
+            controller.enqueue(new Uint8Array(msg.data));
+          } else if (msg.type === 'end') {
+            controller.close();
+            port.close();
+            console.log(`service worker: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`);
+            client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`});
+          } else if (msg.type === 'error') {
+            controller.error(new Error(msg.reason || 'gen failed'));
+            port.close();
+            console.log(`service worker: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}; sessionID: ${sessionID}`);
+            client.postMessage({type:'DEBUG', message: `SW: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}; sessionID: ${sessionID}`});
+            reject();
+          } else if (msg.type === 'ready') {
+            console.log(`SW: ready to pull chunks; UUID: ${randomUUID}; sessionID: ${sessionID}`);
+            client.postMessage({type:'DEBUG', message: `SW: ready to pull chunks; UUID: ${randomUUID}; sessionID: ${sessionID}`});
+            resolve();
+          }
         }
-      }
-      client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, sessionID: sessionID, start: start, end: end },[channel.port2]);
+        client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, sessionID: sessionID, start: start, end: end },[channel.port2]);
+      });
     },
 		pull(controller){
 			return new Promise( async (resolve, reject) => {
