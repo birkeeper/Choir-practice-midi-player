@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc50"
+const VERSION = "v3.0.0rc51"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -214,7 +214,8 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
 document.getElementById("forward-label").innerHTML = getForwardSvg(ICON_SIZE_PX);
 document.getElementById("backward-label").innerHTML = getBackwardSvg(ICON_SIZE_PX);
 
-const audioElement = new Audio();
+const iframe = document.getElementById("audioElement");
+const audioElement = iframe.contentDocument.getElementById("audioElement");
 console.log("audioElement created");
 
 dedicatedWorker.onmessage = (e) => {
@@ -243,6 +244,7 @@ async function activateApplication(instruments)
 
     let settings;
     setEventListenersAudioElement();
+    siframe.onload = ()=> {setEventListenersAudioElement();};
     
     async function setupApplication() {
         // parse all the files
@@ -358,12 +360,12 @@ async function activateApplication(instruments)
 				dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 				storeSettings(settings.midiFileHash,settings)
 				.then( () => { // setup audioElement
-                	audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`; // point to file that will be generated on the fly
-					console.log(`generated wave file loaded: ${audioElement.src}`);
 					audioElement.pause();
-					audioElement.currentTime = 0.0;
+                    audioElement.currentTime = 0.0;
 					progressSlider.value = Math.floor(0.0);
 					currentTimeDisplay.textContent = formatTime(0.0);
+                    updateAudioElement(settings.playbackRate);
+                    console.log(`generated wave file loaded: ${audioElement.src}`);
 					if ("mediaSession" in navigator) {
 						navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
 						navigator.mediaSession.playbackState = "paused";
@@ -556,6 +558,7 @@ async function activateApplication(instruments)
 		const currentTime = audioElement.currentTime * currentPlaybackRate;
 		audioElement.pause();
         const old_wav = audioElement.src;
+        iframe.src = iframe.src; // reload frame with audioElement. Resets the audioElement
 		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
 		audioElement.load();
 		audioElement.currentTime = currentTime / settings.playbackRate;
