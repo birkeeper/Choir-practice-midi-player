@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc57"
+const VERSION = "v3.0.0rc58"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -243,16 +243,16 @@ async function activateApplication(instruments)
 	document.getElementById("message").innerText = "open midi file";
 
     let settings;
-    let currentPlaybackRate = 1
+    let currentPlaybackRate = 1;
+    let currentTime = 0;
     setEventListenersAudioElement();
     iframe.onload = ()=> {
-        const currentTime = audioElement.currentTime * currentPlaybackRate;
-		audioElement.pause();
         const old_wav = audioElement.src;
         audioElement = iframe.contentDocument.getElementById("audioElement");
         setEventListenersAudioElement();
         audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
         audioElement.currentTime = currentTime / settings.playbackRate;
+        currentPlaybackRate = settings.playbackRate;
         appendAlert( `main: AudioElement ${old_wav} has been replaced with ${audioElement.src}`, 'info', 'DEBUG');
     };
     
@@ -282,7 +282,7 @@ async function activateApplication(instruments)
 		function handleReleaseProgressSlider() {
 			audioElement.currentTime = Number(progressSlider.value) / settings.playbackRate;
 			progressSlider.BeingDragged = false;
-			iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+			updateAudioElement();
 			console.log("progress slider released");
 		}
 
@@ -299,7 +299,7 @@ async function activateApplication(instruments)
                 dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 				await storeSettings(settings.midiFileHash, settings);
 			}
-			iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+			updateAudioElement();
             currentPlaybackRate = settings.playbackRate;
 		}
         
@@ -401,7 +401,7 @@ async function activateApplication(instruments)
 								audioElement.currentTime = evt.seekTime / settings.playbackRate;
                                 progressSlider.value = Math.floor(evt.seekTime);
                                 currentTimeDisplay.textContent = formatTime(evt.seekTime);
-								iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+								updateAudioElement();
                             }
 							else {
 								progressSlider.BeingDragged = true;
@@ -409,11 +409,11 @@ async function activateApplication(instruments)
                         });
 						navigator.mediaSession.setActionHandler("nexttrack", () => {
                             audioElement.currentTime = Math.min((audioElement.currentTime*settings.playbackRate + SKIPFORWARD_SECONDS)/settings.playbackRate, audioElement.duration-1);
-							iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+							updateAudioElement();
                         });
 						navigator.mediaSession.setActionHandler("previoustrack", () => {
                             audioElement.currentTime = Math.max((audioElement.currentTime*settings.playbackRate - SKIPBACKWARD_SECONDS)/settings.playbackRate, 0);
-							iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+							updateAudioElement();
                         });
 					}
 				});
@@ -442,7 +442,7 @@ async function activateApplication(instruments)
                     if (settings?.midiFileHash !== undefined) {
                         await storeSettings(settings.midiFileHash, settings);
                     }
-					iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement			
+					updateAudioElement();					
                 }
             
                 const column2 = document.createElement('div');
@@ -485,7 +485,7 @@ async function activateApplication(instruments)
                         if (settings?.midiFileHash !== undefined) {
                             await storeSettings(settings.midiFileHash, settings);
                         }
-						iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+						updateAudioElement();
                     });
                     instrumentControls.set(channel.number,instrumentSelect);                 
                 }
@@ -524,13 +524,13 @@ async function activateApplication(instruments)
 		// on forward click
         document.getElementById("forward").onclick = () => {
 			audioElement.currentTime = Math.min((audioElement.currentTime*settings.playbackRate + SKIPFORWARD_SECONDS)/settings.playbackRate, audioElement.duration-1);
-			iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+			updateAudioElement();
         }
 
 		// on backward click
         document.getElementById("backward").onclick = () => {
 			audioElement.currentTime = Math.max((audioElement.currentTime*settings.playbackRate - SKIPBACKWARD_SECONDS)/settings.playbackRate, 0);
-			iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+			updateAudioElement();
         }
     }
 
@@ -563,6 +563,12 @@ async function activateApplication(instruments)
 		const minutes = Math.floor(seconds / 60);
 		const secs = Math.floor(seconds % 60);
 		return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+	}
+
+	function updateAudioElement() { // 
+		currentTime = audioElement.currentTime * currentPlaybackRate;
+		audioElement.pause();        
+        iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
 	}
 
     // add an event listener for the recently opened files
@@ -640,7 +646,7 @@ async function activateApplication(instruments)
 			currentTimeDisplay.textContent = formatTime(0.0);
 			document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 			audioElement.pause();
-			updateAudioElement(settings.playbackRate);
+			updateAudioElement();
 		});
         audioElement.addEventListener("canplay", (event) => {
 			const paused = document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX); // audioElement.paused is unrealiable when buttons are bashed.
