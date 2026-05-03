@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc56"
+const VERSION = "v3.0.0rc57"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -243,11 +243,17 @@ async function activateApplication(instruments)
 	document.getElementById("message").innerText = "open midi file";
 
     let settings;
+    let currentPlaybackRate = 1
     setEventListenersAudioElement();
     iframe.onload = ()=> {
+        const currentTime = audioElement.currentTime * currentPlaybackRate;
+		audioElement.pause();
+        const old_wav = audioElement.src;
         audioElement = iframe.contentDocument.getElementById("audioElement");
         setEventListenersAudioElement();
         audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
+        audioElement.currentTime = currentTime / settings.playbackRate;
+        appendAlert( `main: AudioElement ${old_wav} has been replaced with ${audioElement.src}`, 'info', 'DEBUG');
     };
     
     async function setupApplication() {
@@ -276,7 +282,7 @@ async function activateApplication(instruments)
 		function handleReleaseProgressSlider() {
 			audioElement.currentTime = Number(progressSlider.value) / settings.playbackRate;
 			progressSlider.BeingDragged = false;
-			updateAudioElement(settings.playbackRate);
+			iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
 			console.log("progress slider released");
 		}
 
@@ -287,14 +293,14 @@ async function activateApplication(instruments)
 		playbackRateInput.addEventListener('change',playbackRateCallback);
 		async function playbackRateCallback() {
 			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
-			let currentPlaybackRate = settings.playbackRate;
 			if (settings?.midiFileHash !== undefined) {
 				settings.playbackRate = playbackRateInput.value;
 				settings.wavLength_bytes = Math.floor(settings.duration_s / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
                 dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 				await storeSettings(settings.midiFileHash, settings);
 			}
-			updateAudioElement(currentPlaybackRate);
+			iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+            currentPlaybackRate = settings.playbackRate;
 		}
         
 		
@@ -348,6 +354,7 @@ async function activateApplication(instruments)
 					settings.wavLength_bytes = Math.floor(midi.duration / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
 				}
                 settings.lastOpened = Date.now();
+                currentPlaybackRate = settings.playbackRate;
 				document.getElementById("message").innerText = settings.midiName;
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                                
@@ -394,7 +401,7 @@ async function activateApplication(instruments)
 								audioElement.currentTime = evt.seekTime / settings.playbackRate;
                                 progressSlider.value = Math.floor(evt.seekTime);
                                 currentTimeDisplay.textContent = formatTime(evt.seekTime);
-								updateAudioElement(settings.playbackRate);
+								iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
                             }
 							else {
 								progressSlider.BeingDragged = true;
@@ -402,11 +409,11 @@ async function activateApplication(instruments)
                         });
 						navigator.mediaSession.setActionHandler("nexttrack", () => {
                             audioElement.currentTime = Math.min((audioElement.currentTime*settings.playbackRate + SKIPFORWARD_SECONDS)/settings.playbackRate, audioElement.duration-1);
-							updateAudioElement(settings.playbackRate);
+							iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
                         });
 						navigator.mediaSession.setActionHandler("previoustrack", () => {
                             audioElement.currentTime = Math.max((audioElement.currentTime*settings.playbackRate - SKIPBACKWARD_SECONDS)/settings.playbackRate, 0);
-							updateAudioElement(settings.playbackRate);
+							iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
                         });
 					}
 				});
@@ -435,7 +442,7 @@ async function activateApplication(instruments)
                     if (settings?.midiFileHash !== undefined) {
                         await storeSettings(settings.midiFileHash, settings);
                     }
-					updateAudioElement(settings.playbackRate);					
+					iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement			
                 }
             
                 const column2 = document.createElement('div');
@@ -478,7 +485,7 @@ async function activateApplication(instruments)
                         if (settings?.midiFileHash !== undefined) {
                             await storeSettings(settings.midiFileHash, settings);
                         }
-						updateAudioElement(settings.playbackRate);
+						iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
                     });
                     instrumentControls.set(channel.number,instrumentSelect);                 
                 }
@@ -517,13 +524,13 @@ async function activateApplication(instruments)
 		// on forward click
         document.getElementById("forward").onclick = () => {
 			audioElement.currentTime = Math.min((audioElement.currentTime*settings.playbackRate + SKIPFORWARD_SECONDS)/settings.playbackRate, audioElement.duration-1);
-			updateAudioElement(settings.playbackRate);
+			iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
         }
 
 		// on backward click
         document.getElementById("backward").onclick = () => {
 			audioElement.currentTime = Math.max((audioElement.currentTime*settings.playbackRate - SKIPBACKWARD_SECONDS)/settings.playbackRate, 0);
-			updateAudioElement(settings.playbackRate);
+			iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
         }
     }
 
@@ -556,17 +563,6 @@ async function activateApplication(instruments)
 		const minutes = Math.floor(seconds / 60);
 		const secs = Math.floor(seconds % 60);
 		return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-	}
-
-	function updateAudioElement(currentPlaybackRate) { // 
-		const currentTime = audioElement.currentTime * currentPlaybackRate;
-		audioElement.pause();
-        const old_wav = audioElement.src;
-        iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
-		//audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
-		//audioElement.load();
-		audioElement.currentTime = currentTime / settings.playbackRate;
-        appendAlert( `main: AudioElement ${old_wav} has been replaced with ${audioElement.src}`, 'info', 'DEBUG');
 	}
 
     // add an event listener for the recently opened files
