@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc55"
+const VERSION = "v3.0.0rc56"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -215,7 +215,7 @@ document.getElementById("forward-label").innerHTML = getForwardSvg(ICON_SIZE_PX)
 document.getElementById("backward-label").innerHTML = getBackwardSvg(ICON_SIZE_PX);
 
 const iframe = document.getElementById("audioElementFrame");
-const audioElement = iframe.contentDocument.getElementById("audioElement");
+let audioElement = iframe.contentDocument.getElementById("audioElement");
 console.log("audioElement created");
 
 dedicatedWorker.onmessage = (e) => {
@@ -244,7 +244,11 @@ async function activateApplication(instruments)
 
     let settings;
     setEventListenersAudioElement();
-    iframe.onload = ()=> {setEventListenersAudioElement();};
+    iframe.onload = ()=> {
+        audioElement = iframe.contentDocument.getElementById("audioElement");
+        setEventListenersAudioElement();
+        audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
+    };
     
     async function setupApplication() {
         // parse all the files
@@ -559,8 +563,8 @@ async function activateApplication(instruments)
 		audioElement.pause();
         const old_wav = audioElement.src;
         iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
-		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
-		audioElement.load();
+		//audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
+		//audioElement.load();
 		audioElement.currentTime = currentTime / settings.playbackRate;
         appendAlert( `main: AudioElement ${old_wav} has been replaced with ${audioElement.src}`, 'info', 'DEBUG');
 	}
