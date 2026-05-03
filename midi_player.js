@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc52"
+const VERSION = "v3.0.0rc53"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -214,7 +214,7 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
 document.getElementById("forward-label").innerHTML = getForwardSvg(ICON_SIZE_PX);
 document.getElementById("backward-label").innerHTML = getBackwardSvg(ICON_SIZE_PX);
 
-const iframe = document.getElementById("audioElement");
+const iframe = document.getElementById("audioElementFrame");
 const audioElement = iframe.contentDocument.getElementById("audioElement");
 console.log("audioElement created");
 
