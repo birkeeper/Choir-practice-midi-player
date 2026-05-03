@@ -360,12 +360,12 @@ async function activateApplication(instruments)
 				dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 				storeSettings(settings.midiFileHash,settings)
 				.then( () => { // setup audioElement
-					audioElement.pause();
+					audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`; // point to file that will be generated on the fly
+					console.log(`generated wave file loaded: ${audioElement.src}`);
+                    audioElement.pause();
                     audioElement.currentTime = 0.0;
 					progressSlider.value = Math.floor(0.0);
 					currentTimeDisplay.textContent = formatTime(0.0);
-                    updateAudioElement(settings.playbackRate);
-                    console.log(`generated wave file loaded: ${audioElement.src}`);
 					if ("mediaSession" in navigator) {
 						navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
 						navigator.mediaSession.playbackState = "paused";
