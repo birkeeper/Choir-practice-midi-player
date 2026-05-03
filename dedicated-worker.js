@@ -1,5 +1,5 @@
 import { loadSoundFont, SpessaSynthSequencer, SpessaSynthProcessor, midiControllers } from './libraries/spessasynth_core/index.js';
-import { SOUNDFONT_GM, SOUNTFONT_SPECIAL } from "./constants.js";
+import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const MASTERGAIN = Math.pow(10,9/20); //NOTE: clipping possible when >1.0
