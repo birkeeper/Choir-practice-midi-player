@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc54"
+const VERSION = "v3.0.0rc55"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -558,7 +558,7 @@ async function activateApplication(instruments)
 		const currentTime = audioElement.currentTime * currentPlaybackRate;
 		audioElement.pause();
         const old_wav = audioElement.src;
-        iframe.src = iframe.src; // reload frame with audioElement. Resets the audioElement
+        iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
 		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
 		audioElement.load();
 		audioElement.currentTime = currentTime / settings.playbackRate;
