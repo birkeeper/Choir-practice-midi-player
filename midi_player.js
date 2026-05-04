@@ -624,10 +624,11 @@ async function activateApplication(instruments)
 		});
 		audioElement.addEventListener("stalled", (event) => {
 			console.log(`main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-            appendAlert( `main: AudioElement sTsource AudioElement ended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
+            appendAlert( `main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`, 'warning', 'DEBUG');
         });
 		audioElement.addEventListener("suspend", (event) => {
 			console.log(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
+            appendAlert(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`, 'info', 'DEBUG');
 		});
 		audioElement.addEventListener("timeupdate", () => {
 			if (!progressSlider.BeingDragged) {
