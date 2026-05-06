@@ -383,6 +383,7 @@ async function activateApplication(instruments)
                             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
 							audioElement.play().catch((err)=>{
 								if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
+                                if (err.name === "NotAllowedError") { return; } // user did not do any GUI interaction, so the audio will not play.
 								else { throw err;}
 							});
                             navigator.mediaSession.playbackState = "playing";
@@ -495,6 +496,7 @@ async function activateApplication(instruments)
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
 				audioElement.play().catch((err)=>{
 					if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
+                    if (err.name === "NotAllowedError") { return; } // user did not do any GUI interaction, so the audio will not play.
 					else { throw err;}
 				});
                 if ("mediaSession" in navigator) {
@@ -671,6 +673,7 @@ async function activateApplication(instruments)
                 .catch((err)=>{
                     appendAlert( `main: ${err.name}`, 'danger', 'DEBUG');
                     if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
+                    if (err.name === "NotAllowedError") { return; } // user did not do any GUI interaction, so the audio will not play.
                     else { throw err;}
                 });
                 if ("mediaSession" in navigator) { // else the mediaSession in the notification screen will be closed
