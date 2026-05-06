@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc63"
+const VERSION = "v3.0.0rc64"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -368,16 +368,12 @@ async function activateApplication(instruments)
 				dedicatedWorker.postMessage({type: 'updateSettings', value: settings});
 				storeSettings(settings.midiFileHash,settings)
 				.then( () => { // setup audioElement
-					audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`; // point to file that will be generated on the fly
-					console.log(`generated wave file loaded: ${audioElement.src}`);
-                    audioElement.pause();
-                    audioElement.currentTime = 0.0;
+					currentTime = 0.0;
 					progressSlider.value = Math.floor(0.0);
 					currentTimeDisplay.textContent = formatTime(0.0);
+                    audioElement.pause();        
+                    iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
 					if ("mediaSession" in navigator) {
-						navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
-						navigator.mediaSession.playbackState = "paused";
-						navigator.mediaSession.setPositionState({duration: settings.duration_s, position: 0.0});
 						navigator.mediaSession.setActionHandler("pause", () => {
                             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                             audioElement.pause();
@@ -648,7 +644,7 @@ async function activateApplication(instruments)
         audioElement.addEventListener("loadedmetadata", (event) => {
             audioElement.currentTime = currentTime / settings.playbackRate;
             currentPlaybackRate = settings.playbackRate;
-
+            console.log( `main: AudioElement meta data loaded: ${audioElement.readyState}, ${audioElement.src}` );
             appendAlert( `main: AudioElement meta data loaded: ${audioElement.readyState}, ${audioElement.src}`, 'info', 'DEBUG');
         });
         audioElement.addEventListener("canplay", (event) => {
