@@ -392,8 +392,6 @@ async function activateApplication(instruments)
                             {
                                 progressSlider.BeingDragged = false;
 								audioElement.currentTime = evt.seekTime / settings.playbackRate;
-                                progressSlider.value = Math.floor(evt.seekTime);
-                                currentTimeDisplay.textContent = formatTime(evt.seekTime);
 								updateAudioElement();
                             }
 							else {
