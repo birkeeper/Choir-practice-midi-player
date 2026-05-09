@@ -642,16 +642,15 @@ async function activateApplication(instruments)
 			updateAudioElement();
 		});
         audioElement.addEventListener("loadedmetadata", (event) => {
-            audioElement.currentTime = currentTime / settings.playbackRate;
             currentPlaybackRate = settings.playbackRate;
             console.log( `main: AudioElement meta data loaded: ${audioElement.readyState}, ${audioElement.src}` );
             appendAlert( `main: AudioElement meta data loaded: ${audioElement.readyState}, ${audioElement.src}`, 'info', 'DEBUG');
-        });
-        audioElement.addEventListener("canplay", (event) => {
-			const paused = document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX); // audioElement.paused is unrealiable when buttons are bashed.
+
+            const paused = document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX); // audioElement.paused is unrealiable when buttons are bashed.
             if (paused) { // first start it before pausing, else mediaSession element will not be shown
                 audioElement.play()
                 .then(() => {
+                    audioElement.currentTime = currentTime / settings.playbackRate;
                     audioElement.pause();
                     if ("mediaSession" in navigator) { // else the mediaSession in the notification screen will be closed
                         navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
@@ -670,6 +669,9 @@ async function activateApplication(instruments)
             }
             else { 
                 audioElement.play()
+                .then (() => {
+                    audioElement.currentTime = currentTime / settings.playbackRate;
+                })
                 .catch((err)=>{
                     appendAlert( `main: ${err.name}`, 'danger', 'DEBUG');
                     if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
@@ -683,7 +685,7 @@ async function activateApplication(instruments)
                 }
                 appendAlert( `main: ${audioElement.src} playing`, 'info', 'DEBUG');
             }
-		});
+        });
 	}
 }
 
