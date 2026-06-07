@@ -315,10 +315,10 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
       		client = clientItem;
 		}
 	}
-  const total = settings.wavLength_bytes;
+	const total = settings.wavLength_bytes;
 	const rangeHdr = request.headers.get('Range');
-  let isPartial = false;
-  let start = 0, end = total - 1;
+	let isPartial = false;
+	let start = 0, end = total - 1;
 
 	
 	if (rangeHdr) {

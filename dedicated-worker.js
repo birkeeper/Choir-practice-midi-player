@@ -3,9 +3,11 @@ import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const MASTERGAIN = Math.pow(10,9/20); //NOTE: clipping possible when >1.0
+const BYTESPERPCMFRAME = (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS; // [bytes] PCM frame length
+const BUFFER_SIZE = 128; // note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
 
 console.log("worker: initalising dedicated worker...");
-const CHUNCKSIZE = 128 * 25; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
+const CHUNCKSIZE = Math.floor(BUFFER_SIZE * 25 / BYTESPERPCMFRAME) * BYTESPERPCMFRAME; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
 // load the soundfonts
 const [responseSecondary, responsePrimary] = await Promise.all([fetch(SOUNTFONT_SPECIAL), fetch(SOUNDFONT_GM)]);
 // load the soundfonts into array buffers
@@ -84,16 +86,19 @@ self.onmessage = async (msg) => {
 			if (end < WAV_HEADERSIZE) { // only one chunk
 				port.postMessage({ type: 'end' });
       			port.close();
+				return;
 			}
 
 			// Send PCM bytes if needed.
-			const dataLength_bytes = Math.floor(duration / playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS); // [bytes] length of data section in wave file
+			const dataLength_bytes = Math.floor(duration / playbackRate * WAV_SAMPLERATE * BYTESPERPCMFRAME); // [bytes] length of data section in wave file
 			const dataStart_bytes = Math.max(start, WAV_HEADERSIZE) - WAV_HEADERSIZE;
+			const dataStartAligned_bytes = Math.floor(dataStart_bytes/BYTESPERPCMFRAME) * BYTESPERPCMFRAME;
 			const dataEndExclusive_bytes = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
-			const start_seconds = dataStart_bytes / WAV_SAMPLERATE / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS *playbackRate;
+			const dataEndExclusiveAligned_bytes = Math.ceil(dataEndExclusive_bytes/BYTESPERPCMFRAME) * BYTESPERPCMFRAME;
+			const start_seconds = dataStartAligned_bytes / WAV_SAMPLERATE / BYTESPERPCMFRAME * playbackRate;
 			seq.currentTime = start_seconds;
 			seq.playbackRate = playbackRate;
-			const dataLength_samples = (dataEndExclusive_bytes - dataStart_bytes) / (WAV_BITSPERSAMPLE/8) / WAV_NROFCHANNELS; // per channel
+			const dataLength_samples = (dataEndExclusiveAligned_bytes - dataStart_bytes) / BYTESPERPCMFRAME; // per channel
 			let processedSamples = 0;
 
 			port.onmessage = (e) => {
@@ -107,10 +112,12 @@ self.onmessage = async (msg) => {
 					if (processedSamples >= dataLength_samples) { // all chuncks processed.
 						port.postMessage({ type: 'end' });
       					port.close();
+						return;
 					}
 				}
 				else if (e.data.type === 'cancel') { //service worker cancels stream
 					port.close();
+					return;
 				}
 			}
 
@@ -119,7 +126,6 @@ self.onmessage = async (msg) => {
 				const outRight = new Float32Array(sampleCount);
 				const outputArray = [outLeft, outRight];
 				const outputPCM = new Uint8Array(sampleCount * WAV_NROFCHANNELS * (WAV_BITSPERSAMPLE/8));
-				const BUFFER_SIZE = 128; // note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
 				let filledSamples = 0;
 				while (filledSamples < sampleCount)
 				{
@@ -149,6 +155,7 @@ self.onmessage = async (msg) => {
     	} catch (err) {
       		port.postMessage({ type: 'error', message: String(err?.message || err) });
       		port.close();
+			return;
     	}
 		port.postMessage({ type: 'ready' }); // signal that the code is ready to receive requests for chunks
 	}
