@@ -214,8 +214,7 @@ document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE
 document.getElementById("forward-label").innerHTML = getForwardSvg(ICON_SIZE_PX);
 document.getElementById("backward-label").innerHTML = getBackwardSvg(ICON_SIZE_PX);
 
-const iframe = document.getElementById("audioElementFrame");
-let audioElement = iframe.contentDocument.getElementById("audioElement");
+const audioElement = document.getElementById("audioElement");
 console.log("audioElement created");
 
 dedicatedWorker.onmessage = (e) => {
@@ -246,13 +245,6 @@ async function activateApplication(instruments)
     let currentPlaybackRate = 1;
     let currentTime = 0;
     setEventListenersAudioElement();
-    iframe.onload = ()=> {
-        const old_wav = audioElement.src;
-        audioElement = iframe.contentDocument.getElementById("audioElement");
-        setEventListenersAudioElement();
-        audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
-        appendAlert( `main: AudioElement ${old_wav} has been replaced with ${audioElement.src}`, 'info', 'DEBUG');
-    };
     
     async function setupApplication() {
         // parse all the files
@@ -371,8 +363,10 @@ async function activateApplication(instruments)
 					currentTime = 0.0;
 					progressSlider.value = Math.floor(0.0);
 					currentTimeDisplay.textContent = formatTime(0.0);
-                    audioElement.pause();        
-                    iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+                    audioElement.pause();
+					audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
+					audioElement.load();
+					appendAlert(`main: AudioElement src set to ${audioElement.src}`, 'info', 'DEBUG');
 					if ("mediaSession" in navigator) {
 						navigator.mediaSession.setActionHandler("pause", () => {
                             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
@@ -558,10 +552,12 @@ async function activateApplication(instruments)
 		return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 	}
 
-	function updateAudioElement() { // 
+	function updateAudioElement() {
 		currentTime = audioElement.currentTime * currentPlaybackRate;
-		audioElement.pause();        
-        iframe.contentDocument.location.reload(true); // reload frame with audioElement. Resets the audioElement
+		audioElement.pause();
+		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
+		audioElement.load();
+		appendAlert(`main: AudioElement src set to ${audioElement.src}`, 'info', 'DEBUG');
 	}
 
     // add an event listener for the recently opened files

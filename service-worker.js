@@ -301,7 +301,7 @@ self.addEventListener('message', async (event) => {
 async function handleSongRequest(request, songID, randomUUID, sessionID) {
 	const cache = await caches.open(CACHE_NAME);
 	const response = await cache.match(`./settings/${songID}`);
-	if (!response.ok) { 
+	if (response === undefined) {
 		return new Response(null, { status: 404 });
 	}
 	const settings = await response.json();
