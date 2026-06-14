@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MIDI Player Tests</title>
+<style>
+  body { font-family: monospace; padding: 1rem; background: #111; color: #eee; }
+  h1   { font-size: 1.1rem; margin: 0 0 1rem; }
+  .suite  { margin: 1.5rem 0 0.5rem; font-weight: bold; border-bottom: 1px solid #444; padding-bottom: 0.2rem; }
+  .test   { margin: 0.2rem 0 0.2rem 1rem; }
+  .pass   { color: #4f4; }
+  .fail   { color: #f44; }
+  .skip   { color: #888; }
+  .pending { color: #fa0; }
+  pre     { white-space: pre-wrap; margin: 0.2rem 0 0.2rem 2rem; color: #f88; font-size: 0.85rem; }
+  #summary { margin-top: 1.5rem; border-top: 1px solid #444; padding-top: 0.5rem; }
+  button  { margin: 0.2rem; padding: 0.3rem 0.8rem; background: #333; color: #eee; border: 1px solid #555; cursor: pointer; }
+  button:hover { background: #444; }
+  #controls { margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+<h1>MIDI Player Test Runner</h1>
+<div id="controls">
+  <button id="btnAll">Run all layers</button>
+  <button id="btnL1">Layer 1 only</button>
+  <button id="btnL2">Layer 2 only</button>
+  <button id="btnL3">Layer 3 only</button>
+</div>
+<div id="output"></div>
+<div id="summary"></div>
+
+<script type="module">
+import { suite as l1 } from './layer1-wav-constants.js';
+import { suite as l2 } from './layer2-worker-protocol.js';
+import { suite as l3 } from './layer3-ios-sequence.js';
+
+const out = document.getElementById('output');
+const sum = document.getElementById('summary');
+
+function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls)  e.className = cls;
+    if (text) e.textContent = text;
+    return e;
+}
+
+async function runSuite(suite) {
+    const header = el('div', 'suite', suite.name);
+    out.appendChild(header);
+
+    let passed = 0, failed = 0;
+
+    for (const t of suite.tests) {
+        const row  = el('div', 'test pending', `⏳ ${t.name}`);
+        out.appendChild(row);
+
+        try {
+            await t.fn();
+            row.className = 'test pass';
+            row.textContent = `✓ ${t.name}`;
+            passed++;
+        } catch (err) {
+            row.className = 'test fail';
+            row.textContent = `✗ ${t.name}`;
+            const pre = el('pre', '', err.message);
+            out.appendChild(pre);
+            failed++;
+        }
+        // Yield to let the DOM update.
+        await new Promise(r => setTimeout(r, 0));
+    }
+    return { passed, failed };
+}
+
+async function run(suites) {
+    out.innerHTML = '';
+    sum.innerHTML = '';
+    let totalPassed = 0, totalFailed = 0;
+    for (const s of suites) {
+        const { passed, failed } = await runSuite(s);
+        totalPassed += passed;
+        totalFailed += failed;
+    }
+    const cls = totalFailed ? 'fail' : 'pass';
+    sum.innerHTML = `<span class="${cls}">Passed: ${totalPassed}  Failed: ${totalFailed}</span>`;
+}
+
+document.getElementById('btnAll').onclick = () => run([l1, l2, l3]);
+document.getElementById('btnL1').onclick  = () => run([l1]);
+document.getElementById('btnL2').onclick  = () => run([l2]);
+document.getElementById('btnL3').onclick  = () => run([l3]);
+</script>
+</body>
+</html>
