@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.70"; 
+const CACHE_NAME = "v10.71"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -339,7 +339,7 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
 	let port;
 	const stream = new ReadableStream({
     start(controller){
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const channel = new MessageChannel();
         port = channel.port1;
         port.onmessage = (e) => {
@@ -350,14 +350,15 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
           } else if (msg.type === 'end') {
             controller.close();
             port.close();
+            resolve(); // resolve also on 'end': header-only requests never send 'ready'
             console.log(`service worker: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`);
             client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`});
           } else if (msg.type === 'error') {
             controller.error(new Error(msg.reason || 'gen failed'));
             port.close();
+            reject(new Error(msg.reason || 'gen failed'));
             console.log(`service worker: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}; sessionID: ${sessionID}`);
             client.postMessage({type:'DEBUG', message: `SW: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}; sessionID: ${sessionID}`});
-            reject();
           } else if (msg.type === 'ready') {
             console.log(`SW: ready to pull chunks; UUID: ${randomUUID}; sessionID: ${sessionID}`);
             client.postMessage({type:'DEBUG', message: `SW: ready to pull chunks; UUID: ${randomUUID}; sessionID: ${sessionID}`});
