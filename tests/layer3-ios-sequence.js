@@ -25,7 +25,7 @@ export const suite = new Suite('Layer 3: iOS range sequence (full-stack regressi
 const WAV_HEADERSIZE    = 44;
 const BYTESPERPCMFRAME  = 4;
 const WAV_SAMPLERATE    = 44100;
-const TAIL_BYTES        = 2048;   // iOS tail probe size
+const TAIL_BYTES        = 44658;   // iOS tail probe size
 const PLAY_DURATION_S   = 2;     // seconds of audio to synthesise in step 5
 const PLAY_RANGE_BYTES  = PLAY_DURATION_S * WAV_SAMPLERATE * BYTESPERPCMFRAME;
 const CANCEL_DELAY_MS   = 500;   // ms before aborting the step-2 probe
@@ -41,15 +41,22 @@ async function getSwRegistration() {
 }
 
 // Ask the SW for all cached settings objects; return the first one.
-async function getFirstCachedSettings() {
+async function getCachedSettingsLastOpenedSong() {
     const reg = await getSwRegistration();
     return new Promise((resolve, reject) => {
         const ch = new MessageChannel();
         ch.port1.onmessage = (e) => {
-            if (!e.data || e.data.length === 0) {
+            const historyList = e.data;
+            if (!Array.isArray(historyList)) { 
                 reject(new Error('No songs in SW cache — load a MIDI in the app first'));
             } else {
-                resolve(e.data[0]);
+                historyList.sort((a,b) => { // sort list by date, last opened first
+                    if (!Object.hasOwn(a, "lastOpened")) {return 1;}
+                    if (!Object.hasOwn(b, "lastOpened")) {return -1;}
+                    if (a.lastOpened > b.lastOpened) {return -1;}
+                    else { return 1;}
+                });
+               resolve(e.data[0]);
             }
         };
         reg.active.postMessage({ type: 'all' }, [ch.port1]);
@@ -179,7 +186,7 @@ suite.test('service worker is active', async () => {
 let baseSettings;
 
 suite.test('song is in SW cache', async () => {
-    baseSettings = await withTimeout(getFirstCachedSettings(), 5_000, 'cache read timed out');
+    baseSettings = await withTimeout(getCachedSettingsLastOpenedSong(), 5_000, 'cache read timed out');
     assert(!!baseSettings.midiFileHash, 'settings has no midiFileHash');
     assert(!!baseSettings.duration_s,   'settings has no duration_s');
     assert(!!baseSettings.playbackRate, 'settings has no playbackRate');
