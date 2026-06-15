@@ -76,11 +76,15 @@ async function storeSettings(key, settings) {
 // Fetch a Range request through the SW.
 // If `signal` is provided, the fetch can be aborted.
 // Returns { status, contentRange, totalBytes, firstBytes }
-async function fetchRange(hash, rangeHeader, { signal } = {}) {
+async function fetchRange(hash, rangeHeader, cancelDelay_ms = undefined) {
     const uuid = crypto.randomUUID();
     const url  = `./generatedWav/${hash}_${uuid}.wav`;
     const resp = await fetch(url, { headers: { Range: rangeHeader }, signal });
     const reader = resp.body.getReader();
+    if (cancelDelay_ms !== undefined) {
+        const timer = setTimeout(() => reader.cancel(), cancelDelay_ms);
+    }
+
     let totalBytes = 0;
     let firstBytes = null;
     try {
@@ -99,18 +103,6 @@ async function fetchRange(hash, rangeHeader, { signal } = {}) {
     return { status: resp.status, contentRange: resp.headers.get('Content-Range'), totalBytes, firstBytes };
 }
 
-// Issue a fetch and abort it after CANCEL_DELAY_MS.
-async function fetchAndCancel(hash, rangeHeader) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), CANCEL_DELAY_MS);
-    try {
-        await fetchRange(hash, rangeHeader, { signal: ctrl.signal });
-    } catch (e) {
-        if (e.name !== 'AbortError') throw e;
-    } finally {
-        clearTimeout(timer);
-    }
-}
 
 // Compute wav length in bytes from settings.
 function wavLength(settings) {
@@ -137,7 +129,7 @@ async function runIosSequence(settings, iterLabel) {
 
     // ---- Steps 2-3: bytes=0-{total-1}, then cancel -----------------------
     await withTimeout(
-        fetchAndCancel(hash, `bytes=0-${total - 1}`),
+        fetchRange(hash, `bytes=0-${total - 1}`, CANCEL_DELAY_MS),
         30_000,
         `${iterLabel} step2 (cancel) timed out`
     );
@@ -167,7 +159,7 @@ async function runIosSequence(settings, iterLabel) {
     const playStart = rawPos - (rawPos % BYTESPERPCMFRAME);
     const playEnd   = Math.min(total - 1, playStart + PLAY_RANGE_BYTES - 1);
     await withTimeout(
-        fetchAndCancel(hash, `bytes=${playStart}-${total - 1}`),
+        fetchRange(hash, `bytes=${playStart}-${total - 1}`, PLAY_DURATION_S*1000),
         120_000,
         `${iterLabel} step5 (play) timed out`
     );
