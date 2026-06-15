@@ -59,7 +59,7 @@ async function getCachedSettingsLastOpenedSong() {
                resolve(e.data[0]);
             }
         };
-        reg.active.postMessage({ type: 'all' }, [ch.port1]);
+        reg.active.postMessage({ type: 'all' }, [ch.port2]);
     });
 }
 
