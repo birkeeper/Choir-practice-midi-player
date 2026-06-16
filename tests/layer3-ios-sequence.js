@@ -74,12 +74,11 @@ async function storeSettings(key, settings) {
 }
 
 // Fetch a Range request through the SW.
-// If `signal` is provided, the fetch can be aborted.
 // Returns { status, contentRange, totalBytes, firstBytes }
 async function fetchRange(hash, rangeHeader, cancelDelay_ms = undefined) {
     const uuid = crypto.randomUUID();
     const url  = `./generatedWav/${hash}_${uuid}.wav`;
-    const resp = await fetch(url, { headers: { Range: rangeHeader }, signal });
+    const resp = await fetch(url, { headers: { Range: rangeHeader } });
     const reader = resp.body.getReader();
     if (cancelDelay_ms !== undefined) {
         const timer = setTimeout(() => reader.cancel(), cancelDelay_ms);
