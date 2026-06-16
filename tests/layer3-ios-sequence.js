@@ -75,8 +75,7 @@ async function storeSettings(key, settings) {
 
 // Fetch a Range request through the SW.
 // Returns { status, contentRange, totalBytes, firstBytes }
-async function fetchRange(hash, rangeHeader, cancelDelay_ms = undefined) {
-    const uuid = crypto.randomUUID();
+async function fetchRange(hash, uuid, rangeHeader, cancelDelay_ms = undefined) {
     const url  = `./generatedWav/${hash}_${uuid}.wav`;
     const resp = await fetch(url, { headers: { Range: rangeHeader } });
     const reader = resp.body.getReader();
@@ -113,11 +112,12 @@ function wavLength(settings) {
 // ---------------------------------------------------------------------------
 async function runIosSequence(settings, iterLabel) {
     const hash  = settings.midiFileHash;
+    const uuid = crypto.randomUUID();
     const total = wavLength(settings);
 
     // ---- Step 1: bytes=0-1 -----------------------------------------------
     const r1 = await withTimeout(
-        fetchRange(hash, 'bytes=0-1'),
+        fetchRange(hash, uuid,uuid, 'bytes=0-1'),
         30_000,
         `${iterLabel} step1 timed out`
     );
@@ -128,7 +128,7 @@ async function runIosSequence(settings, iterLabel) {
 
     // ---- Steps 2-3: bytes=0-{total-1}, then cancel -----------------------
     await withTimeout(
-        fetchRange(hash, `bytes=0-${total - 1}`, CANCEL_DELAY_MS),
+        fetchRange(hash, uuid, `bytes=0-${total - 1}`, CANCEL_DELAY_MS),
         30_000,
         `${iterLabel} step2 (cancel) timed out`
     );
@@ -136,7 +136,7 @@ async function runIosSequence(settings, iterLabel) {
     // ---- Step 3: tail request --------------------------------------------
     const tailStart = Math.max(WAV_HEADERSIZE, total - TAIL_BYTES);
     const r3 = await withTimeout(
-        fetchRange(hash, `bytes=${tailStart}-${total - 1}`),
+        fetchRange(hash, uuid, `bytes=${tailStart}-${total - 1}`),
         60_000,
         `${iterLabel} step3 (tail) timed out`
     );
@@ -145,7 +145,7 @@ async function runIosSequence(settings, iterLabel) {
 
     // ---- Step 4: bytes=0-1445 --------------------------------------------
     const r4 = await withTimeout(
-        fetchRange(hash, 'bytes=0-1445'),
+        fetchRange(hash, uuid, 'bytes=0-1445'),
         30_000,
         `${iterLabel} step4 timed out`
     );
@@ -158,7 +158,7 @@ async function runIosSequence(settings, iterLabel) {
     const playStart = rawPos - (rawPos % BYTESPERPCMFRAME);
     const playEnd   = Math.min(total - 1, playStart + PLAY_RANGE_BYTES - 1);
     await withTimeout(
-        fetchRange(hash, `bytes=${playStart}-${total - 1}`, PLAY_DURATION_S*1000),
+        fetchRange(hash, uuid, `bytes=${playStart}-${total - 1}`, PLAY_DURATION_S*1000),
         120_000,
         `${iterLabel} step5 (play) timed out`
     );
@@ -192,7 +192,7 @@ suite.test('iOS sequence iteration 2 (settings change #1: playbackRate ×0.5)', 
     assert(!!baseSettings);
     const s2 = {
         ...baseSettings,
-        playbackRate: parseFloat((baseSettings.playbackRate * 0.5).toFixed(4))
+        playbackRate: 0.5
     };
     s2.wavLength_bytes = wavLength(s2);
     await storeSettings(`./settings/${s2.midiFileHash}`, s2);
@@ -205,7 +205,7 @@ suite.test('iOS sequence iteration 3 (settings change #2: playbackRate ×0.75)',
     assert(!!baseSettings);
     const s3 = {
         ...baseSettings,
-        playbackRate: parseFloat((baseSettings.playbackRate * 0.75).toFixed(4))
+        playbackRate: 0.75
     };
     s3.wavLength_bytes = wavLength(s3);
     await storeSettings(`./settings/${s3.midiFileHash}`, s3);
