@@ -117,7 +117,7 @@ async function runIosSequence(settings, iterLabel) {
 
     // ---- Step 1: bytes=0-1 -----------------------------------------------
     const r1 = await withTimeout(
-        fetchRange(hash, uuid,uuid, 'bytes=0-1'),
+        fetchRange(hash, uuid, 'bytes=0-1'),
         30_000,
         `${iterLabel} step1 timed out`
     );
