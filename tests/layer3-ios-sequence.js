@@ -66,10 +66,24 @@ async function getCachedSettingsLastOpenedSong() {
 // Store updated settings back into the SW cache.
 async function storeSettings(key, settings) {
     const reg = await getSwRegistration();
-    return new Promise(resolve => {
-        const ch = new MessageChannel();
-        ch.port1.onmessage = () => resolve();
-        reg.active.postMessage({ type: 'storeSettings', key, settings }, [ch.port1]);
+    return new Promise(async (resolve, reject) => {
+        console.log(`storing settings (key: ${key}`);
+        await postStoreSettingsMessage(key, settings);
+        resolve();
+        function postStoreSettingsMessage(key, settings) {
+            return new Promise((resolve, reject) => {
+                const messageChannel = new MessageChannel();
+                messageChannel.port1.onmessage = async (e) => {
+                    console.log(`main: ${e.data}`);
+                    resolve();
+                }
+                reg.active.postMessage({
+                    type: 'storeSettings',
+                    key: `./settings/${key}`,
+                    settings: settings
+                }, [messageChannel.port2,]);
+            });
+        }
     });
 }
 
