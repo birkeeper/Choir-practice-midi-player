@@ -100,6 +100,10 @@ async function rangeRequest(start, end, { cancelAfterReady = false } = {}) {
                     totalBytes += e.data.data.byteLength;
                     chunks.push(new Uint8Array(e.data.data));
                     requestNextChunk();
+                } else if (e.data.type === 'end') {
+                    // dedicated-worker sends 'end' on the chunk channel (same as last chunk)
+                    port.close();
+                    resolve({ ready, chunks, totalBytes, canceled: false });
                 }
             };
         }
