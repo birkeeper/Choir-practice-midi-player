@@ -76,6 +76,12 @@ self.onmessage = async (msg) => {
 			}
 		}
 
+		function cleanup() {
+			port.onmessage = null; // break closure reference chain so synth/seq can be GC'd
+			try { seq.stop(); } catch(e) {}
+			try { synth.destroySynthProcessor(); } catch(e) {}
+		}
+
 		try {
 			// Send header slice if needed.
 			if (start < WAV_HEADERSIZE) {
@@ -85,6 +91,7 @@ self.onmessage = async (msg) => {
 			}
 			if (end < WAV_HEADERSIZE) { // only one chunk
 				port.postMessage({ type: 'end' });
+				cleanup();
       			port.close();
 				return;
 			}
@@ -119,11 +126,13 @@ self.onmessage = async (msg) => {
 					}
 					if (processedSamples >= dataLength_samples) { // all chuncks processed.
 						port.postMessage({ type: 'end' });
+						cleanup();
       					port.close();
 						return;
 					}
 				}
 				else if (e.data.type === 'cancel') { //service worker cancels stream
+					cleanup();
 					port.close();
 					return;
 				}
@@ -167,6 +176,7 @@ self.onmessage = async (msg) => {
 			}
     	} catch (err) {
       		port.postMessage({ type: 'error', message: String(err?.message || err) });
+			cleanup();
       		port.close();
 			return;
     	}

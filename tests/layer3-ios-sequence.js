@@ -63,11 +63,11 @@ async function getCachedSettingsLastOpenedSong() {
     });
 }
 
-// Store updated settings back into the SW cache.
+// Store updated settings back into the SW cache and notify the running dedicated worker.
 async function storeSettings(key, settings) {
     const reg = await getSwRegistration();
     console.log(`storing settings (key: ${key}`);
-    return new Promise((resolve) => {
+    await new Promise((resolve) => {
         const messageChannel = new MessageChannel();
         messageChannel.port1.onmessage = (e) => {
             console.log(`main: ${e.data}`);
@@ -79,6 +79,9 @@ async function storeSettings(key, settings) {
             settings: settings
         }, [messageChannel.port2]);
     });
+    if (window.dedicatedWorker) {
+        window.dedicatedWorker.postMessage({ type: 'updateSettings', value: settings });
+    }
 }
 
 // Fetch a Range request through the SW.
@@ -203,21 +206,21 @@ suite.test('iOS sequence iteration 2 (settings change #1: playbackRate ×0.5)', 
         playbackRate: 0.5
     };
     s2.wavLength_bytes = wavLength(s2);
-    await storeSettings(`./settings/${s2.midiFileHash}`, s2);
+    await storeSettings(`${s2.midiFileHash}`, s2);
     await runIosSequence(s2, 'iter2');
     // Restore original settings for the next test
-    await storeSettings(`./settings/${baseSettings.midiFileHash}`, baseSettings);
+    await storeSettings(`${baseSettings.midiFileHash}`, baseSettings);
 });
 
-suite.test('iOS sequence iteration 3 (settings change #2: playbackRate ×0.75)', async () => {
+suite.test('iOS sequence iteration 3 (settings change #2: channel[0].volume to 0', async () => {
     assert(!!baseSettings);
     const s3 = {
         ...baseSettings,
-        playbackRate: 0.75
+        channels: [{ ...baseSettings.channels[0], volume: 0 }, ...baseSettings.channels.slice(1)]
     };
     s3.wavLength_bytes = wavLength(s3);
-    await storeSettings(`./settings/${s3.midiFileHash}`, s3);
+    await storeSettings(`${s3.midiFileHash}`, s3);
     await runIosSequence(s3, 'iter3');
     // Restore original settings
-    await storeSettings(`./settings/${baseSettings.midiFileHash}`, baseSettings);
+    await storeSettings(`${baseSettings.midiFileHash}`, baseSettings);
 });
