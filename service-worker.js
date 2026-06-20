@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.86"; 
+const CACHE_NAME = "v10.87"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -381,6 +381,13 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
 							resolve();
 						}
 						catch { reject(); }
+					} else if (msg.type === 'end') {
+						// The dedicated worker sends 'end' on the same chunkPort as the last
+						// chunk, guaranteeing they arrive here in order on a single channel.
+						// Close before resolve() so the browser cannot call pull() again
+						// between this handler returning and the Promise settling.
+						controller.close();
+						resolve();
 					}
 				}
 			});
