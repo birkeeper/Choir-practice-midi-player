@@ -79,7 +79,10 @@ self.onmessage = async (msg) => {
 		function cleanup() {
 			port.onmessage = null; // break closure reference chain so synth/seq can be GC'd
 			try { seq.stop(); } catch(e) {}
-			try { synth.destroySynthProcessor(); } catch(e) {}
+			try {
+				synth.soundfontManager.soundfontList = []; // detach shared soundfonts before destroy so destroyManager() doesn't call destroySoundBank() on them
+				synth.destroySynthProcessor();
+			} catch(e) {}
 		}
 
 		try {
