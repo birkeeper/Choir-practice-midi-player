@@ -136,11 +136,14 @@ async function runIosSequence(settings, iterLabel) {
     assertEquals(r1.firstBytes[1], 0x49, `${iterLabel} step1: byte 1 should be I`);
 
     // ---- Steps 2-3: bytes=0-{total-1}, then cancel -----------------------
-    await withTimeout(
+    const r2=await withTimeout(
         fetchRange(hash, uuid, `bytes=0-${total - 1}`, CANCEL_DELAY_MS),
         30_000,
         `${iterLabel} step2 (cancel) timed out`
     );
+    assertEquals(r2.status, 206,        `${iterLabel} step1: expected 206`);
+    assertEquals(r2.firstBytes[0], 0x52, `${iterLabel} step1: byte 0 should be R`);
+    assertEquals(r2.firstBytes[1], 0x49, `${iterLabel} step1: byte 1 should be I`);
 
     // ---- Step 3: tail request --------------------------------------------
     const tailStart = Math.max(WAV_HEADERSIZE, total - TAIL_BYTES);
