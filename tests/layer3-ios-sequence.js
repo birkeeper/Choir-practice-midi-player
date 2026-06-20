@@ -79,9 +79,7 @@ async function storeSettings(key, settings) {
             settings: settings
         }, [messageChannel.port2]);
     });
-    if (window.dedicatedWorker) {
-        window.dedicatedWorker.postMessage({ type: 'updateSettings', value: settings });
-    }
+
 }
 
 // Fetch a Range request through the SW.

@@ -21,17 +21,12 @@ for (const instrument of Object.values(instruments)) { //adjust soundfont preset
 }
 
 let midi;
-let settings;
 
 self.onmessage = async (msg) => {
     console.log(`worker: message received of type: ${msg.data.type}`);
 	if (msg.data.type === 'LOAD_MIDI') {
 		console.log(`DW: loading midi`);
 		midi = msg.data.midi;
-	}
-	else if (msg.data.type === 'updateSettings') {
-		settings = msg.data.value;
-		console.log(`DW: updating settings to ${settings}`);
 	}
 	else if (msg.data.type === 'AUDIO_RANGE_REQ') {
 		const port = msg.ports && msg.ports[0];
@@ -52,10 +47,11 @@ self.onmessage = async (msg) => {
 		seq.loadNewSongList([midi]);
     	seq.loop = false;
 		console.log("worker: synthSequencer initialised");
-		console.log(`DW: using following settings: ${settings}`);
-		const playbackRate = settings.playbackRate;
-		const duration = settings.duration_s;
-		for(const channel of settings.channels) {
+		const reqSettings = msg.data.settings;
+		console.log(`DW: using following settings: ${reqSettings}`);
+		const playbackRate = reqSettings.playbackRate;
+		const duration = reqSettings.duration_s;
+		for(const channel of reqSettings.channels) {
 			setPan(synth, channel.number, channel.pan);
 			setMainVolume(synth, channel.number, channel.volume);
 			setModulationWheel(synth, channel.number, 0); //set and lock modulation wheel, because it seems to be used a lot and creates a kind of vibrato, that is not pleasant

@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.84"; 
+const CACHE_NAME = "v10.85"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -365,7 +365,7 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
             resolve();
           }
         }
-        client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, sessionID: sessionID, start: start, end: end },[channel.port2]);
+        client.postMessage({type:'AUDIO_RANGE_REQ', songID: songID, UUID: randomUUID, sessionID: sessionID, start: start, end: end, settings: settings },[channel.port2]);
       });
     },
 		pull(controller){

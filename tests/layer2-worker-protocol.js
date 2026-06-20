@@ -65,8 +65,7 @@ async function initWorker() {
     );
 
     const midi = new MIDI(MINIMAL_MIDI_BYTES.buffer.slice(0), 'layer2-test.mid');
-    worker.postMessage({ type: 'LOAD_MIDI',       midi });
-    worker.postMessage({ type: 'updateSettings',  value: TEST_SETTINGS });
+    worker.postMessage({ type: 'LOAD_MIDI', midi });
 }
 
 // ---------------------------------------------------------------------------
@@ -84,6 +83,7 @@ async function rangeRequest(start, end, { cancelAfterReady = false } = {}) {
         songID:    TEST_SETTINGS.midiFileHash,
         UUID:      `test-${start}-${end}-${Date.now()}`,
         sessionID: 'test-session',
+        settings:  TEST_SETTINGS,
         start, end
     }, [channel.port2]);
 
