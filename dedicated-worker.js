@@ -5,6 +5,7 @@ const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion
 const MASTERGAIN = Math.pow(10,9/20); //NOTE: clipping possible when >1.0
 const BYTESPERPCMFRAME = (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS; // [bytes] PCM frame length
 const BUFFER_SIZE = 128; // note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
+const PREROLLTIME = 1.0; // [s] time the midi is started before the requested start of the range request.
 
 console.log("worker: initalising dedicated worker...");
 const CHUNCKSIZE = BUFFER_SIZE * 25; // [samples] chunck size of the chunck send to the service worker on when receiving a range request. 
@@ -104,8 +105,23 @@ self.onmessage = async (msg) => {
 			const dataEndExclusive_bytes = Math.max(Math.min(end + 1 - WAV_HEADERSIZE, dataLength_bytes), 0);
 			const dataEndExclusiveAligned_bytes = Math.ceil(dataEndExclusive_bytes/BYTESPERPCMFRAME) * BYTESPERPCMFRAME;
 			const start_seconds = dataStartAligned_bytes / WAV_SAMPLERATE / BYTESPERPCMFRAME * playbackRate;
-			seq.currentTime = start_seconds;
+			// Pre-roll: process up to PREROLLTIME real-time second before the requested start so
+			// sustained notes/envelopes are already in flight. Output is discarded.
+			const prerollSamples = Math.min(
+				Math.floor(PREROLLTIME*WAV_SAMPLERATE / playbackRate),
+				Math.floor(dataStartAligned_bytes / BYTESPERPCMFRAME)
+			);
+			seq.currentTime = start_seconds - (prerollSamples / WAV_SAMPLERATE * playbackRate);
 			seq.playbackRate = playbackRate;
+			const prerollLeft = new Float32Array(BUFFER_SIZE);
+			const prerollRight = new Float32Array(BUFFER_SIZE);
+			let prerollProcessed = 0;
+			while (prerollProcessed < prerollSamples) {
+				seq.processTick();
+				const bufferSize = Math.min(BUFFER_SIZE, prerollSamples - prerollProcessed);
+				synth.renderAudio([prerollLeft, prerollRight], [], [], 0, bufferSize);
+				prerollProcessed += bufferSize;
+			}
 			const dataLength_samples = (dataEndExclusiveAligned_bytes - dataStartAligned_bytes) / BYTESPERPCMFRAME; // per channel
 			let processedSamples = 0;
 
