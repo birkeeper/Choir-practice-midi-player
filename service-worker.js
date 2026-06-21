@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.88"; 
+const CACHE_NAME = "v10.89"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -347,14 +347,17 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
           if (msg.type == 'chunk') {
             // Transferable ArrayBuffer to avoid copies
             controller.enqueue(new Uint8Array(msg.data));
-          } else if (msg.type === 'end') {
-            controller.close();
-            port.close();
-            resolve(); // resolve also on 'end': header-only requests never send 'ready'
-            console.log(`service worker: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`);
-            client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`});
+            if (msg.end === true) { // first chunk is last chunk
+              controller.close();
+              port.onmessage = null;
+              port.close();
+              resolve(); // resolve also on 'end': header-only requests never send 'ready'
+              console.log(`service worker: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`);
+              client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`});
+            }
           } else if (msg.type === 'error') {
             controller.error(new Error(msg.reason || 'gen failed'));
+            port.onmessage = null;
             port.close();
             reject(new Error(msg.reason || 'gen failed'));
             console.log(`service worker: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}; sessionID: ${sessionID}`);
@@ -369,7 +372,7 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
       });
     },
 		pull(controller){
-			return new Promise( async (resolve, reject) => {
+			return new Promise( (resolve, reject) => {
 				const chunkChannel = new MessageChannel();
 				port.postMessage({type: 'reqNextChunk'}, [chunkChannel.port2]);
 				chunkChannel.port1.onmessage = (e) => {
@@ -378,17 +381,19 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
 						// Transferable ArrayBuffer to avoid copies
 						try {
 							controller.enqueue(new Uint8Array(msg.data));
+              if (msg.end === true) { // last chunk
+                controller.close();
+                port.onmessage = null;
+                port.close();
+                console.log(`service worker: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`);
+                client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`});
+              }
+              chunkChannel.port1.onmessage = null;
+              chunkChannel.port1.close();
 							resolve();
 						}
 						catch { reject(); }
-					} else if (msg.type === 'end') {
-						// The dedicated worker sends 'end' on the same chunkPort as the last
-						// chunk, guaranteeing they arrive here in order on a single channel.
-						// Close before resolve() so the browser cannot call pull() again
-						// between this handler returning and the Promise settling.
-						controller.close();
-						resolve();
-					}
+					} 
 				}
 			});
 		},

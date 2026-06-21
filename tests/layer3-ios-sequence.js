@@ -169,11 +169,27 @@ async function runIosSequence(settings, iterLabel) {
     const rawPos = WAV_HEADERSIZE + Math.floor((total - WAV_HEADERSIZE) * 0.10);
     const playStart = rawPos - (rawPos % BYTESPERPCMFRAME);
     const playEnd   = Math.min(total - 1, playStart + PLAY_RANGE_BYTES - 1);
-    await withTimeout(
-        fetchRange(hash, uuid, `bytes=${playStart}-${total - 1}`, PLAY_DURATION_S*1000),
+
+    // Step 5a: launch immediately; step 5b launches after half PLAY_DURATION_S with
+    // the same range, producing overlapping requests to the same SW-cached stream.
+    const p5a = withTimeout(
+        fetchRange(hash, uuid, `bytes=${playStart}-${total - 1}`, PLAY_DURATION_S * 1000),
         120_000,
-        `${iterLabel} step5 (play) timed out`
+        `${iterLabel} step5a (play) timed out`
     );
+    await new Promise(resolve => setTimeout(resolve, (PLAY_DURATION_S / 2) * 1000));
+    const p5b = withTimeout(
+        fetchRange(hash, uuid, `bytes=${playStart}-${total - 1}`, PLAY_DURATION_S * 1000),
+        120_000,
+        `${iterLabel} step5b (play repeat) timed out`
+    );
+    const [r5a, r5b] = await Promise.all([p5a, p5b]);
+
+    assert(r5a.firstBytes !== null, `${iterLabel} step5a: no bytes received`);
+    assert(r5b.firstBytes !== null, `${iterLabel} step5b: no bytes received`);
+    const firstBytesMatch = r5a.firstBytes.length === r5b.firstBytes.length &&
+        r5a.firstBytes.every((b, i) => b === r5b.firstBytes[i]);
+    assert(firstBytesMatch, `${iterLabel} step5: firstBytes mismatch — SW served different data for the same range`);
 }
 
 // ---------------------------------------------------------------------------

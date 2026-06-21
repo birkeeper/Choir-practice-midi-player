@@ -86,14 +86,16 @@ self.onmessage = async (msg) => {
 			if (start < WAV_HEADERSIZE) {
 				const hdr = generateWavHeader(duration, playbackRate);
 				const hdrSlice = hdr.slice(start, Math.min(end + 1, WAV_HEADERSIZE));
-				port.postMessage({ type: 'chunk', data: hdrSlice.buffer }, [hdrSlice.buffer]);
+				if (end < WAV_HEADERSIZE) { // only one chunk
+					port.postMessage({ type: 'chunk', data: hdrSlice.buffer, end: true }, [hdrSlice.buffer]);
+					cleanup();
+      				port.close();
+					return;
+				} else {
+					port.postMessage({ type: 'chunk', data: hdrSlice.buffer, end: false }, [hdrSlice.buffer]);
+				}		
 			}
-			if (end < WAV_HEADERSIZE) { // only one chunk
-				port.postMessage({ type: 'end' });
-				cleanup();
-      			port.close();
-				return;
-			}
+			
 
 			// Send PCM bytes if needed.
 			const dataLength_bytes = Math.floor(duration / playbackRate * WAV_SAMPLERATE * BYTESPERPCMFRAME); // [bytes] length of data section in wave file
@@ -120,17 +122,16 @@ self.onmessage = async (msg) => {
 						if ((processedSamples + sampleCount) >= dataLength_samples) { // is last processed chunk
 							endExclusiveSlice_bytes = sampleCount * BYTESPERPCMFRAME - (dataEndExclusiveAligned_bytes - dataEndExclusive_bytes);
 						}
-						sendPCMchunk(chunkPort, sampleCount, startSlice_bytes, endExclusiveSlice_bytes);
 						processedSamples += sampleCount;
-					}
-					if (processedSamples >= dataLength_samples) { // all chuncks processed.
-						// Send 'end' on the same chunkPort as the last chunk so the SW pull()
-						// handler receives them on one channel in guaranteed send order.
-						// Sending 'end' on the separate main port races with the chunk on iOS.
-						if (chunkPort) chunkPort.postMessage({ type: 'end' });
-						cleanup();
-      					port.close();
-						return;
+						if (processedSamples >= dataLength_samples) { // all chuncks processed.
+							sendPCMchunk(chunkPort, sampleCount, startSlice_bytes, endExclusiveSlice_bytes, true);
+							cleanup();
+      						port.close();
+							return;
+						} else {
+							sendPCMchunk(chunkPort, sampleCount, startSlice_bytes, endExclusiveSlice_bytes, false);
+							return;
+						}
 					}
 				}
 				else if (e.data.type === 'cancel') { //service worker cancels stream
@@ -140,7 +141,7 @@ self.onmessage = async (msg) => {
 				}
 			}
 
-			function sendPCMchunk(chunkPort_, sampleCount, startSlice_bytes_, endExclusiveSlice_bytes_) { // generates  a chunk of PCM data and send it through the port provided. Returns the sample count of the chunk
+			function sendPCMchunk(chunkPort_, sampleCount, startSlice_bytes_, endExclusiveSlice_bytes_, lastChunk) { // generates  a chunk of PCM data and send it through the port provided. Returns the sample count of the chunk
 				const outLeft = new Float32Array(sampleCount);
 				const outRight = new Float32Array(sampleCount);
 				const outputArray = [outLeft, outRight];
@@ -173,11 +174,11 @@ self.onmessage = async (msg) => {
 				// slice data
 				const sliceOutputPCM = outputPCM.slice(startSlice_bytes_, endExclusiveSlice_bytes_);
 				if (sliceOutputPCM.length > 0) {
-					chunkPort_.postMessage({ type: 'chunk', data: sliceOutputPCM.buffer },[sliceOutputPCM.buffer]);
+					chunkPort_.postMessage({ type: 'chunk', data: sliceOutputPCM.buffer, end: lastChunk },[sliceOutputPCM.buffer]);
 				}
 			}
     	} catch (err) {
-      		port.postMessage({ type: 'error', message: String(err?.message || err) });
+      		port.postMessage({ type: 'error', reason: String(err?.message || err) });
 			cleanup();
       		port.close();
 			return;
