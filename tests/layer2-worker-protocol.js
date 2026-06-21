@@ -99,11 +99,12 @@ async function rangeRequest(start, end, { cancelAfterReady = false } = {}) {
                 if (e.data.type === 'chunk') {
                     totalBytes += e.data.data.byteLength;
                     chunks.push(new Uint8Array(e.data.data));
-                    requestNextChunk();
-                } else if (e.data.type === 'end') {
-                    // dedicated-worker sends 'end' on the chunk channel (same as last chunk)
-                    port.close();
-                    resolve({ ready, chunks, totalBytes, canceled: false });
+                    if (e.data.end === true) {
+                        port.close();
+                        resolve({ ready, chunks, totalBytes, canceled: false });
+                    } else {
+                        requestNextChunk();
+                    }
                 }
             };
         }
@@ -113,6 +114,10 @@ async function rangeRequest(start, end, { cancelAfterReady = false } = {}) {
             if (msg.type === 'chunk') {
                 totalBytes += msg.data.byteLength;
                 chunks.push(new Uint8Array(msg.data));
+                if (msg.end === true) { // header-only: no 'ready' will follow
+                    port.close();
+                    resolve({ ready, chunks, totalBytes, canceled: false });
+                }
             } else if (msg.type === 'ready') {
                 ready = true;
                 if (cancelAfterReady) {
@@ -122,12 +127,9 @@ async function rangeRequest(start, end, { cancelAfterReady = false } = {}) {
                 } else {
                     requestNextChunk();
                 }
-            } else if (msg.type === 'end') {
-                port.close();
-                resolve({ ready, chunks, totalBytes, canceled: false });
             } else if (msg.type === 'error') {
                 port.close();
-                reject(new Error(msg.message || 'worker reported error'));
+                reject(new Error(msg.reason || 'worker reported error'));
             }
         };
     }), 45_000, `rangeRequest(${start}-${end}) timed out`);
