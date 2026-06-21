@@ -99,8 +99,14 @@ async function rangeRequest(start, end, { cancelAfterReady = false } = {}) {
                 if (e.data.type === 'chunk') {
                     totalBytes += e.data.data.byteLength;
                     chunks.push(new Uint8Array(e.data.data));
-                    if (e.data.end === true) {
+                    const isLast = e.data.end === true;
+                    if (isLast) {
+                        port.onmessage = null;
                         port.close();
+                    }
+                    chunkCh.port1.onmessage = null;
+                    chunkCh.port1.close();
+                    if (isLast) {
                         resolve({ ready, chunks, totalBytes, canceled: false });
                     } else {
                         requestNextChunk();
@@ -115,6 +121,7 @@ async function rangeRequest(start, end, { cancelAfterReady = false } = {}) {
                 totalBytes += msg.data.byteLength;
                 chunks.push(new Uint8Array(msg.data));
                 if (msg.end === true) { // header-only: no 'ready' will follow
+                    port.onmessage = null;
                     port.close();
                     resolve({ ready, chunks, totalBytes, canceled: false });
                 }
@@ -122,12 +129,14 @@ async function rangeRequest(start, end, { cancelAfterReady = false } = {}) {
                 ready = true;
                 if (cancelAfterReady) {
                     port.postMessage({ type: 'cancel' });
+                    port.onmessage = null;
                     port.close();
                     resolve({ ready, chunks, totalBytes, canceled: true });
                 } else {
                     requestNextChunk();
                 }
             } else if (msg.type === 'error') {
+                port.onmessage = null;
                 port.close();
                 reject(new Error(msg.reason || 'worker reported error'));
             }

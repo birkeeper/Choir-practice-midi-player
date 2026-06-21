@@ -3,7 +3,7 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0rc90"
+const VERSION = "v3.0.0rc91"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
@@ -78,37 +78,34 @@ navigator.serviceWorker.addEventListener("message", (event) => {
 
 // Function to store settings
 async function storeSettings(key, settings) {
-    if (navigator.serviceWorker.controller) {
-		return new Promise(async (resolve, reject) => {
-			console.log(`storing settings (key: ${key}`);
-			if (key === "current_midi_file") {
-				const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
-				await postStoreSettingsMessage(key, fileURL);
-				await postStoreSettingsMessage("current_midi_file_name", settings.name); // file info is not stored in objectURL, only the blob info.
-			}
-			else if (key.startsWith("blob_")) { // store file
-				const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
-				await postStoreSettingsMessage(key, fileURL);
-			}
-			else {
-				await postStoreSettingsMessage(key, settings);
-			}
-			resolve();
-			function postStoreSettingsMessage(key, settings) {
-				return new Promise((resolve, reject) => {
-					const messageChannel = new MessageChannel();
-					messageChannel.port1.onmessage = async (e) => {
-						console.log(`main: ${e.data}`);
-						resolve();
-					}
-					navigator.serviceWorker.controller.postMessage({
-						type: 'storeSettings',
-						key: `./settings/${key}`,
-						settings: settings
-					}, [messageChannel.port2,]);
-				});
-			}
-		});
+    if (!navigator.serviceWorker.controller) return;
+    console.log(`storing settings (key: ${key}`);
+    if (key === "current_midi_file") {
+        const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
+        await Promise.all([
+            postStoreSettingsMessage(key, fileURL),
+            postStoreSettingsMessage("current_midi_file_name", settings.name), // file info is not stored in objectURL, only the blob info.
+        ]);
+    } else if (key.startsWith("blob_")) { // store file
+        const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
+        await postStoreSettingsMessage(key, fileURL);
+    } else {
+        await postStoreSettingsMessage(key, settings);
+    }
+
+    function postStoreSettingsMessage(key, settings) {
+        return new Promise((resolve) => {
+            const messageChannel = new MessageChannel();
+            messageChannel.port1.onmessage = (e) => {
+                console.log(`main: ${e.data}`);
+                resolve();
+            };
+            navigator.serviceWorker.controller.postMessage({
+                type: 'storeSettings',
+                key: `./settings/${key}`,
+                settings: settings
+            }, [messageChannel.port2]);
+        });
     }
 }
 
@@ -220,7 +217,7 @@ console.log("audioElement created");
 
 dedicatedWorker.onmessage = (e) => {
 	const msg = e.data;
-	if (msg.type === 'workerInitalised')
+	if (msg.type === 'workerInitialised')
 	{
 		console.log("dedicated worker initialised")
 		activateApplication(msg.instruments);
@@ -245,6 +242,7 @@ async function activateApplication(instruments)
     let settings;
     let currentPlaybackRate = 1;
     let currentTime = 0;
+    let progressAbortController = null;
     setEventListenersAudioElement();
     
     async function setupApplication() {
@@ -259,11 +257,14 @@ async function activateApplication(instruments)
 		progressSlider.oninput = () => {
 			currentTimeDisplay.textContent = formatTime(Number(progressSlider.value));
 		};
-		progressSlider.addEventListener("pointerdown", handleClickProgressSlider, { capture: true});
-		progressSlider.addEventListener("pointerup", handleReleaseProgressSlider, { capture: false});
-		progressSlider.addEventListener("touchstart", handleClickProgressSlider, { capture: true}); // else it won't work on touch devices when dragging the slider
-		progressSlider.addEventListener("touchcancel", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
-		progressSlider.addEventListener("touchend", handleReleaseProgressSlider, { capture: false}); // else it won't work on touch devices when dragging the slider
+		if (progressAbortController) progressAbortController.abort();
+		progressAbortController = new AbortController();
+		const { signal } = progressAbortController;
+		progressSlider.addEventListener("pointerdown", handleClickProgressSlider, { capture: true, signal });
+		progressSlider.addEventListener("pointerup", handleReleaseProgressSlider, { capture: false, signal });
+		progressSlider.addEventListener("touchstart", handleClickProgressSlider, { capture: true, signal }); // else it won't work on touch devices when dragging the slider
+		progressSlider.addEventListener("touchcancel", handleReleaseProgressSlider, { capture: false, signal }); // else it won't work on touch devices when dragging the slider
+		progressSlider.addEventListener("touchend", handleReleaseProgressSlider, { capture: false, signal }); // else it won't work on touch devices when dragging the slider
 		
 		function handleClickProgressSlider() {
 			progressSlider.BeingDragged = true;
@@ -273,7 +274,6 @@ async function activateApplication(instruments)
 		function handleReleaseProgressSlider() {
 			audioElement.currentTime = Number(progressSlider.value) / settings.playbackRate;
 			progressSlider.BeingDragged = false;
-			updateAudioElement();
 			console.log("progress slider released");
 		}
 
@@ -281,7 +281,7 @@ async function activateApplication(instruments)
 		playbackRateInput.oninput = ()=> { 
 			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
 		};
-		playbackRateInput.addEventListener('change',playbackRateCallback);
+		playbackRateInput.onchange = playbackRateCallback;
 		async function playbackRateCallback() {
 			playbackRateValue.textContent = `${Number(playbackRateInput.value).toFixed(2)}x`;
 			if (settings?.midiFileHash !== undefined) {
@@ -334,14 +334,9 @@ async function activateApplication(instruments)
                         settings.channels.push(channelSettings);
                     });
                 }
-                if (!Object.hasOwn(settings,"midiFileHash")) { //ensure compatibility with old settings stored in cache
-                    settings.midiFileHash = midiFileHash;
-                    settings.midiName = midi.midiName;
-                }
-				if (!Object.hasOwn(settings,"wavLength_bytes")) { //ensure compatibility with old settings stored in cache
-					settings.duration_s = midi.duration; // [s] midi duration. start of the file to `midi.lastVoiceEventTick`.
-					settings.wavLength_bytes = Math.floor(midi.duration / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
-				}
+                settings.midiName ??= midi.midiName; //ensure compatibility with old settings stored in cache
+                settings.duration_s ??= midi.duration; // [s] midi duration. start of the file to `midi.lastVoiceEventTick`. //ensure compatibility with old settings stored in cache
+                settings.wavLength_bytes ??= Math.floor(midi.duration / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE/8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file //ensure compatibility with old settings stored in cache
                 settings.lastOpened = Date.now();
                 currentPlaybackRate = settings.playbackRate;
 				document.getElementById("message").innerText = settings.midiName;
@@ -365,7 +360,7 @@ async function activateApplication(instruments)
                     audioElement.pause();
 					audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
 					audioElement.load();
-					appendAlert(`main: AudioElement src set to ${audioElement.src}`, 'info', 'DEBUG');
+					console.log(`main: AudioElement src set to ${audioElement.src}`);
 					if ("mediaSession" in navigator) {
 						navigator.mediaSession.setActionHandler("pause", () => {
                             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
@@ -386,7 +381,6 @@ async function activateApplication(instruments)
                             {
                                 progressSlider.BeingDragged = false;
 								audioElement.currentTime = evt.seekTime / settings.playbackRate;
-								updateAudioElement();
                             }
 							else {
 								progressSlider.BeingDragged = true;
@@ -394,11 +388,9 @@ async function activateApplication(instruments)
                         });
 						navigator.mediaSession.setActionHandler("nexttrack", () => {
                             audioElement.currentTime = Math.min((audioElement.currentTime*settings.playbackRate + SKIPFORWARD_SECONDS)/settings.playbackRate, audioElement.duration-1);
-							updateAudioElement();
                         });
 						navigator.mediaSession.setActionHandler("previoustrack", () => {
                             audioElement.currentTime = Math.max((audioElement.currentTime*settings.playbackRate - SKIPBACKWARD_SECONDS)/settings.playbackRate, 0);
-							updateAudioElement();
                         });
 					}
 				});
@@ -508,13 +500,11 @@ async function activateApplication(instruments)
 		// on forward click
         document.getElementById("forward").onclick = () => {
 			audioElement.currentTime = Math.min((audioElement.currentTime*settings.playbackRate + SKIPFORWARD_SECONDS)/settings.playbackRate, audioElement.duration-1);
-			updateAudioElement();
         }
 
 		// on backward click
         document.getElementById("backward").onclick = () => {
 			audioElement.currentTime = Math.max((audioElement.currentTime*settings.playbackRate - SKIPBACKWARD_SECONDS)/settings.playbackRate, 0);
-			updateAudioElement();
         }
     }
 
@@ -538,8 +528,9 @@ async function activateApplication(instruments)
         }
         console.log("file opened");
         const midiFileHash = await generateHash(await file.arrayBuffer());
-        storeSettings("current_midi_file",file);
-        storeSettings(`blob_${midiFileHash}`,file);
+        await Promise.all([
+            storeSettings("current_midi_file",file), 
+            storeSettings(`blob_${midiFileHash}`,file),]);
         setupApplication();
     });
 
@@ -554,7 +545,7 @@ async function activateApplication(instruments)
 		audioElement.pause();
 		audioElement.src = `./generatedWav/${settings.midiFileHash}_${self.crypto.randomUUID()}.wav`;
 		audioElement.load();
-		appendAlert(`main: AudioElement src set to ${audioElement.src}`, 'info', 'DEBUG');
+		console.log(`main: AudioElement src set to ${audioElement.src}`);
 	}
 
     // add an event listener for the recently opened files
@@ -596,7 +587,7 @@ async function activateApplication(instruments)
                     appendAlert( "File not found. Select a different file or open a new one.", 'warning', 'fileError');
                 } else {
                     console.log(`blob_${li.midiFileHash} retrieved from cash`);
-                    storeSettings("current_midi_file", file);
+                    await storeSettings("current_midi_file", file);
                     setupApplication();
                 }
             };
@@ -607,11 +598,9 @@ async function activateApplication(instruments)
 	function setEventListenersAudioElement() {
 		audioElement.addEventListener("error", (event) => {
 			console.log(`main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`);
-            appendAlert( `main: error event on AudioElement: ${audioElement.error.code}, ${audioElement.error.message}, ${audioElement.src}`, 'danger', 'DEBUG');
 		});
 		audioElement.addEventListener("stalled", (event) => {
 			console.log(`main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
-            appendAlert( `main: AudioElement stalled. Ready state: ${audioElement.readyState}, ${audioElement.src}`, 'warning', 'DEBUG');
         });
 		audioElement.addEventListener("suspend", (event) => {
 			console.log(`main: AudioElement suspended. Ready state: ${audioElement.readyState}, ${audioElement.src}`);
@@ -632,13 +621,10 @@ async function activateApplication(instruments)
 			currentTimeDisplay.textContent = formatTime(0.0);
 			document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
 			audioElement.pause();
-			updateAudioElement();
 		});
         audioElement.addEventListener("loadedmetadata", (event) => {
-            currentPlaybackRate = settings.playbackRate;
+            currentPlaybackRate = settings.playbackRate; // tracks the playback rate of the audio currently playing. settings.playbackRate is the intended rate.
             console.log( `main: AudioElement meta data loaded: ${audioElement.readyState}, ${audioElement.src}` );
-            appendAlert( `main: AudioElement meta data loaded: ${audioElement.readyState}, ${audioElement.src}`, 'info', 'DEBUG');
-
             const paused = document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX); // audioElement.paused is unrealiable when buttons are bashed.
             if (paused) { // first start it before pausing, else mediaSession element will not be shown
                 audioElement.play()
@@ -650,13 +636,14 @@ async function activateApplication(instruments)
                         navigator.mediaSession.playbackState = "paused";
                         navigator.mediaSession.setPositionState({duration: settings.duration_s, position: audioElement.currentTime*settings.playbackRate});
                     }
-                    appendAlert( `main: ${audioElement.src} paused`, 'info', 'DEBUG');
                 })
                 .catch((err)=>{
-                    appendAlert( `main: ${err.name}`, 'danger', 'DEBUG');
                     if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
-					if (err.name === "NotAllowedError") { return; } // user did not do any GUI interaction, so the audio will not play.
-                    else { throw err;}
+					else if (err.name === "NotAllowedError") { return; } // user did not do any GUI interaction, so the audio will not play.
+                    else { 
+                        appendAlert( `main: ${err.name}`, 'danger', 'DEBUG');
+                        throw err;
+                    }
                 });
                 
             }
@@ -666,17 +653,18 @@ async function activateApplication(instruments)
                     audioElement.currentTime = currentTime / settings.playbackRate;
                 })
                 .catch((err)=>{
-                    appendAlert( `main: ${err.name}`, 'danger', 'DEBUG');
                     if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
-                    if (err.name === "NotAllowedError") { return; } // user did not do any GUI interaction, so the audio will not play.
-                    else { throw err;}
+                    else if (err.name === "NotAllowedError") { return; } // user did not do any GUI interaction, so the audio will not play.
+                    else { 
+                        appendAlert( `main: ${err.name}`, 'danger', 'DEBUG');
+                        throw err;
+                    }
                 });
                 if ("mediaSession" in navigator) { // else the mediaSession in the notification screen will be closed
                     navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
                     navigator.mediaSession.playbackState = "playing";
                     navigator.mediaSession.setPositionState({duration: settings.duration_s, position: audioElement.currentTime*settings.playbackRate});
                 }
-                appendAlert( `main: ${audioElement.src} playing`, 'info', 'DEBUG');
             }
         });
 	}

@@ -298,4 +298,4 @@ function generateWavHeader(duration, playbackRate) {
 }
 
 console.log("worker: dedicated worker initialised");
-self.postMessage({type: 'workerInitalised', instruments: instruments});
+self.postMessage({type: 'workerInitialised', instruments: instruments});

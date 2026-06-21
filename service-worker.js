@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.90"; 
+const CACHE_NAME = "v10.91"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -198,16 +198,7 @@ const putInCache = async (request, response) => {
       for (const pair of event.request.headers.entries()) {
         debugStringArray.push(`${pair[0]}: ${pair[1]}`); //DEBUG
       }
-      console.log(debugStringArray.join(" | ")); //DEBUG
-      self.clients.matchAll().then((clientList) => {  //DEBUG
-        let client; //DEBUG
-        for (const clientItem of clientList) { //DEBUG
-            if (clientItem.url.includes("midi_player.html")) { //DEBUG
-                client = clientItem; //DEBUG
-          }
-        }
-        client.postMessage({type:'DEBUG', message: debugStringArray.join(" | ")}); //DEBUG
-      }); //DEBUG     
+      console.log(debugStringArray.join(" | ")); //DEBUG     
   	} else {
 		event.respondWith(	
       		cacheFirst({
@@ -353,7 +344,6 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
               port.close();
               resolve(); // resolve also on 'end': header-only requests never send 'ready'
               console.log(`service worker: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`);
-              client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`});
             }
           } else if (msg.type === 'error') {
             controller.error(new Error(msg.reason || 'gen failed'));
@@ -361,10 +351,8 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
             port.close();
             reject(new Error(msg.reason || 'gen failed'));
             console.log(`service worker: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}; sessionID: ${sessionID}`);
-            client.postMessage({type:'DEBUG', message: `SW: 'error' received; reason: ${msg.reason}; UUID: ${randomUUID}; sessionID: ${sessionID}`});
           } else if (msg.type === 'ready') {
             console.log(`SW: ready to pull chunks; UUID: ${randomUUID}; sessionID: ${sessionID}`);
-            client.postMessage({type:'DEBUG', message: `SW: ready to pull chunks; UUID: ${randomUUID}; sessionID: ${sessionID}`});
             resolve();
           }
         }
@@ -386,7 +374,6 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
                 port.onmessage = null;
                 port.close();
                 console.log(`service worker: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`);
-                client.postMessage({type:'DEBUG', message: `SW: 'end' received; UUID: ${randomUUID}; sessionID: ${sessionID}`});
               }
               chunkChannel.port1.onmessage = null;
               chunkChannel.port1.close();
@@ -399,9 +386,9 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
 		},
 		cancel(reason) {
 			console.log(`service worker: ReadableStream canceled; UUID: ${randomUUID}; sessionID: ${sessionID}`);
-			port.postMessage({type: 'cancel'});
+			port.postMessage({type: 'cancel'});https://birkeeper.github.io/midi-player-website/Choir-practice-midi-player/midi_player.html
+      port.onmessage = null;
 			port.close();
-      client.postMessage({type:'DEBUG', message: `SW: ReadableStream canceled; UUID: ${randomUUID}; sessionID: ${sessionID}`});
 		}
   }, {highWaterMark: 13});
 
