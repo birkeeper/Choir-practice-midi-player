@@ -32,7 +32,16 @@
     min-width: 5rem;
 }
 
-.instrument-option { 
+.instrument-option {
     width: 20%;
     overflow-wrap: anywhere;
+}
+
+.form-range::-webkit-slider-thumb {
+    background-color: var(--bs-body-color) !important;
+}
+
+.form-range::-moz-range-thumb {
+    background-color: var(--bs-body-color) !important;
+    border-color: var(--bs-body-color) !important;
 }
