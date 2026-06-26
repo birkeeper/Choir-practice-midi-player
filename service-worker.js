@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.2"; 
+const CACHE_NAME = "v10.3"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -68,27 +68,6 @@ const putInCache = async (request, response) => {
 
   self.addEventListener("install", (event) => {
     event.waitUntil( Promise.allSettled([
-      caches.keys().then(cacheNames => {
-        // Filter out the new cache name
-        const oldCacheNames = cacheNames.filter(name => name !== CACHE_NAME);
-        // Get the latest cache name
-        const latestCacheName = oldCacheNames[oldCacheNames.length - 1];
-                
-        if (!latestCacheName) { return; }
-		if (Number(latestCacheName.slice(1))<=7.0) { return; }//settings of caches of versions <=7.0 are not compatible
-		return caches.open(latestCacheName).then(oldCache => {
-			return oldCache.keys().then(requests => {
-				const settingsRequests = requests.filter(request => request.url.includes('/settings/'));
-				return Promise.all(settingsRequests.map(request => {
-					return oldCache.match(request).then(response => {
-						if (response) {
-							return putInCache(request, response);
-						}
-					});
-				}));
-			});
-		});
-      }),
       caches.open(CACHE_NAME)
         .then((cache) => {
           return fetch(SOUNDFONT_GM, {cache: "reload"}).then((response) => {
@@ -214,15 +193,26 @@ const putInCache = async (request, response) => {
       (async () => {
           const cacheWhitelist = [CACHE_NAME];
           const cacheNames = await caches.keys();
-          await Promise.all(
-              cacheNames.map(cacheName => {
-                  if (!cacheWhitelist.includes(cacheName)) {
-                      console.log(`old cache ${cacheName} deleted.`);
-                      return caches.delete(cacheName);
-                  }
-                  console.log(`active cache is ${CACHE_NAME}`);
-              })
-          );
+          const oldCacheNames = cacheNames
+              .filter(name => !cacheWhitelist.includes(name))
+              .sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))); // oldest first so newest settings win
+
+          for (const oldCacheName of oldCacheNames) {
+              if (Number(oldCacheName.slice(1)) <= 7.0) continue; // settings of caches <=7.0 are not compatible
+              const oldCache = await caches.open(oldCacheName);
+              const requests = await oldCache.keys();
+              const settingsRequests = requests.filter(req => req.url.includes('/settings/'));
+              await Promise.all(settingsRequests.map(async req => {
+                  const response = await oldCache.match(req);
+                  if (response) await putInCache(req, response);
+              }));
+          }
+
+          await Promise.all(oldCacheNames.map(cacheName => {
+              console.log(`old cache ${cacheName} deleted.`);
+              return caches.delete(cacheName);
+          }));
+          console.log(`active cache is ${CACHE_NAME}`);
           await clients.claim();
       })()
     );

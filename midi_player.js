@@ -3,8 +3,26 @@ import { MIDI } from './libraries/spessasynth_core/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev2"
+const VERSION = "v3.0.0dev3"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
+
+const _singleTabAllowed = await (async () => {
+    if ('locks' in navigator) {
+        return new Promise(resolve => {
+            navigator.locks.request('midi-player-single-tab', { ifAvailable: true }, lock => {
+                if (!lock) { resolve(false); return; }
+                resolve(true);
+                return new Promise(() => {}); // hold lock until tab is closed
+            });
+        });
+    }
+    return true;
+})();
+
+if (!_singleTabAllowed) {
+    document.body.innerHTML = '<p style="font-family:sans-serif;padding:2rem">This app is already open in another tab. Please close this tab.</p>';
+    throw new Error('App already open in another tab.');
+}
 const ICON_SIZE_PX = 24; // size of button icons
 const MAXNROFRECENTFILES = 10; // Maximum number of recently opened files that can be stored in the cache
 const SKIPFORWARD_SECONDS = 10; // skip audio forwards in seconds
@@ -36,12 +54,15 @@ if ("serviceWorker" in navigator) {
                             () => {
                                 console.log("Posting skipWaiting to service worker.");
 								appendAlert("Update installing... When the installation has finished, the app will be reloaded automatically",'warning', "update");
-                                installingWorker.postMessage({ type: 'skipWaiting'}); }
+                                (registration.waiting ?? installingWorker).postMessage({ type: 'skipWaiting'}); }
                         );
                     }
                 });
             });
-            registration.update(); // Check for updates immediately
+            registration.update(); // Check for updates immediately on load
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "visible") registration.update();
+            });
         },
         (error) => {
             console.error(`Service worker registration failed: ${error}`);
