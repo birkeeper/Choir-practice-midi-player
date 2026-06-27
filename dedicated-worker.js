@@ -1,4 +1,4 @@
-import { SoundBankLoader, SpessaSynthSequencer, SpessaSynthProcessor, MIDIControllers } from './libraries/spessasynth_core_dist/index.js';
+import { SoundBankLoader, SpessaSynthSequencer, SpessaSynthProcessor, MIDIControllers, BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
@@ -27,7 +27,7 @@ self.onmessage = async (msg) => {
     console.log(`worker: message received of type: ${msg.data.type}`);
 	if (msg.data.type === 'LOAD_MIDI') {
 		console.log(`DW: loading midi`);
-		midi = msg.data.midi;
+		midi = BasicMIDI.fromArrayBuffer(msg.data.buffer, msg.data.name);
 	}
 	else if (msg.data.type === 'AUDIO_RANGE_REQ') {
 		const port = msg.ports && msg.ports[0];

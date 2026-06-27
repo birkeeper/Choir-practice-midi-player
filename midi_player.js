@@ -3,7 +3,7 @@ import { BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev9"
+const VERSION = "v3.0.0dev10"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
 const _singleTabAllowed = await (async () => {
@@ -237,7 +237,7 @@ async function activateApplication(instruments) {
         const buffer = await file.arrayBuffer();
         const midiFileHash = await generateHash(buffer);
         const midi = BasicMIDI.fromArrayBuffer(buffer, file.name);
-        dedicatedWorker.postMessage({ type: 'LOAD_MIDI', midi: midi });
+        dedicatedWorker.postMessage({ type: 'LOAD_MIDI', buffer: buffer, name: file.name });
 
         setupProgressSliderEvents();
         setupPlaybackRateEvents();
