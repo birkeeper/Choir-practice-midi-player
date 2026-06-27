@@ -1,5 +1,5 @@
 // import the modules
-import { MIDI } from './libraries/spessasynth_core/index.js';
+import { BasicMIDI } from './libraries/spessasynth_core/dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
@@ -236,7 +236,7 @@ async function activateApplication(instruments) {
     async function setupApplication() {
         const buffer = await file.arrayBuffer();
         const midiFileHash = await generateHash(buffer);
-        const midi = new MIDI(buffer, file.name);
+        const midi = BasicMIDI.fromArrayBuffer(buffer, file.name);
         dedicatedWorker.postMessage({ type: 'LOAD_MIDI', midi: midi });
 
         setupProgressSliderEvents();
