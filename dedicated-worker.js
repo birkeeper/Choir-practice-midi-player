@@ -119,7 +119,7 @@ self.onmessage = async (msg) => {
 			while (prerollProcessed < prerollSamples) {
 				seq.processTick();
 				const bufferSize = Math.min(BUFFER_SIZE, prerollSamples - prerollProcessed);
-				synth.renderAudio([prerollLeft, prerollRight], [], [], 0, bufferSize);
+				synth.process(prerollLeft, prerollRight, 0, bufferSize);
 				prerollProcessed += bufferSize;
 			}
 			const dataLength_samples = (dataEndExclusiveAligned_bytes - dataStartAligned_bytes) / BYTESPERPCMFRAME; // per channel
@@ -169,7 +169,7 @@ self.onmessage = async (msg) => {
 					seq.processTick();
 					// render
 					const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
-					synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
+					synth.process(outLeft, outRight, filledSamples, bufferSize);
 					filledSamples += bufferSize;
 				}
 
