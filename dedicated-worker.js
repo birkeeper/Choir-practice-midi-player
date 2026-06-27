@@ -1,4 +1,4 @@
-import { SoundBankLoader, SpessaSynthSequencer, SpessaSynthProcessor, MIDIControllers } from './libraries/spessasynth_core/dist/index.js';
+import { SoundBankLoader, SpessaSynthSequencer, SpessaSynthProcessor, MIDIControllers } from './libraries/spessasynth_core_dist/index.js';
 import { SOUNDFONT_GM, SOUNTFONT_SPECIAL, SOUNDFONTBANK } from "./constants.js";
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
