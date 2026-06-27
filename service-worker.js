@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.6"; 
+const CACHE_NAME = "v10.7"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -268,10 +268,8 @@ self.addEventListener('message', async (event) => {
         responses.map(async res => res ? await res.json() : null)
       );
 
-      if (contents.length === 0) { contents = null; }
-
       // Send the responses back to the calling script
-      port.postMessage(contents);
+      port.postMessage(contents.length === 0 ? null : contents);
     } catch (error) {
       port.postMessage(null);
     }
@@ -376,7 +374,7 @@ async function handleSongRequest(request, songID, randomUUID, sessionID) {
 		},
 		cancel(reason) {
 			console.log(`service worker: ReadableStream canceled; UUID: ${randomUUID}; sessionID: ${sessionID}`);
-			port.postMessage({type: 'cancel'});https://birkeeper.github.io/midi-player-website/Choir-practice-midi-player/midi_player.html
+			port.postMessage({type: 'cancel'});
       port.onmessage = null;
 			port.close();
 		}
