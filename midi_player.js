@@ -456,8 +456,8 @@ async function activateApplication(instruments) {
             for (const instrument of Object.values(instruments)) {
                 const option = document.createElement('option');
                 option.value = `${instrument.bank}:${instrument.program}`;
-                option.textContent = instrument.presetName;
-                option.selected = channel.selectedInstrument === instrument.presetName;
+                option.textContent = instrument.name;
+                option.selected = channel.selectedInstrument === instrument.name;
                 instrumentSelect.appendChild(option);
             }
             instrumentSelect.onchange = async (event) => {

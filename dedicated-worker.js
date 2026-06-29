@@ -40,7 +40,7 @@ self.onmessage = async (msg) => {
 			effectsEnabled: false
 		});
 		synth.soundBankManager.addSoundBank(primarySoundFont, "primary");
-		synth.soundBankManager.addSoundBank(secondarySoundFont, "secondary", 0);
+		synth.soundBankManager.addSoundBank(secondarySoundFont, "secondary", 0)
 		await synth.processorInitialized;
 		console.log("worker: synthProcessor initialised");
 		const seq = new SpessaSynthSequencer(synth);
@@ -62,7 +62,7 @@ self.onmessage = async (msg) => {
 			}
 			else {
 				for (const instrument of Object.values(instruments)) {
-					if (channel.selectedInstrument === instrument.presetName) {
+					if (channel.selectedInstrument === instrument.name) {
 						bankSelect(synth, channel.number, instrument.bank);
 						programChange(synth, channel.number, instrument.program);
 					}
@@ -204,23 +204,23 @@ self.onmessage = async (msg) => {
 };
 
 function setPan(synth, channel, pan) {
-	synth.midiChannels[channel].lockController(MIDIControllers.pan, false);
+	synth.midiChannels()[channel].lockController(MIDIControllers.pan, false);
 	synth.controllerChange(channel, MIDIControllers.pan, pan);
-	synth.midiChannels[channel].lockController(MIDIControllers.pan, true);
+	synth.midiChannels()[channel].lockController(MIDIControllers.pan, true);
 }
 
 function setModulationWheel(synth, channel, modulation) {
-	synth.midiChannels[channel].lockController(MIDIControllers.modulationWheel, false);
+	synth.midiChannels()[channel].lockController(MIDIControllers.modulationWheel, false);
 	synth.controllerChange(channel, MIDIControllers.modulationWheel, modulation);
-	synth.midiChannels[channel].lockController(MIDIControllers.modulationWheel, true);
+	synth.midiChannels()[channel].lockController(MIDIControllers.modulationWheel, true);
 }
 
 function releasePreset(synth, channel) {
-	synth.midiChannels[channel].setPresetLock(false);
+	synth.midiChannels()[channel].setPresetLock(false);
 }
 
 function releaseBankSelect(synth, channel) {
-	synth.midiChannels[channel].lockController(MIDIControllers.bankSelect, false);
+	synth.midiChannels()[channel].lockController(MIDIControllers.bankSelect, false);
 }
 
 function programChange(synth, channel, program) {
@@ -230,19 +230,19 @@ function programChange(synth, channel, program) {
 }
 
 function bankSelect(synth, channel, bank) {
-	synth.midiChannels[channel].lockController(MIDIControllers.bankSelect, false);
+	synth.midiChannels()[channel].lockController(MIDIControllers.bankSelect, false);
 	synth.controllerChange(channel, MIDIControllers.bankSelect, bank);
-	synth.midiChannels[channel].lockController(MIDIControllers.bankSelect, true);
+	synth.midiChannels()[channel].lockController(MIDIControllers.bankSelect, true);
 }
 
 function setDrums(synth, channel, isDrum) {
-	synth.midiChannels[channel].setDrums(isDrum);
+	synth.midiChannels()[channel].setDrums(isDrum);
 }
 
 function setMainVolume(synth, channel, mainVolume) {
-	synth.midiChannels[channel].lockController(MIDIControllers.mainVolume, false);
+	synth.midiChannels()[channel].lockController(MIDIControllers.mainVolume, false);
 	synth.controllerChange(channel, MIDIControllers.mainVolume, mainVolume);
-	synth.midiChannels[channel].lockController(MIDIControllers.mainVolume, true);
+	synth.midiChannels()[channel].lockController(MIDIControllers.mainVolume, true);
 }
 
 function generateWavHeader(duration, playbackRate) {
