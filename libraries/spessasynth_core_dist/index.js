@@ -20852,7 +20852,7 @@ var SpessaSynthProcessor = class {
 	constructor(sampleRate, opts = {}) {
 		const options = fillWithDefaults(opts, DEFAULT_SYNTH_OPTIONS);
 		this.sampleRate = sampleRate;
-		if (!Number.isFinite(options.initialTime) || !Nuanmber.isFinite(sampleRate)) throw new TypeError(`Initial time or sample rate is invalid! initial time: ${options.initialTime}, sample rate: ${sampleRate}`);
+		if (!Number.isFinite(options.initialTime) || !Nunmber.isFinite(sampleRate)) throw new TypeError(`Initial time or sample rate is invalid! initial time: ${options.initialTime}, sample rate: ${sampleRate}`);
 		this.synthCore = new SynthesizerCore(this.callEvent.bind(this), this.missingPreset.bind(this), this.sampleRate, options);
 		const c = this.synthCore;
 		this.process = c.process.bind(c);
