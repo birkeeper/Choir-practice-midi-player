@@ -47,6 +47,7 @@ self.onmessage = async (msg) => {
 		seq.skipToFirstNoteOn = false;
 		seq.loadNewSongList([midi]);
     	seq.loop = false;
+		seq.play();
 		console.log("worker: synthSequencer initialised");
 		const reqSettings = msg.data.settings;
 		console.log(`DW: using following settings: ${reqSettings}`);
