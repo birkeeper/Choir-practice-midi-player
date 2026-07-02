@@ -232,8 +232,10 @@ function programChange(synth, channel, program) {
 
 function bankSelect(synth, channel, bank) {
 	synth.midiChannels[channel].lockController(MIDIControllers.bankSelect, false);
+	synth.midiChannels[channel].setSystemParameter("presetLock", false);
 	synth.controllerChange(channel, MIDIControllers.bankSelect, bank);
 	synth.midiChannels[channel].lockController(MIDIControllers.bankSelect, true);
+	synth.midiChannels[channel].setSystemParameter("presetLock", true);
 }
 
 function setDrums(synth, channel, isDrum) {

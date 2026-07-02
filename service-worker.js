@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.15"; 
+const CACHE_NAME = "v10.16"; 
 
 const putInCache = async (request, response) => {
     try {
@@ -152,7 +152,17 @@ const putInCache = async (request, response) => {
           });
         })
         .catch(() => {return Promise.resolve(undefined);}),
-	  caches.open(CACHE_NAME)
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          return fetch('./libraries/spessasynth_core_dist/index.js', {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put('./constants.js', response);
+          });
+        })
+        .catch(() => {return Promise.resolve(undefined);}),
+	    caches.open(CACHE_NAME)
         .then((cache) => {
           return fetch('./dedicated-worker.js', {cache: "reload"}).then((response) => {
             if (!response.ok) {
