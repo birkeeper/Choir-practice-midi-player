@@ -252,7 +252,7 @@ async function activateApplication(instruments) {
         channelControlsContainer.innerHTML = channelControlHeader.outerHTML; // Clear existing controls except for the header
 
         settings = (await retrieveSettings(midiFileHash)) ?? createDefaultSettings(midi, midiFileHash);
-        settings.midiName ??= midi.midiName; // ensure compatibility with old settings stored in cache
+        settings.midiName ??= midi.getName(); // ensure compatibility with old settings stored in cache
         settings.duration_s ??= midi.duration; // [s] midi duration. start of the file to `midi.lastVoiceEventTick`.
         settings.wavLength_bytes ??= Math.floor(midi.duration / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE / 8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
         settings.lastOpened = Date.now();
@@ -388,7 +388,7 @@ async function activateApplication(instruments) {
     }
 
     function createDefaultSettings(midi, midiFileHash) {
-        const channelsPerTrack = midi.usedChannelsOnTrack;
+        const channelsPerTrack = midi.tracks.length;
         const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
         const trackNames = getTrackNames(midi);
         const channels = [];
@@ -404,7 +404,7 @@ async function activateApplication(instruments) {
         });
         return {
             midiFileHash,
-            midiName: midi.midiName,
+            midiName: midi.getName(),
             playbackRate: 1.0,
             duration_s: midi.duration,
             wavLength_bytes: Math.floor(midi.duration * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE / 8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE,
