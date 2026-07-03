@@ -3,7 +3,7 @@ import { BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev23"
+const VERSION = "v3.0.0dev24"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
 const _singleTabAllowed = await (async () => {
@@ -253,6 +253,81 @@ document.getElementById("backward-label").innerHTML = getBackwardSvg(ICON_SIZE_P
 const audioElement = document.getElementById("audioElement");
 console.log("audioElement created");
 
+// In an installed (standalone) web app, iOS suspends the web process shortly after audio pauses
+// while the screen is locked, so the lock-screen play command never reaches the page
+// (https://bugs.webkit.org/show_bug.cgi?id=261858). Keeping an inaudible loop playing on a second
+// audio element holds the audio session open, so the process stays alive and playback can resume.
+const IS_STANDALONE = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const KEEPALIVE_MAX_MS = 5 * 60 * 1000; // [ms] battery guard: after this long paused-and-locked, let iOS suspend the app; resuming then requires reopening it
+const keepAliveAudio = IS_STANDALONE ? createKeepAliveAudio() : null;
+let keepAliveTimer = null;
+let keepAliveUnlocked = false;
+
+function createKeepAliveAudio() {
+    const sampleRate = 8000;
+    const numSamples = sampleRate; // 1 second of silence, looped
+    const wav = new Uint8Array(WAV_HEADERSIZE + numSamples);
+    const view = new DataView(wav.buffer);
+    const writeString = (offset, str) => { for (let i = 0; i < str.length; i++) { wav[offset + i] = str.charCodeAt(i); } };
+    writeString(0, "RIFF");
+    view.setUint32(4, 36 + numSamples, true);
+    writeString(8, "WAVE");
+    writeString(12, "fmt ");
+    view.setUint32(16, 16, true); // fmt chunk size
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, 1, true); // mono
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate, true); // byte rate: sampleRate * 1 channel * 1 byte
+    view.setUint16(32, 1, true); // block align
+    view.setUint16(34, 8, true); // bits per sample
+    writeString(36, "data");
+    view.setUint32(40, numSamples, true);
+    wav.fill(0x80, WAV_HEADERSIZE); // 0x80 = silence in 8-bit PCM
+    const audio = new Audio(URL.createObjectURL(new Blob([wav], { type: "audio/wav" })));
+    audio.loop = true;
+    return audio;
+}
+
+function unlockKeepAliveAudio() { // must be called from a user gesture; afterwards keep-alive can be started programmatically
+    if (!keepAliveAudio || keepAliveUnlocked) return;
+    keepAliveUnlocked = true;
+    keepAliveAudio.play().then(() => {
+        keepAliveAudio.pause();
+        console.log("main: keep-alive audio unlocked");
+    }).catch(() => { keepAliveUnlocked = false; });
+}
+
+function startKeepAlive() {
+    if (!keepAliveAudio || !keepAliveUnlocked || document.visibilityState !== "hidden") return;
+    keepAliveAudio.play().then(() => {
+        console.log("main: keep-alive audio started");
+    }).catch((err) => {
+        console.log(`main: keep-alive audio failed to start: ${err.name}`);
+    });
+    clearTimeout(keepAliveTimer);
+    keepAliveTimer = setTimeout(stopKeepAlive, KEEPALIVE_MAX_MS);
+}
+
+function stopKeepAlive() {
+    if (!keepAliveAudio) return;
+    clearTimeout(keepAliveTimer);
+    keepAliveTimer = null;
+    if (!keepAliveAudio.paused) {
+        keepAliveAudio.pause();
+        console.log("main: keep-alive audio stopped");
+    }
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+        // covers pausing in-app and locking the screen afterwards; while playing, the audible
+        // audio session already keeps the process alive, so keep-alive is not needed
+        if (audioElement.src !== "" && audioElement.paused) startKeepAlive();
+    } else {
+        stopKeepAlive(); // a foreground app is not suspended; do not waste battery
+    }
+});
+
 dedicatedWorker.onmessage = (e) => {
     const msg = e.data;
     if (msg.type === 'workerInitialised') {
@@ -375,8 +450,10 @@ async function activateApplication(instruments) {
 
     function setupPlaybackButtons() {
         document.getElementById("pause").onclick = () => {
+            unlockKeepAliveAudio(); // a user gesture; unlock so keep-alive can be started programmatically later
             if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+                stopKeepAlive();
                 audioElement.play().catch((err) => {
                     if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
                     if (err.name === "NotAllowedError") { // audio will not play; revert the UI so it does not claim to be playing
@@ -413,15 +490,18 @@ async function activateApplication(instruments) {
         navigator.mediaSession.setActionHandler("pause", () => {
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
             audioElement.pause();
+            startKeepAlive(); // hold the audio session open so iOS does not suspend the app while paused on the lock screen
             navigator.mediaSession.playbackState = "paused";
         });
         navigator.mediaSession.setActionHandler("play", () => {
             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+            stopKeepAlive();
             audioElement.play().catch((err) => {
                 if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
                 if (err.name === "NotAllowedError") { // iOS refused to resume (e.g. suspended standalone app); revert the UI so it does not claim to be playing
                     document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                     navigator.mediaSession.playbackState = "paused";
+                    startKeepAlive(); // stay alive so a next play attempt can still reach us
                     return;
                 }
                 else { throw err; }
@@ -643,6 +723,11 @@ async function activateApplication(instruments) {
             currentTimeDisplay.textContent = formatTime(0.0);
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
             audioElement.pause();
+            startKeepAlive(); // when the song ends with the screen locked, stay alive so the lock-screen play button keeps working
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.playbackState = "paused";
+                navigator.mediaSession.setPositionState({ duration: settings.duration_s, position: 0 });
+            }
         });
         audioElement.addEventListener("loadedmetadata", (event) => {
             currentPlaybackRate = settings.playbackRate; // tracks the rate of the audio currently streaming; settings.playbackRate is the intended rate
