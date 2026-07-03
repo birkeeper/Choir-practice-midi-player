@@ -3,7 +3,7 @@ import { BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev24"
+const VERSION = "v3.0.0dev25"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
 const _singleTabAllowed = await (async () => {
@@ -258,10 +258,9 @@ console.log("audioElement created");
 // (https://bugs.webkit.org/show_bug.cgi?id=261858). Keeping an inaudible loop playing on a second
 // audio element holds the audio session open, so the process stays alive and playback can resume.
 const IS_STANDALONE = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-const KEEPALIVE_MAX_MS = 5 * 60 * 1000; // [ms] battery guard: after this long paused-and-locked, let iOS suspend the app; resuming then requires reopening it
+const KEEPALIVE_MAX_MS = 5 * 60 * 1000; // [ms] battery guard: stop the keep-alive loop this long after the last pause; iOS may then suspend the app and resuming requires reopening it
 const keepAliveAudio = IS_STANDALONE ? createKeepAliveAudio() : null;
 let keepAliveTimer = null;
-let keepAliveUnlocked = false;
 
 function createKeepAliveAudio() {
     const sampleRate = 8000;
@@ -288,22 +287,25 @@ function createKeepAliveAudio() {
     return audio;
 }
 
-function unlockKeepAliveAudio() { // must be called from a user gesture; afterwards keep-alive can be started programmatically
-    if (!keepAliveAudio || keepAliveUnlocked) return;
-    keepAliveUnlocked = true;
-    keepAliveAudio.play().then(() => {
-        keepAliveAudio.pause();
-        console.log("main: keep-alive audio unlocked");
-    }).catch(() => { keepAliveUnlocked = false; });
+// iOS (observed on 26.5) refuses to start the silent loop once the lock screen is shown, so it cannot
+// be started from media session handlers triggered on the lock screen. Instead it is started while the
+// app is in focus (on every in-app play) and kept playing across pauses; armKeepAliveStop() bounds how
+// long it keeps running after a pause.
+function startKeepAlive() {
+    if (!keepAliveAudio) return;
+    clearTimeout(keepAliveTimer);
+    keepAliveTimer = null;
+    if (keepAliveAudio.paused) {
+        keepAliveAudio.play().then(() => {
+            console.log("main: keep-alive audio started");
+        }).catch((err) => {
+            console.log(`main: keep-alive audio failed to start: ${err.name}`);
+        });
+    }
 }
 
-function startKeepAlive() {
-    if (!keepAliveAudio || !keepAliveUnlocked || document.visibilityState !== "hidden") return;
-    keepAliveAudio.play().then(() => {
-        console.log("main: keep-alive audio started");
-    }).catch((err) => {
-        console.log(`main: keep-alive audio failed to start: ${err.name}`);
-    });
+function armKeepAliveStop() { // call when the main audio pauses: keep the loop running so the app survives the lock screen, but not forever
+    if (!keepAliveAudio || keepAliveAudio.paused) return;
     clearTimeout(keepAliveTimer);
     keepAliveTimer = setTimeout(stopKeepAlive, KEEPALIVE_MAX_MS);
 }
@@ -317,16 +319,6 @@ function stopKeepAlive() {
         console.log("main: keep-alive audio stopped");
     }
 }
-
-document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
-        // covers pausing in-app and locking the screen afterwards; while playing, the audible
-        // audio session already keeps the process alive, so keep-alive is not needed
-        if (audioElement.src !== "" && audioElement.paused) startKeepAlive();
-    } else {
-        stopKeepAlive(); // a foreground app is not suspended; do not waste battery
-    }
-});
 
 dedicatedWorker.onmessage = (e) => {
     const msg = e.data;
@@ -450,10 +442,9 @@ async function activateApplication(instruments) {
 
     function setupPlaybackButtons() {
         document.getElementById("pause").onclick = () => {
-            unlockKeepAliveAudio(); // a user gesture; unlock so keep-alive can be started programmatically later
             if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-                stopKeepAlive();
+                startKeepAlive(); // a user gesture with the app in focus: the only context where iOS lets the silent loop start
                 audioElement.play().catch((err) => {
                     if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
                     if (err.name === "NotAllowedError") { // audio will not play; revert the UI so it does not claim to be playing
@@ -472,6 +463,7 @@ async function activateApplication(instruments) {
             } else {
                 document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                 audioElement.pause();
+                armKeepAliveStop();
                 if ("mediaSession" in navigator) {
                     navigator.mediaSession.playbackState = "paused";
                     navigator.mediaSession.setPositionState({ duration: settings.duration_s, position: audioElement.currentTime * settings.playbackRate });
@@ -490,18 +482,18 @@ async function activateApplication(instruments) {
         navigator.mediaSession.setActionHandler("pause", () => {
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
             audioElement.pause();
-            startKeepAlive(); // hold the audio session open so iOS does not suspend the app while paused on the lock screen
+            armKeepAliveStop(); // the silent loop keeps running, so iOS does not suspend the app while paused on the lock screen
             navigator.mediaSession.playbackState = "paused";
         });
         navigator.mediaSession.setActionHandler("play", () => {
             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-            stopKeepAlive();
+            startKeepAlive(); // cancels the pending stop; a no-op start when the loop is already playing
             audioElement.play().catch((err) => {
                 if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
                 if (err.name === "NotAllowedError") { // iOS refused to resume (e.g. suspended standalone app); revert the UI so it does not claim to be playing
                     document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                     navigator.mediaSession.playbackState = "paused";
-                    startKeepAlive(); // stay alive so a next play attempt can still reach us
+                    armKeepAliveStop(); // stay alive (bounded) so a next play attempt can still reach us
                     return;
                 }
                 else { throw err; }
@@ -723,7 +715,7 @@ async function activateApplication(instruments) {
             currentTimeDisplay.textContent = formatTime(0.0);
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
             audioElement.pause();
-            startKeepAlive(); // when the song ends with the screen locked, stay alive so the lock-screen play button keeps working
+            armKeepAliveStop(); // when the song ends with the screen locked, stay alive (bounded) so the lock-screen play button keeps working
             if ("mediaSession" in navigator) {
                 navigator.mediaSession.playbackState = "paused";
                 navigator.mediaSession.setPositionState({ duration: settings.duration_s, position: 0 });
