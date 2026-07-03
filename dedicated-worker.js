@@ -40,7 +40,7 @@ self.onmessage = async (msg) => {
 			effectsEnabled: false
 		});
 		synth.soundBankManager.addSoundBank(primarySoundFont, "primary");
-		synth.soundBankManager.addSoundBank(secondarySoundFont, "secondary", 0)
+		synth.soundBankManager.addSoundBank(secondarySoundFont, "secondary", SOUNDFONTBANK);
 		await synth.processorInitialized;
 		console.log("worker: synthProcessor initialised");
 		const seq = new SpessaSynthSequencer(synth);
