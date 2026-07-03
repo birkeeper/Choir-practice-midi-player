@@ -3,7 +3,7 @@ import { BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev22"
+const VERSION = "v3.0.0dev23"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
 const _singleTabAllowed = await (async () => {
@@ -379,7 +379,13 @@ async function activateApplication(instruments) {
                 document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
                 audioElement.play().catch((err) => {
                     if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
-                    if (err.name === "NotAllowedError") { return; } // user did not do any GUI interaction, so the audio will not play.
+                    if (err.name === "NotAllowedError") { // audio will not play; revert the UI so it does not claim to be playing
+                        document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                        if ("mediaSession" in navigator) {
+                            navigator.mediaSession.playbackState = "paused";
+                        }
+                        return;
+                    }
                     else { throw err; }
                 });
                 if ("mediaSession" in navigator) {
@@ -413,7 +419,11 @@ async function activateApplication(instruments) {
             document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
             audioElement.play().catch((err) => {
                 if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
-                if (err.name === "NotAllowedError") { return; } // user did not do any GUI interaction, so the audio will not play.
+                if (err.name === "NotAllowedError") { // iOS refused to resume (e.g. suspended standalone app); revert the UI so it does not claim to be playing
+                    document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                    navigator.mediaSession.playbackState = "paused";
+                    return;
+                }
                 else { throw err; }
             });
             navigator.mediaSession.playbackState = "playing";
