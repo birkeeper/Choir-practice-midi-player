@@ -2,7 +2,13 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL = "./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.21"; 
+const CACHE_NAME = "v10.22";
+
+// Resolves when the activate phase (which migrates settings from the previous
+// versioned cache into CACHE_NAME) has finished. A page can load while a new
+// service worker version is still activating; settings requests must wait for
+// this, or they miss the cache and the app falls back to default settings.
+let activationComplete = Promise.resolve();
 
 const putInCache = async (request, response) => {
     try {
@@ -24,6 +30,9 @@ const putInCache = async (request, response) => {
   };
   
   const cacheFirst = async ({ request, fallbackUrl }) => {
+    if (request.url.includes('/settings/')) {
+      await activationComplete; // settings may still be migrating from the old cache
+    }
     // First try to get the resource from the cache.
     const cache = await caches.open(CACHE_NAME);
     const responseFromCache = await cache.match(request);
@@ -199,33 +208,39 @@ const putInCache = async (request, response) => {
   });
 
   self.addEventListener("activate", (event) => {
-    event.waitUntil(
-      (async () => {
-          const cacheWhitelist = [CACHE_NAME];
-          const cacheNames = await caches.keys();
-          const oldCacheNames = cacheNames
-              .filter(name => !cacheWhitelist.includes(name))
-              .sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))); // oldest first so newest settings win
+    const activation = (async () => {
+        const cacheWhitelist = [CACHE_NAME];
+        const cacheNames = await caches.keys();
+        const oldCacheNames = cacheNames
+            .filter(name => !cacheWhitelist.includes(name))
+            .sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))); // oldest first so newest settings win
 
-          for (const oldCacheName of oldCacheNames) {
-              if (Number(oldCacheName.slice(1)) <= 7.0) continue; // settings of caches <=7.0 are not compatible
-              const oldCache = await caches.open(oldCacheName);
-              const requests = await oldCache.keys();
-              const settingsRequests = requests.filter(req => req.url.includes('/settings/'));
-              await Promise.all(settingsRequests.map(async req => {
-                  const response = await oldCache.match(req);
-                  if (response) await putInCache(req, response);
-              }));
-          }
+        for (const oldCacheName of oldCacheNames) {
+            if (Number(oldCacheName.slice(1)) <= 7.0) continue; // settings of caches <=7.0 are not compatible
+            const oldCache = await caches.open(oldCacheName);
+            const requests = await oldCache.keys();
+            const settingsRequests = requests.filter(req => req.url.includes('/settings/'));
+            await Promise.all(settingsRequests.map(async req => {
+                const response = await oldCache.match(req);
+                if (response) await putInCache(req, response);
+            }));
+        }
 
-          await Promise.all(oldCacheNames.map(cacheName => {
-              console.log(`old cache ${cacheName} deleted.`);
-              return caches.delete(cacheName);
-          }));
-          console.log(`active cache is ${CACHE_NAME}`);
-          await clients.claim();
-      })()
-    );
+        await Promise.all(oldCacheNames.map(cacheName => {
+            console.log(`old cache ${cacheName} deleted.`);
+            return caches.delete(cacheName);
+        }));
+        console.log(`active cache is ${CACHE_NAME}`);
+        await clients.claim();
+        // "controllerchange" is unreliable on iOS, so also signal open pages
+        // explicitly that a new version has taken over and they should reload.
+        const activeClients = await self.clients.matchAll({ includeUncontrolled: true });
+        for (const client of activeClients) {
+            client.postMessage({ type: 'activated' });
+        }
+    })();
+    activationComplete = activation.catch((error) => console.log(error));
+    event.waitUntil(activation);
   });
 
 self.addEventListener('message', async (event) => {

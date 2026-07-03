@@ -3,7 +3,7 @@ import { BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev21"
+const VERSION = "v3.0.0dev22"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
 const _singleTabAllowed = await (async () => {
@@ -37,6 +37,7 @@ async function generateHash(fileBuffer) {
 }
 
 function promptForUpdate(worker) {
+    if (document.getElementById("update")) return; // banner already showing
     appendAlert(
         `A new update of the app is available. When you dismiss this message or restart the app, the update is installed.`,
         'warning', "update",
@@ -48,17 +49,36 @@ function promptForUpdate(worker) {
     );
 }
 
-// On iOS, a standalone home-screen app can get its JS execution frozen while
-// backgrounded. If a service worker finishes installing during that freeze, the
-// "installed" statechange event fires with nothing listening and is lost for good -
-// the worker still ends up in registration.waiting, but the updatefound/statechange
-// chain that would normally show the update banner never runs. So in addition to
-// that chain, explicitly re-check registration.waiting whenever the app regains
-// visibility, to catch updates that were missed while frozen.
-function checkForWaitingWorker(registration) {
-    if (registration.waiting && registration.active) {
-        console.log("main: Found a service worker waiting (possibly missed while backgrounded)");
+// iOS starts its own service worker update check on navigation, before register()
+// resolves and before an "updatefound" listener can be attached. Because the
+// install phase is slow (it re-downloads the soundfonts), the new worker is then
+// typically found in registration.installing - "updatefound" has already fired and
+// was missed. So besides listening for "updatefound", explicitly inspect the
+// installing and waiting slots at startup and whenever the app regains visibility.
+const watchedWorkers = new WeakSet();
+
+function watchInstallingWorker(registration, worker) {
+    if (watchedWorkers.has(worker)) return;
+    watchedWorkers.add(worker);
+    worker.addEventListener("statechange", (e) => {
+        // registration.active distinguishes an update from the very first install.
+        // (navigator.serviceWorker.controller is unreliable for this: iOS sometimes
+        // launches an installed home-screen app uncontrolled.)
+        if (e.target.state === "installed" && registration.active) {
+            console.log("main: Service worker installed");
+            promptForUpdate(worker);
+        }
+    });
+}
+
+function checkForUpdatedWorker(registration) {
+    if (!registration.active) return; // first install, not an update
+    if (registration.waiting) {
+        console.log("main: Found a service worker already waiting");
         promptForUpdate(registration.waiting);
+    } else if (registration.installing) {
+        console.log("main: Found a service worker already installing");
+        watchInstallingWorker(registration, registration.installing);
     }
 }
 
@@ -68,22 +88,17 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./service-worker.js").then(
         (registration) => {
             console.log("Service worker registration succeeded:", registration);
-            checkForWaitingWorker(registration);
+            checkForUpdatedWorker(registration);
             registration.addEventListener("updatefound", () => {
                 const installingWorker = registration.installing;
                 console.log(`A new service worker is being installed: ${installingWorker}`);
-                installingWorker.addEventListener("statechange", (e) => {
-                    if(e.target.state === "installed" && navigator.serviceWorker.controller) {
-                        console.log("main: Service worker installed");
-                        promptForUpdate(installingWorker);
-                    }
-                });
+                if (installingWorker) watchInstallingWorker(registration, installingWorker);
             });
             registration.update(); // Check for updates immediately on load
             document.addEventListener("visibilitychange", () => {
                 if (document.visibilityState === "visible") {
                     registration.update();
-                    checkForWaitingWorker(registration);
+                    checkForUpdatedWorker(registration);
                 }
             });
         },
@@ -95,10 +110,16 @@ if ("serviceWorker" in navigator) {
     console.error("Service workers are not supported.");
 }
 
-navigator.serviceWorker.addEventListener("controllerchange", () => {
-    console.log("The controller of current browsing context has changed. Reloading the page");
+let reloadingForUpdate = false;
+function reloadForUpdate() {
+    // "controllerchange" and the service worker's 'activated' message can both fire
+    if (reloadingForUpdate) return;
+    reloadingForUpdate = true;
+    console.log("A new service worker has taken control. Reloading the page");
     window.location.reload();
-});
+}
+
+navigator.serviceWorker.addEventListener("controllerchange", reloadForUpdate);
 
 const dedicatedWorker = new Worker('./dedicated-worker.js', {type: "module"});
 dedicatedWorker.onerror = e => console.error("WORKER ERROR:", e.message, e);
@@ -116,6 +137,9 @@ navigator.serviceWorker.addEventListener("message", (event) => {
         dedicatedWorker.postMessage(data, [portFromSW]);
     } else if (data.type === 'DEBUG') {
         appendAlert(data.message, 'info', 'debug');
+    } else if (data.type === 'activated') {
+        // Fallback: iOS does not reliably fire "controllerchange" after skipWaiting()
+        reloadForUpdate();
     }
 });
 
