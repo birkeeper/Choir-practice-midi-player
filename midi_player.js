@@ -3,7 +3,7 @@ import { BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev18"
+const VERSION = "v3.0.0dev19"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
 const _singleTabAllowed = await (async () => {
@@ -388,7 +388,7 @@ async function activateApplication(instruments) {
     }
 
     function createDefaultSettings(midi, midiFileHash) {
-        const channelsPerTrack = midi.tracks.length;
+        const channelsPerTrack = midi.tracks.map(track => track.channels);
         const channelNumbers = new Set([...channelsPerTrack.flatMap(set => [...set])]); // unique channels in the midi file
         const trackNames = getTrackNames(midi);
         const channels = [];
@@ -634,18 +634,5 @@ async function activateApplication(instruments) {
 }
 
 function getTrackNames(parsedMIDI) {
-    const tracks = parsedMIDI.tracks;
-    const trackNames = [];
-    for (const track of tracks) {
-        const trackNameMessage = track.find(getTrackName);
-        trackNames.push(trackNameMessage === undefined ? "" : getTrackName(trackNameMessage));
-    }
-    return trackNames;
-}
-
-function getTrackName(element) { // element should be of type MidiMessage
-    if (element.messageStatusByte === 0x03) {
-        return String.fromCharCode(...element.messageData);
-    }
-    return "";
+    return parsedMIDI.tracks.map(track => track.name);
 }
