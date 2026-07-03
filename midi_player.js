@@ -3,7 +3,7 @@ import { BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev20"
+const VERSION = "v3.0.0dev21"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
 const _singleTabAllowed = await (async () => {
@@ -36,32 +36,55 @@ async function generateHash(fileBuffer) {
     return hashHex;
 }
 
+function promptForUpdate(worker) {
+    appendAlert(
+        `A new update of the app is available. When you dismiss this message or restart the app, the update is installed.`,
+        'warning', "update",
+        () => {
+            console.log("Posting skipWaiting to service worker.");
+            appendAlert("Update installing... When the installation has finished, the app will be reloaded automatically",'warning', "update");
+            worker.postMessage({ type: 'skipWaiting'});
+        }
+    );
+}
+
+// On iOS, a standalone home-screen app can get its JS execution frozen while
+// backgrounded. If a service worker finishes installing during that freeze, the
+// "installed" statechange event fires with nothing listening and is lost for good -
+// the worker still ends up in registration.waiting, but the updatefound/statechange
+// chain that would normally show the update banner never runs. So in addition to
+// that chain, explicitly re-check registration.waiting whenever the app regains
+// visibility, to catch updates that were missed while frozen.
+function checkForWaitingWorker(registration) {
+    if (registration.waiting && registration.active) {
+        console.log("main: Found a service worker waiting (possibly missed while backgrounded)");
+        promptForUpdate(registration.waiting);
+    }
+}
+
 if ("serviceWorker" in navigator) {
     // Register a service worker hosted at the root of the
     // site using the default scope.
     navigator.serviceWorker.register("./service-worker.js").then(
         (registration) => {
             console.log("Service worker registration succeeded:", registration);
+            checkForWaitingWorker(registration);
             registration.addEventListener("updatefound", () => {
                 const installingWorker = registration.installing;
                 console.log(`A new service worker is being installed: ${installingWorker}`);
                 installingWorker.addEventListener("statechange", (e) => {
-                    if(e.target.state === "installed") {
+                    if(e.target.state === "installed" && navigator.serviceWorker.controller) {
                         console.log("main: Service worker installed");
-                        appendAlert(
-                            `A new update of the app is available. When you dismiss this message or restart the app, the update is installed.`,
-                            'warning', "update",
-                            () => {
-                                console.log("Posting skipWaiting to service worker.");
-								appendAlert("Update installing... When the installation has finished, the app will be reloaded automatically",'warning', "update");
-                                installingWorker.postMessage({ type: 'skipWaiting'}); }
-                        );
+                        promptForUpdate(installingWorker);
                     }
                 });
             });
             registration.update(); // Check for updates immediately on load
             document.addEventListener("visibilitychange", () => {
-                if (document.visibilityState === "visible") registration.update();
+                if (document.visibilityState === "visible") {
+                    registration.update();
+                    checkForWaitingWorker(registration);
+                }
             });
         },
         (error) => {
