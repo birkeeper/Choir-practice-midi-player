@@ -3,7 +3,7 @@ import { BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev25"
+const VERSION = "v3.0.0dev26"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
 const _singleTabAllowed = await (async () => {
@@ -264,7 +264,9 @@ let keepAliveTimer = null;
 
 function createKeepAliveAudio() {
     const sampleRate = 8000;
-    const numSamples = sampleRate; // 1 second of silence, looped
+    const freqHz = 1000; // DEBUG: audible 1kHz tone instead of silence, to hear when the keep-alive loop is actually playing
+    const numSamples = sampleRate; // 1 second, looped. sampleRate/freqHz = 8 samples/cycle divides evenly into numSamples, so sample 0 and sample numSamples are both zero-crossing/ascending -> seamless loop
+    const amplitude = 12.7; // ~10% of the 8-bit dynamic range (127)
     const wav = new Uint8Array(WAV_HEADERSIZE + numSamples);
     const view = new DataView(wav.buffer);
     const writeString = (offset, str) => { for (let i = 0; i < str.length; i++) { wav[offset + i] = str.charCodeAt(i); } };
@@ -281,7 +283,9 @@ function createKeepAliveAudio() {
     view.setUint16(34, 8, true); // bits per sample
     writeString(36, "data");
     view.setUint32(40, numSamples, true);
-    wav.fill(0x80, WAV_HEADERSIZE); // 0x80 = silence in 8-bit PCM
+    for (let i = 0; i < numSamples; i++) {
+        wav[WAV_HEADERSIZE + i] = 128 + Math.round(amplitude * Math.sin(2 * Math.PI * freqHz * i / sampleRate));
+    }
     const audio = new Audio(URL.createObjectURL(new Blob([wav], { type: "audio/wav" })));
     audio.loop = true;
     return audio;
