@@ -3,7 +3,7 @@ import { BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev28"
+const VERSION = "v3.0.0dev29"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
 const _singleTabAllowed = await (async () => {
@@ -151,7 +151,7 @@ async function storeSettings(key, settings) {
         const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
         await Promise.all([
             postStoreSettingsMessage(key, fileURL),
-            postStoreSettingsMessage("current_midi_file_name", settings.name), // file info is not stored in objectURL, only the blob info.
+            postStoreSettingsMessage("current_midi_file_name", settings.midiName), // file info is not stored in objectURL, only the blob info.
         ]);
     } else if (key.startsWith("blob_")) { // store file
         const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
@@ -259,14 +259,12 @@ console.log("audioElement created");
 // audio element holds the audio session open, so the process stays alive and playback can resume.
 const IS_STANDALONE = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 const KEEPALIVE_MAX_MS = 5 * 60 * 1000; // [ms] battery guard: stop the keep-alive loop this long after the last pause; iOS may then suspend the app and resuming requires reopening it
-const keepAliveAudio = IS_STANDALONE ? createKeepAliveAudio() : null;
+const KEEPALIVE_SAMPLERATE = 8000;
+let keepAliveAudio = null;
 let keepAliveTimer = null;
 
-function createKeepAliveAudio() {
-    const sampleRate = 8000;
-    const freqHz = 1000; // DEBUG: audible 1kHz tone instead of silence, to hear when the keep-alive loop is actually playing
-    const numSamples = sampleRate; // 1 second, looped. sampleRate/freqHz = 8 samples/cycle divides evenly into numSamples, so sample 0 and sample numSamples are both zero-crossing/ascending -> seamless loop
-    const amplitude = 12.7; // ~10% of the 8-bit dynamic range (127)
+function createKeepAliveAudio(durationSeconds) {
+    const numSamples = Math.max(1, Math.floor(durationSeconds * KEEPALIVE_SAMPLERATE));
     const wav = new Uint8Array(WAV_HEADERSIZE + numSamples);
     const view = new DataView(wav.buffer);
     const writeString = (offset, str) => { for (let i = 0; i < str.length; i++) { wav[offset + i] = str.charCodeAt(i); } };
@@ -277,18 +275,34 @@ function createKeepAliveAudio() {
     view.setUint32(16, 16, true); // fmt chunk size
     view.setUint16(20, 1, true); // PCM
     view.setUint16(22, 1, true); // mono
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate, true); // byte rate: sampleRate * 1 channel * 1 byte
+    view.setUint32(24, KEEPALIVE_SAMPLERATE, true);
+    view.setUint32(28, KEEPALIVE_SAMPLERATE, true); // byte rate: sampleRate * 1 channel * 1 byte
     view.setUint16(32, 1, true); // block align
     view.setUint16(34, 8, true); // bits per sample
     writeString(36, "data");
     view.setUint32(40, numSamples, true);
-    for (let i = 0; i < numSamples; i++) {
-        wav[WAV_HEADERSIZE + i] = 128 + Math.round(amplitude * Math.sin(2 * Math.PI * freqHz * i / sampleRate));
-    }
+    wav.fill(0x80, WAV_HEADERSIZE); // 0x80 = silence in 8-bit PCM
     const audio = new Audio(URL.createObjectURL(new Blob([wav], { type: "audio/wav" })));
     audio.loop = true;
     return audio;
+}
+
+// Matches the keep-alive loop's length to the real-time duration of the currently loaded song
+// (settings.duration_s / settings.playbackRate), so it is recreated whenever a song is (re)loaded
+// or the playback rate changes.
+function setKeepAliveDuration(durationSeconds) {
+    if (!IS_STANDALONE) return;
+    const wasPlaying = keepAliveAudio && !keepAliveAudio.paused;
+    if (keepAliveAudio) {
+        keepAliveAudio.pause();
+        URL.revokeObjectURL(keepAliveAudio.src);
+    }
+    keepAliveAudio = createKeepAliveAudio(durationSeconds);
+    if (wasPlaying) {
+        keepAliveAudio.play().catch((err) => {
+            console.log(`main: keep-alive audio failed to restart after duration change: ${err.name}`);
+        });
+    }
 }
 
 // iOS (observed on 26.5) refuses to start the silent loop once the lock screen is shown, so it cannot
@@ -375,6 +389,7 @@ async function activateApplication(instruments) {
         settings.wavLength_bytes ??= Math.floor(midi.duration / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE / 8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
         settings.lastOpened = Date.now();
         currentPlaybackRate = settings.playbackRate;
+        setKeepAliveDuration(settings.duration_s / settings.playbackRate);
 
         document.getElementById("message").innerText = settings.midiName;
         document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
@@ -438,6 +453,7 @@ async function activateApplication(instruments) {
             if (settings?.midiFileHash !== undefined) {
                 settings.playbackRate = playbackRateInput.value;
                 settings.wavLength_bytes = Math.floor(settings.duration_s / settings.playbackRate * WAV_SAMPLERATE * (WAV_BITSPERSAMPLE / 8) * WAV_NROFCHANNELS) + WAV_HEADERSIZE; // [bytes] length of wave file
+                setKeepAliveDuration(settings.duration_s / settings.playbackRate);
                 await storeSettings(settings.midiFileHash, settings);
             }
             updateAudioElement();
@@ -459,6 +475,7 @@ async function activateApplication(instruments) {
                     document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
                     if ("mediaSession" in navigator) {
                         navigator.mediaSession.playbackState = "paused";
+                        navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
                     }
                     return;
                 }
@@ -467,6 +484,7 @@ async function activateApplication(instruments) {
             if ("mediaSession" in navigator) {
                 navigator.mediaSession.setPositionState({ duration: settings.duration_s, position: audioElement.currentTime * settings.playbackRate });
                 navigator.mediaSession.playbackState = "playing";
+                navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
             }
         } else {
             document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
@@ -475,7 +493,9 @@ async function activateApplication(instruments) {
             if ("mediaSession" in navigator) {
                 navigator.mediaSession.playbackState = "paused";
                 navigator.mediaSession.setPositionState({ duration: settings.duration_s, position: audioElement.currentTime * settings.playbackRate });
+                navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
             }
+
         }
     }
 
@@ -497,6 +517,7 @@ async function activateApplication(instruments) {
         navigator.mediaSession.setActionHandler("seekto", (evt) => {
             if (!evt?.fastSeek) {
                 progressSlider.BeingDragged = false;
+                navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
                 audioElement.currentTime = evt.seekTime / settings.playbackRate;
             } else {
                 progressSlider.BeingDragged = true;
@@ -504,9 +525,11 @@ async function activateApplication(instruments) {
         });
         navigator.mediaSession.setActionHandler("nexttrack", () => {
             audioElement.currentTime = Math.min((audioElement.currentTime * settings.playbackRate + SKIPFORWARD_SECONDS) / settings.playbackRate, audioElement.duration - 1);
+            navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
         });
         navigator.mediaSession.setActionHandler("previoustrack", () => {
             audioElement.currentTime = Math.max((audioElement.currentTime * settings.playbackRate - SKIPBACKWARD_SECONDS) / settings.playbackRate, 0);
+            navigator.mediaSession.metadata = new MediaMetadata({title: `${settings.midiName}`});
         });
     }
 
