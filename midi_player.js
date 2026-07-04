@@ -444,36 +444,43 @@ async function activateApplication(instruments) {
         };
     }
 
-    function setupPlaybackButtons() {
-        document.getElementById("pause").onclick = () => {
-            if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
-                document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-                startKeepAlive(); // a user gesture with the app in focus: the only context where iOS lets the silent loop start
-                audioElement.play().catch((err) => {
-                    if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
-                    if (err.name === "NotAllowedError") { // audio will not play; revert the UI so it does not claim to be playing
-                        document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                        if ("mediaSession" in navigator) {
-                            navigator.mediaSession.playbackState = "paused";
-                        }
-                        return;
+    // Because the keep-alive loop keeps real audio flowing through pauses, iOS/Android judge the lock-screen
+    // icon and which action to send from actual audio-output activity, not from navigator.mediaSession.playbackState.
+    // In practice that means only "pause" ever gets delivered from the lock screen, never "play". So instead of
+    // trusting which action fired, treat every trigger (button click or either media session action) as a toggle,
+    // driven by the pause-label icon - audioElement.paused is unreliable when buttons are bashed.
+    function togglePlayback() {
+        if (document.getElementById("pause-label").innerHTML === getPlaySvg(ICON_SIZE_PX)) {
+            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
+            startKeepAlive(); // a user gesture with the app in focus: the only context where iOS lets the silent loop start
+            audioElement.play().catch((err) => {
+                if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
+                if (err.name === "NotAllowedError") { // audio will not play; revert the UI so it does not claim to be playing
+                    document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+                    if ("mediaSession" in navigator) {
+                        navigator.mediaSession.playbackState = "paused";
                     }
-                    else { throw err; }
-                });
-                if ("mediaSession" in navigator) {
-                    navigator.mediaSession.setPositionState({ duration: settings.duration_s, position: audioElement.currentTime * settings.playbackRate });
-                    navigator.mediaSession.playbackState = "playing";
+                    return;
                 }
-            } else {
-                document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                audioElement.pause();
-                armKeepAliveStop();
-                if ("mediaSession" in navigator) {
-                    navigator.mediaSession.playbackState = "paused";
-                    navigator.mediaSession.setPositionState({ duration: settings.duration_s, position: audioElement.currentTime * settings.playbackRate });
-                }
+                else { throw err; }
+            });
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.setPositionState({ duration: settings.duration_s, position: audioElement.currentTime * settings.playbackRate });
+                navigator.mediaSession.playbackState = "playing";
             }
-        };
+        } else {
+            document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
+            audioElement.pause();
+            armKeepAliveStop();
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.playbackState = "paused";
+                navigator.mediaSession.setPositionState({ duration: settings.duration_s, position: audioElement.currentTime * settings.playbackRate });
+            }
+        }
+    }
+
+    function setupPlaybackButtons() {
+        document.getElementById("pause").onclick = togglePlayback;
         document.getElementById("forward").onclick = () => {
             audioElement.currentTime = Math.min((audioElement.currentTime * settings.playbackRate + SKIPFORWARD_SECONDS) / settings.playbackRate, audioElement.duration - 1);
         };
@@ -483,27 +490,10 @@ async function activateApplication(instruments) {
     }
 
     function setupMediaSession() {
-        navigator.mediaSession.setActionHandler("pause", () => {
-            document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-            audioElement.pause();
-            armKeepAliveStop(); // the silent loop keeps running, so iOS does not suspend the app while paused on the lock screen
-            navigator.mediaSession.playbackState = "paused";
-        });
-        navigator.mediaSession.setActionHandler("play", () => {
-            document.getElementById("pause-label").innerHTML = getPauseSvg(ICON_SIZE_PX);
-            startKeepAlive(); // cancels the pending stop; a no-op start when the loop is already playing
-            audioElement.play().catch((err) => {
-                if (err.name === "AbortError") { return; } // play was cancelled. Should not throw an error
-                if (err.name === "NotAllowedError") { // iOS refused to resume (e.g. suspended standalone app); revert the UI so it does not claim to be playing
-                    document.getElementById("pause-label").innerHTML = getPlaySvg(ICON_SIZE_PX);
-                    navigator.mediaSession.playbackState = "paused";
-                    armKeepAliveStop(); // stay alive (bounded) so a next play attempt can still reach us
-                    return;
-                }
-                else { throw err; }
-            });
-            navigator.mediaSession.playbackState = "playing";
-        });
+        // Both bound to the same toggle: the lock screen only ever sends "pause" while the keep-alive loop
+        // is audibly running (see togglePlayback's comment), so "play" cannot be relied on to fire at all.
+        navigator.mediaSession.setActionHandler("pause", togglePlayback);
+        navigator.mediaSession.setActionHandler("play", togglePlayback);
         navigator.mediaSession.setActionHandler("seekto", (evt) => {
             if (!evt?.fastSeek) {
                 progressSlider.BeingDragged = false;
