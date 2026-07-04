@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL ="./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v10.31";
+const CACHE_NAME = "v10.32";
 
 // Resolves when the activate phase (which migrates settings from the previous
 // versioned cache into CACHE_NAME) has finished. A page can load while a new
