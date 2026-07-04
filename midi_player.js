@@ -3,7 +3,7 @@ import { BasicMIDI } from './libraries/spessasynth_core_dist/index.js';
 import { getPauseSvg, getPlaySvg, getFileOpenSvg, getFileHistorySvg, getForwardSvg, getBackwardSvg } from './js/icons.js';
 import { WAV_NROFCHANNELS, WAV_BITSPERSAMPLE, WAV_SAMPLERATE, WAV_HEADERSIZE } from "./constants.js";
 
-const VERSION = "v3.0.0dev29"
+const VERSION = "v3.0.0dev30"
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 
 const _singleTabAllowed = await (async () => {
@@ -253,11 +253,14 @@ document.getElementById("backward-label").innerHTML = getBackwardSvg(ICON_SIZE_P
 const audioElement = document.getElementById("audioElement");
 console.log("audioElement created");
 
-// In an installed (standalone) web app, iOS suspends the web process shortly after audio pauses
-// while the screen is locked, so the lock-screen play command never reaches the page
-// (https://bugs.webkit.org/show_bug.cgi?id=261858). Keeping an inaudible loop playing on a second
-// audio element holds the audio session open, so the process stays alive and playback can resume.
-const IS_STANDALONE = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+// Keeping an inaudible loop playing on a second audio element holds the page's audio session open,
+// which works around several background-suspension issues:
+// - installed (standalone) web app on iOS: the web process is suspended shortly after audio pauses
+//   while the screen is locked, so the lock-screen play command never reaches the page
+//   (https://bugs.webkit.org/show_bug.cgi?id=261858);
+// - regular Safari tab on iOS: a backgrounded tab with no active audio is killed within ~10 seconds;
+// - Android (standalone or browser): the media notification closes when the song ends, so it can no
+//   longer be restarted without returning to the app - an active audio session keeps it open.
 const KEEPALIVE_MAX_MS = 5 * 60 * 1000; // [ms] battery guard: stop the keep-alive loop this long after the last pause; iOS may then suspend the app and resuming requires reopening it
 const KEEPALIVE_SAMPLERATE = 8000;
 let keepAliveAudio = null;
@@ -291,7 +294,6 @@ function createKeepAliveAudio(durationSeconds) {
 // (settings.duration_s / settings.playbackRate), so it is recreated whenever a song is (re)loaded
 // or the playback rate changes.
 function setKeepAliveDuration(durationSeconds) {
-    if (!IS_STANDALONE) return;
     const wasPlaying = keepAliveAudio && !keepAliveAudio.paused;
     if (keepAliveAudio) {
         keepAliveAudio.pause();
