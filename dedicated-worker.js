@@ -46,7 +46,7 @@ self.onmessage = async (msg) => {
 		const seq = new SpessaSynthSequencer(synth);
 		seq.skipToFirstNoteOn = false;
 		seq.loadNewSongList([midi]);
-    	seq.loop = false;
+    	seq.loopCount = 0;
 		seq.play();
 		console.log("worker: synthSequencer initialised");
 		const reqSettings = msg.data.settings;
