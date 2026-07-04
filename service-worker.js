@@ -267,9 +267,6 @@ self.addEventListener('message', async (event) => {
   if (type === 'skipWaiting') {
     self.skipWaiting();
   }
-  if (type === 'claimClients') {
-    await clients.claim();
-  }
   if (type === 'deleteFromCache') {
     const cache = await caches.open(CACHE_NAME);
     cache.delete(key);

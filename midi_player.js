@@ -89,16 +89,6 @@ if ("serviceWorker" in navigator) {
         (registration) => {
             console.log("Service worker registration succeeded:", registration);
             checkForUpdatedWorker(registration);
-            if (!navigator.serviceWorker.controller && registration.active) {
-                // iOS sometimes launches an installed home-screen app without attaching the
-                // already-active service worker as controller for this page instance (same
-                // quirk documented at watchInstallingWorker(), just hitting an already-active
-                // worker instead of one mid-install). Without a controller, retrieveSettings()
-                // silently returns null and the last-opened MIDI file never loads. Ask the
-                // active worker to re-claim clients; that fires "controllerchange" ->
-                // reloadForUpdate(), so the app reloads once as a controlled page.
-                registration.active.postMessage({ type: 'claimClients' });
-            }
             registration.addEventListener("updatefound", () => {
                 const installingWorker = registration.installing;
                 console.log(`A new service worker is being installed: ${installingWorker}`);
@@ -161,7 +151,7 @@ async function storeSettings(key, settings) {
         const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
         await Promise.all([
             postStoreSettingsMessage(key, fileURL),
-            postStoreSettingsMessage("current_midi_file_name", settings.midiName), // file info is not stored in objectURL, only the blob info.
+            postStoreSettingsMessage("current_midi_file_name", settings.name), // File.name (not .midiName): file info is not stored in objectURL, only the blob info.
         ]);
     } else if (key.startsWith("blob_")) { // store file
         const fileURL = URL.createObjectURL(settings); // URL revoked in service worker
