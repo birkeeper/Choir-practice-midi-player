@@ -39,6 +39,29 @@ function writeBigEndian(number, bytesAmount) {
 //#endregion
 //#region src/utils/byte_functions/little_endian.ts
 /**
+* Reads the number as little endian from an IndexedByteArray. Uses BigInt to go above 32 bytes.
+* @param dataArray the array to read from.
+* @param bytesAmount the number of bytes to read.
+* @returns the number.
+*/
+function readLE64Indexed(dataArray, bytesAmount) {
+	const res = readLE64(dataArray, bytesAmount, dataArray.currentIndex);
+	dataArray.currentIndex += bytesAmount;
+	return res;
+}
+/**
+* Reads the number as little endian. Uses BigInt to go above 32 bytes.
+* @param dataArray the array to read from.
+* @param bytesAmount the number of bytes to read.
+* @param offset the offset to start reading at.
+* @returns the number.
+*/
+function readLE64(dataArray, bytesAmount, offset = 0) {
+	let out = 0n;
+	for (let i = 0; i < bytesAmount; i++) out |= BigInt(dataArray[offset + i]) << BigInt(i * 8);
+	return Number(out);
+}
+/**
 * Reads the number as little endian from an IndexedByteArray.
 * @param dataArray the array to read from.
 * @param bytesAmount the number of bytes to read.
@@ -73,6 +96,7 @@ function writeLittleEndianIndexed(dataArray, number, byteTarget) {
 }
 /**
 * Writes a WORD (SHORT)
+* 16 bits.
 */
 function writeWord(dataArray, word) {
 	dataArray[dataArray.currentIndex++] = word & 255;
@@ -80,9 +104,18 @@ function writeWord(dataArray, word) {
 }
 /**
 * Writes a DWORD (INT)
+* 32 bits.
 */
 function writeDword(dataArray, dword) {
 	writeLittleEndianIndexed(dataArray, dword, 4);
+}
+/**
+* Writes a QWORD (LONG)
+* 64 bits.
+*/
+function writeQword(dataArray, qword) {
+	const qb = BigInt(qword);
+	for (let i = 0n; i < 8n; i++) dataArray[dataArray.currentIndex++] = Number(qb >> i * 8n & 255n);
 }
 /**
 * Reads two bytes as a signed short.
@@ -525,44 +558,49 @@ var RIFFChunk = class RIFFChunk {
 	*/
 	data;
 	/**
+	* The size of the chunk's header in bytes.
+	* This varies for 32-bit and 64-bit RIFF chunks.
+	*/
+	headerSize;
+	/**
 	* Creates a new RIFF chunk.
 	*/
-	constructor(header, size, data) {
+	constructor(header, size, data, headerSize = 8) {
 		this.header = header;
 		this.size = size;
 		this.data = data;
+		this.headerSize = headerSize;
 	}
 	/**
 	* Reads a RIFF chunk from an array.
 	* @param dataArray the array to read from.
+	* @param rf64 if the chunk uses a 64-bit size.
 	* @param readData if the data should be read as well.
-	* @param forceShift if the index should be shifted to the end of the chunk even if the data has not been read.
 	*/
-	static read(dataArray, readData = true, forceShift = false) {
+	static read(dataArray, rf64 = false, readData = true) {
 		const header = readBinaryStringIndexed(dataArray, 4);
-		let size = readLittleEndianIndexed(dataArray, 4);
+		let size = rf64 ? readLE64Indexed(dataArray, 8) : readLittleEndianIndexed(dataArray, 4);
 		if (header === "") size = 0;
 		const chunkData = readData ? dataArray.slice(dataArray.currentIndex, dataArray.currentIndex + size) : new IndexedByteArray(0);
-		if (readData || forceShift) {
+		if (readData) {
 			dataArray.currentIndex += size;
 			if (size % 2 !== 0) dataArray.currentIndex++;
 		}
-		return new RIFFChunk(header, size, chunkData);
+		return new RIFFChunk(header, size, chunkData, rf64 ? 12 : 8);
 	}
 	/**
 	* Writes a RIFF chunk correctly.
 	* @param header the fourCC code of the header.
 	* @param data the binary chunk data.
-	* @param addZeroByte if a zero byte should be at the end of the chunk's data.
 	* @param isList if a "LIST" should be set as the chunk type and the actual type should be written at the start of the data.
+	* @param rf64 if the chunk uses a 64-bit size.
 	* @returns the binary data.
 	*/
-	static write(header, data, addZeroByte = false, isList = false) {
+	static write(header, data, rf64 = false, isList = false) {
 		if (header.length !== 4) throw new Error(`Invalid header length: ${header}`);
-		let dataStartOffset = 8;
+		let dataStartOffset = rf64 ? 12 : 8;
 		let headerWritten = header;
-		let dataLength = data.length;
-		if (addZeroByte) dataLength++;
+		const dataLength = data.length;
 		let writtenSize = dataLength;
 		if (isList) {
 			dataStartOffset += 4;
@@ -573,7 +611,8 @@ var RIFFChunk = class RIFFChunk {
 		if (finalSize % 2 !== 0) finalSize++;
 		const outArray = new IndexedByteArray(finalSize);
 		writeBinaryStringIndexed(outArray, headerWritten);
-		writeDword(outArray, writtenSize);
+		if (rf64) writeQword(outArray, writtenSize);
+		else writeDword(outArray, writtenSize);
 		if (isList) writeBinaryStringIndexed(outArray, header);
 		outArray.set(data, dataStartOffset);
 		return outArray;
@@ -586,18 +625,25 @@ var RIFFChunk = class RIFFChunk {
 	* @param header  the fourCC code of the header.
 	* @param chunks binary chunk data parts, will be combined in order.
 	* @param isList if a "LIST" should be set as the chunk type and the actual type should be written at the start of the data.
+	* @param rf64 if the chunk uses a 64-bit size.
 	* @returns the chunk as binary blobs.
 	*/
-	static getParts(header, chunks, isList = false) {
+	static getParts(header, chunks, rf64 = false, isList = false) {
 		let headerWritten = header;
 		let totalSize = chunks.reduce((len, c) => c.length + len, 0);
 		if (isList) {
 			totalSize += 4;
 			headerWritten = "LIST";
 		}
-		const dwordSize = new IndexedByteArray(4);
-		writeDword(dwordSize, totalSize);
-		const parts = [getStringBytes(headerWritten), dwordSize];
+		let sizeBytes;
+		if (rf64) {
+			sizeBytes = new IndexedByteArray(8);
+			writeQword(sizeBytes, totalSize);
+		} else {
+			sizeBytes = new IndexedByteArray(4);
+			writeDword(sizeBytes, totalSize);
+		}
+		const parts = [getStringBytes(headerWritten), sizeBytes];
 		if (isList) parts.push(getStringBytes(header));
 		parts.push(...chunks);
 		if (totalSize % 2 !== 0) parts.push(new Uint8Array(1));
@@ -609,10 +655,11 @@ var RIFFChunk = class RIFFChunk {
 	* @param header  the fourCC code of the header.
 	* @param chunks binary chunk data parts, will be combined in order.
 	* @param isList if a "LIST" should be set as the chunk type and the actual type should be written at the start of the data.
+	* @param rf64 if the chunk uses a 64-bit size.
 	* @returns the binary data.
 	*/
-	static writeParts(header, chunks, isList = false) {
-		let dataOffset = 8;
+	static writeParts(header, chunks, rf64 = false, isList = false) {
+		let dataOffset = rf64 ? 12 : 8;
 		let headerWritten = header;
 		const dataLength = chunks.reduce((len, c) => c.length + len, 0);
 		let writtenSize = dataLength;
@@ -625,7 +672,8 @@ var RIFFChunk = class RIFFChunk {
 		if (finalSize % 2 !== 0) finalSize++;
 		const outArray = new IndexedByteArray(finalSize);
 		writeBinaryStringIndexed(outArray, headerWritten);
-		writeDword(outArray, writtenSize);
+		if (rf64) writeQword(outArray, writtenSize);
+		else writeDword(outArray, writtenSize);
 		if (isList) writeBinaryStringIndexed(outArray, header);
 		for (const c of chunks) {
 			outArray.set(c, dataOffset);
@@ -684,12 +732,12 @@ function audioToWav(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) 
 	const infoOn = Object.keys(metadata).length > 0;
 	if (infoOn) {
 		const encoder = new TextEncoder();
-		const infoChunks = [RIFFChunk.write("ICMT", encoder.encode("Created with SpessaSynth"), true)];
-		if (metadata.artist) infoChunks.push(RIFFChunk.write("IART", encoder.encode(metadata.artist), true));
-		if (metadata.album) infoChunks.push(RIFFChunk.write("IPRD", encoder.encode(metadata.album), true));
-		if (metadata.genre) infoChunks.push(RIFFChunk.write("IGNR", encoder.encode(metadata.genre), true));
-		if (metadata.title) infoChunks.push(RIFFChunk.write("INAM", encoder.encode(metadata.title), true));
-		infoChunk = RIFFChunk.writeParts("INFO", infoChunks, true);
+		const infoChunks = [RIFFChunk.writeParts("ICMT", [encoder.encode("Created with SpessaSynth"), [0]])];
+		if (metadata.artist) infoChunks.push(RIFFChunk.writeParts("IART", [encoder.encode(metadata.artist), [0]]));
+		if (metadata.album) infoChunks.push(RIFFChunk.writeParts("IPRD", [encoder.encode(metadata.album), [0]]));
+		if (metadata.genre) infoChunks.push(RIFFChunk.writeParts("IGNR", [encoder.encode(metadata.genre), [0]]));
+		if (metadata.title) infoChunks.push(RIFFChunk.writeParts("INAM", [encoder.encode(metadata.title), [0]]));
+		infoChunk = RIFFChunk.writeParts("INFO", infoChunks, false, true);
 	}
 	let cueChunk = new IndexedByteArray(0);
 	const cueOn = loop?.end !== void 0 && loop?.start !== void 0;
@@ -2588,7 +2636,7 @@ function writeRMIDIInternal(mid, soundBankBinary, options) {
 	return RIFFChunk.writeParts("RIFF", [
 		getStringBytes("RMID"),
 		RIFFChunk.write("data", newMid),
-		RIFFChunk.writeParts("INFO", infoContent, true),
+		RIFFChunk.writeParts("INFO", infoContent, false, true),
 		new IndexedByteArray(soundBankBinary)
 	]).buffer;
 }
@@ -3651,7 +3699,7 @@ function parseRMIDIInternal(outputMIDI, binaryData, fileName) {
 	let foundDBNK = false;
 	while (binaryData.currentIndex < binaryData.length) {
 		const startIndex = binaryData.currentIndex;
-		const currentChunk = RIFFChunk.read(binaryData, true);
+		const currentChunk = RIFFChunk.read(binaryData);
 		if (currentChunk.header === "RIFF") {
 			const type = readBinaryStringIndexed(currentChunk.data, 4).toLowerCase();
 			if (type === "sfbk" || type === "sfpk" || type === "dls ") {
@@ -3664,7 +3712,7 @@ function parseRMIDIInternal(outputMIDI, binaryData, fileName) {
 			if (readBinaryStringIndexed(currentChunk.data, 4) === "INFO") {
 				SpessaLog.info("%cFound RMIDI INFO chunk!", ConsoleColors.recognized);
 				while (currentChunk.data.currentIndex < currentChunk.size) {
-					const infoChunk = RIFFChunk.read(currentChunk.data, true);
+					const infoChunk = RIFFChunk.read(currentChunk.data);
 					const headerTyped = infoChunk.header;
 					const infoData = infoChunk.data;
 					switch (headerTyped) {
@@ -8605,7 +8653,7 @@ var BasicSample = class {
 			return decoded;
 		} catch (error) {
 			SpessaLog.warn(`Error decoding sample ${this.name}: ${error}`);
-			return new Float32Array(this.loopEnd + 1);
+			return new Float32Array(this.loopEnd);
 		}
 	}
 };
@@ -8954,14 +9002,19 @@ var BasicPreset = class BasicPreset {
 	* Writes the SF2 header
 	* @param phdrData
 	* @param index
+	* @param writeLSB
+	* @internal
 	*/
-	write(phdrData, index) {
+	write(phdrData, index, writeLSB) {
 		SpessaLog.info(`%cWriting ${this.name}...`, ConsoleColors.info);
 		writeBinaryStringIndexed(phdrData.pdta, this.name.slice(0, 20), 20);
 		writeBinaryStringIndexed(phdrData.xdta, this.name.slice(20), 20);
 		writeWord(phdrData.pdta, this.program);
 		let wBank = this.bankMSB;
-		if (this.isGMGSDrum) wBank = 128;
+		if (writeLSB) {
+			wBank = this.bankMSB & 127 | (this.bankLSB & 127) << 8;
+			if (this.isGMGSDrum) wBank |= 128;
+		} else if (this.isGMGSDrum) wBank = 128;
 		else if (this.bankMSB === 0) wBank = this.bankLSB;
 		writeWord(phdrData.pdta, wBank);
 		phdrData.xdta.currentIndex += 4;
@@ -9150,6 +9203,11 @@ var BasicInstrument = class {
 			}
 		}
 	}
+	/**
+	* @internal
+	* @param instData
+	* @param index
+	*/
 	write(instData, index) {
 		SpessaLog.info(`%cWriting ${this.name}...`, ConsoleColors.info);
 		writeBinaryStringIndexed(instData.pdta, this.name.slice(0, 20), 20);
@@ -9160,7 +9218,7 @@ var BasicInstrument = class {
 };
 //#endregion
 //#region src/soundbank/soundfont/write/sdta.ts
-function getSDTA(bank, smplStartOffsets, smplEndOffsets, progressFunction) {
+function getSDTA(bank, smplStartOffsets, smplEndOffsets, rf64, progressFunction) {
 	let writtenCount = 0;
 	const sampleData = [];
 	const sampleSize = [];
@@ -9173,8 +9231,8 @@ function getSDTA(bank, smplStartOffsets, smplEndOffsets, progressFunction) {
 		sampleSize.push(r.length);
 		if (!s.isCompressed) sampleData.push(new Uint8Array(92));
 	}
-	const smpl = RIFFChunk.getParts("smpl", sampleData);
-	const sdta = RIFFChunk.getParts("sdta", smpl, true);
+	const smpl = RIFFChunk.getParts("smpl", sampleData, rf64);
+	const sdta = RIFFChunk.getParts("sdta", smpl, rf64, true);
 	let offset = 0;
 	for (const [i, sample] of bank.samples.entries()) {
 		const size = sampleSize[i];
@@ -9314,7 +9372,7 @@ function readSample(index, sampleHeaderData, smplArrayData) {
 }
 //#endregion
 //#region src/soundbank/soundfont/write/shdr.ts
-function getSHDR(bank, smplStartOffsets, smplEndOffsets) {
+function getSHDR(bank, smplStartOffsets, smplEndOffsets, rf64) {
 	const sampleLength = 46;
 	const shdrSize = sampleLength * (bank.samples.length + 1);
 	const shdrData = new IndexedByteArray(shdrSize);
@@ -9353,13 +9411,13 @@ function getSHDR(bank, smplStartOffsets, smplEndOffsets) {
 	writeBinaryStringIndexed(shdrData, "EOS", sampleLength);
 	writeBinaryStringIndexed(xshdrData, "EOS", sampleLength);
 	return {
-		pdta: RIFFChunk.write("shdr", shdrData),
-		xdta: RIFFChunk.write("shdr", xshdrData)
+		pdta: RIFFChunk.write("shdr", shdrData, rf64),
+		xdta: RIFFChunk.write("shdr", xshdrData, rf64)
 	};
 }
 //#endregion
 //#region src/soundbank/soundfont/write/write_sf2_elements.ts
-function writeSF2Elements(bank, isPreset = false) {
+function writeSF2Elements(bank, rf64, isPreset, writeBankLSB = false) {
 	const elements = isPreset ? bank.presets : bank.instruments;
 	const genHeader = isPreset ? "pgen" : "igen";
 	const modHeader = isPreset ? "pmod" : "imod";
@@ -9416,7 +9474,7 @@ function writeSF2Elements(bank, isPreset = false) {
 		pdta: new IndexedByteArray(hdrSize),
 		xdta: new IndexedByteArray(hdrSize)
 	};
-	for (const [i, el] of elements.entries()) el.write(hdrData, zoneIndexes[i]);
+	for (const [i, el] of elements.entries()) el.write(hdrData, zoneIndexes[i], writeBankLSB);
 	if (isPreset) {
 		writeBinaryStringIndexed(hdrData.pdta, "EOP", 20);
 		hdrData.pdta.currentIndex += 4;
@@ -9435,20 +9493,20 @@ function writeSF2Elements(bank, isPreset = false) {
 	return {
 		writeXdta: Math.max(currentGenIndex, currentModIndex, zoneIndex) > 65535,
 		gen: {
-			pdta: RIFFChunk.write(genHeader, genData),
-			xdta: RIFFChunk.write(modHeader, new IndexedByteArray(4))
+			pdta: RIFFChunk.write(genHeader, genData, rf64),
+			xdta: RIFFChunk.write(modHeader, new IndexedByteArray(4), rf64)
 		},
 		mod: {
-			pdta: RIFFChunk.write(modHeader, modData),
-			xdta: RIFFChunk.write(modHeader, new IndexedByteArray(10))
+			pdta: RIFFChunk.write(modHeader, modData, rf64),
+			xdta: RIFFChunk.write(modHeader, new IndexedByteArray(10), rf64)
 		},
 		bag: {
-			pdta: RIFFChunk.write(bagHeader, bagData.pdta),
-			xdta: RIFFChunk.write(bagHeader, bagData.xdta)
+			pdta: RIFFChunk.write(bagHeader, bagData.pdta, rf64),
+			xdta: RIFFChunk.write(bagHeader, bagData.xdta, rf64)
 		},
 		hdr: {
-			pdta: RIFFChunk.write(hdrHeader, hdrData.pdta),
-			xdta: RIFFChunk.write(hdrHeader, hdrData.xdta)
+			pdta: RIFFChunk.write(hdrHeader, hdrData.pdta, rf64),
+			xdta: RIFFChunk.write(hdrHeader, hdrData.xdta, rf64)
 		}
 	};
 }
@@ -9459,6 +9517,10 @@ const DEFAULT_SF2_WRITE_OPTIONS = {
 	writeExtendedLimits: true,
 	software: "SpessaSynth"
 };
+const DEFAULT_SFE_WRITE_OPTIONS = {
+	rf64: true,
+	software: "SpessaSynth"
+};
 /**
 * Writes the sound bank as an SF2 file.
 * @param bank
@@ -9467,6 +9529,28 @@ const DEFAULT_SF2_WRITE_OPTIONS = {
 */
 function writeSF2Internal(bank, writeOptions) {
 	const options = fillWithDefaults(writeOptions, DEFAULT_SF2_WRITE_OPTIONS);
+	return writeSF(bank, options.software, options.writeDefaultModulators, options.writeExtendedLimits, false, false);
+}
+/**
+* Writes the sound bank as an SFE 4 file.
+* @param bank
+* @param writeOptions the options for writing.
+* @returns the binary file data.
+*/
+function writeSFEInternal(bank, writeOptions) {
+	return writeSF(bank, fillWithDefaults(writeOptions, DEFAULT_SFE_WRITE_OPTIONS).software, true, true, true, true);
+}
+/**
+* General writing function for both SFE and SF2.
+* @param bank the bank
+* @param software software param
+* @param writeDefaultModulators SFE + SF2 compatible
+* @param writeExtendedLimits SFE + SF2 compatible
+* @param writeBankLSB SFE Only
+* @param rf64 SFE Only
+* @internal
+*/
+function writeSF(bank, software, writeDefaultModulators, writeExtendedLimits, writeBankLSB, rf64) {
 	SpessaLog.groupCollapsed("%cSaving soundbank...", ConsoleColors.info);
 	SpessaLog.group("%cWriting INFO...", ConsoleColors.info);
 	/**
@@ -9475,14 +9559,14 @@ function writeSF2Internal(bank, writeOptions) {
 	const infoArrays = [];
 	const writeSF2Info = (type, data) => {
 		if (!data) return;
-		infoArrays.push(...RIFFChunk.getParts(type, [getStringBytes(data, true, true)]));
+		infoArrays.push(...RIFFChunk.getParts(type, [getStringBytes(data, true, true)], rf64));
 	};
 	const info = bank.soundBankInfo;
 	{
 		const ifilData = new IndexedByteArray(4);
 		writeWord(ifilData, info.version.major);
 		writeWord(ifilData, info.version.minor);
-		infoArrays.push(RIFFChunk.write("ifil", ifilData));
+		infoArrays.push(RIFFChunk.write("ifil", ifilData, rf64));
 	}
 	writeSF2Info("isng", info.soundEngine);
 	writeSF2Info("INAM", info.name);
@@ -9491,36 +9575,35 @@ function writeSF2Internal(bank, writeOptions) {
 		const ifilData = new IndexedByteArray(4);
 		writeWord(ifilData, info.romVersion.major);
 		writeWord(ifilData, info.romVersion.minor);
-		infoArrays.push(RIFFChunk.write("iver", ifilData));
+		infoArrays.push(RIFFChunk.write("iver", ifilData, rf64));
 	}
 	writeSF2Info("ICRD", toISODateString(info.creationDate));
 	writeSF2Info("IENG", info.engineer);
 	writeSF2Info("IPRD", info.product);
 	writeSF2Info("ICOP", info.copyright);
 	writeSF2Info("ICMT", info?.subject ? (info?.comment ? info.comment + "\n" : "") + info.subject : info?.comment);
-	const software = options.software;
 	writeSF2Info("ISFT", software);
-	if (bank.defaultModulators.some((mod) => !SPESSASYNTH_DEFAULT_MODULATORS.some((m) => Modulator.isIdentical(m, mod, true))) && options?.writeDefaultModulators) {
+	if (bank.defaultModulators.some((mod) => !SPESSASYNTH_DEFAULT_MODULATORS.some((m) => Modulator.isIdentical(m, mod, true))) && writeDefaultModulators) {
 		const mods = bank.defaultModulators;
 		SpessaLog.info(`%cWriting %c${mods.length}%c default modulators...`, ConsoleColors.info, ConsoleColors.recognized, ConsoleColors.info);
 		const dmodData = new IndexedByteArray(10 + mods.length * 10);
 		for (const mod of mods) mod.write(dmodData);
 		writeLittleEndianIndexed(dmodData, 0, 10);
-		infoArrays.push(...RIFFChunk.getParts("DMOD", [dmodData]));
+		infoArrays.push(...RIFFChunk.getParts("DMOD", [dmodData], rf64));
 	}
 	SpessaLog.groupEnd();
 	SpessaLog.info("%cWriting SDTA...", ConsoleColors.info);
 	const smplStartOffsets = [];
 	const smplEndOffsets = [];
-	const sdtaChunk = getSDTA(bank, smplStartOffsets, smplEndOffsets);
+	const sdtaChunk = getSDTA(bank, smplStartOffsets, smplEndOffsets, rf64);
 	SpessaLog.info("%cWriting PDTA...", ConsoleColors.info);
 	SpessaLog.info("%cWriting SHDR...", ConsoleColors.info);
-	const shdrChunk = getSHDR(bank, smplStartOffsets, smplEndOffsets);
+	const shdrChunk = getSHDR(bank, smplStartOffsets, smplEndOffsets, rf64);
 	SpessaLog.group("%cWriting instruments...", ConsoleColors.info);
-	const instData = writeSF2Elements(bank, false);
+	const instData = writeSF2Elements(bank, rf64, false);
 	SpessaLog.groupEnd();
 	SpessaLog.group("%cWriting presets...", ConsoleColors.info);
-	const presData = writeSF2Elements(bank, true);
+	const presData = writeSF2Elements(bank, rf64, true, writeBankLSB);
 	SpessaLog.groupEnd();
 	const chunks = [
 		presData.hdr,
@@ -9533,19 +9616,19 @@ function writeSF2Internal(bank, writeOptions) {
 		instData.gen,
 		shdrChunk
 	];
-	const pdtaChunk = RIFFChunk.getParts("pdta", chunks.map((c) => c.pdta), true);
-	if (options.writeExtendedLimits && (instData.writeXdta || presData.writeXdta || bank.presets.some((p) => p.name.length > 20) || bank.instruments.some((i) => i.name.length > 20) || bank.samples.some((s) => s.name.length > 20))) {
+	const pdtaChunk = RIFFChunk.getParts("pdta", chunks.map((c) => c.pdta), rf64, true);
+	if (writeExtendedLimits && (instData.writeXdta || presData.writeXdta || bank.presets.some((p) => p.name.length > 20) || bank.instruments.some((i) => i.name.length > 20) || bank.samples.some((s) => s.name.length > 20))) {
 		SpessaLog.info(`%cWriting the xdta chunk as writeExtendedLimits is enabled and at least one condition was met.`, ConsoleColors.info, ConsoleColors.value);
-		infoArrays.push(...RIFFChunk.getParts("xdta", chunks.map((c) => c.xdta), true));
+		infoArrays.push(...RIFFChunk.getParts("xdta", chunks.map((c) => c.xdta), rf64, true));
 	}
-	const infoChunk = RIFFChunk.getParts("INFO", infoArrays, true);
+	const infoChunk = RIFFChunk.getParts("INFO", infoArrays, rf64, true);
 	SpessaLog.info("%cWriting the output file...", ConsoleColors.info);
-	const main = RIFFChunk.writeParts("RIFF", [
-		getStringBytes("sfbk"),
+	const main = RIFFChunk.writeParts(rf64 ? "RIFS" : "RIFF", [
+		getStringBytes(writeBankLSB ? "sfen" : "sfbk"),
 		...infoChunk,
 		...sdtaChunk,
 		...pdtaChunk
-	]);
+	], rf64);
 	SpessaLog.info(`%cSaved successfully! Final file size: %c${main.length}`, ConsoleColors.info, ConsoleColors.recognized);
 	SpessaLog.groupEnd();
 	return main.buffer;
@@ -9967,7 +10050,7 @@ var DownloadableSoundsSample = class DownloadableSoundsSample extends DLSVerifie
 			wsmp,
 			...data,
 			info
-		], true);
+		], false, true);
 	}
 	writeFmt() {
 		const fmtData = new IndexedByteArray(18);
@@ -10895,7 +10978,7 @@ var DownloadableSoundsRegion = class DownloadableSoundsRegion extends DLSVerifie
 			this.waveLink.write(),
 			...this.articulation.write()
 		];
-		return RIFFChunk.getParts("rgn2", chunks, true);
+		return RIFFChunk.getParts("rgn2", chunks, false, true);
 	}
 	toSFZone(instrument, samples) {
 		const sample = samples[this.waveLink.tableIndex];
@@ -11016,12 +11099,12 @@ var DownloadableSoundsInstrument = class DownloadableSoundsInstrument extends DL
 		SpessaLog.groupCollapsed(`%cWriting %c${this.name}%c...`, ConsoleColors.info, ConsoleColors.recognized, ConsoleColors.info);
 		const chunks = [this.writeHeader()];
 		const regionChunks = this.regions.flatMap((r) => r.write());
-		chunks.push(...RIFFChunk.getParts("lrgn", regionChunks, true));
+		chunks.push(...RIFFChunk.getParts("lrgn", regionChunks, false, true));
 		if (this.articulation.length > 0) chunks.push(...this.articulation.write());
 		const inam = RIFFChunk.write("INAM", getStringBytes(this.name, true));
 		chunks.push(RIFFChunk.write("INFO", inam, false, true));
 		SpessaLog.groupEnd();
-		return RIFFChunk.writeParts("ins ", chunks, true);
+		return RIFFChunk.writeParts("ins ", chunks, false, true);
 	}
 	/**
 	* Performs the full DLS to SF2 instrument conversion.
@@ -11076,7 +11159,7 @@ var DownloadableSounds = class DownloadableSounds extends DLSVerifier {
 		if (!buffer) throw new Error("No data provided!");
 		const dataArray = new IndexedByteArray(buffer);
 		SpessaLog.group("%cParsing DLS file...", ConsoleColors.info);
-		const firstChunk = RIFFChunk.read(dataArray, false);
+		const firstChunk = RIFFChunk.read(dataArray, false, false);
 		this.verifyHeader(firstChunk, "RIFF");
 		this.verifyText(readBinaryStringIndexed(dataArray, 4).toLowerCase(), "dls ");
 		/**
@@ -11230,7 +11313,7 @@ var DownloadableSounds = class DownloadableSounds extends DLSVerifier {
 		writeDword(colhNum, this.instruments.length);
 		const colh = RIFFChunk.write("colh", colhNum);
 		SpessaLog.groupCollapsed("%cWriting instruments...", ConsoleColors.info);
-		const lins = RIFFChunk.getParts("lins", this.instruments.map((i) => i.write()), true);
+		const lins = RIFFChunk.getParts("lins", this.instruments.map((i) => i.write()), false, true);
 		SpessaLog.info("%cSuccess!", ConsoleColors.recognized);
 		SpessaLog.groupEnd();
 		SpessaLog.groupCollapsed("%cWriting WAVE samples...", ConsoleColors.info);
@@ -11247,7 +11330,7 @@ var DownloadableSounds = class DownloadableSounds extends DLSVerifier {
 			samples.push(...out);
 			written++;
 		}
-		const wvpl = RIFFChunk.getParts("wvpl", samples, true);
+		const wvpl = RIFFChunk.getParts("wvpl", samples, false, true);
 		SpessaLog.info("%cSucceeded!", ConsoleColors.recognized);
 		const ptblData = new IndexedByteArray(8 + 4 * ptblOffsets.length);
 		writeDword(ptblData, 8);
@@ -11276,7 +11359,7 @@ var DownloadableSounds = class DownloadableSounds extends DLSVerifier {
 			...lins,
 			ptbl,
 			...wvpl,
-			...RIFFChunk.getParts("INFO", infos, true)
+			...RIFFChunk.getParts("INFO", infos, false, true)
 		]);
 		SpessaLog.info("%cSaved successfully!", ConsoleColors.recognized);
 		SpessaLog.groupEnd();
@@ -11311,7 +11394,7 @@ var BasicSoundBank = class BasicSoundBank {
 	static isSF3DecoderReady = stb.isInitialized;
 	/**
 	* The type of the sound bank that was loaded.
-	* Either `sf2` for SoundFont2/SoundFont3 or `dls` for DownLoadable Sounds.
+	* Either `sf2` for SoundFont2/SoundFont3 or `dls` for DownLoadable Sounds or `sfe` for SF-Enhanced.
 	*
 	* Please note that SF3 or SFOGG files are parsed as `sf2` files, but with compressed samples.
 	* The type is still `sf2`.
@@ -11390,7 +11473,7 @@ var BasicSoundBank = class BasicSoundBank {
 		sample.name = "Saw";
 		sample.originalKey = 65;
 		sample.pitchCorrection = 20;
-		sample.loopEnd = 127;
+		sample.loopEnd = 128;
 		sample.setAudioData(sampleData, 44100);
 		font.addSamples(sample);
 		const inst = new BasicInstrument();
@@ -11403,7 +11486,7 @@ var BasicSoundBank = class BasicSoundBank {
 		preset.name = "Saw Wave";
 		preset.createZone(inst);
 		font.addPresets(preset);
-		font.soundBankInfo.name = "Dummy";
+		font.soundBankInfo.name = "SpessaSynth Sample Sound Bank";
 		font.flush();
 		return font.writeSF2();
 	}
@@ -11485,6 +11568,16 @@ var BasicSoundBank = class BasicSoundBank {
 	*/
 	writeSF2(writeOptions = DEFAULT_SF2_WRITE_OPTIONS) {
 		return writeSF2Internal(this, writeOptions);
+	}
+	/**
+	* Writes the sound bank as an [SFE 4](https://sfe-team-was-taken.github.io/SFE/) file.
+	* This enables features such as bank LSB and RIFF64.
+	* Note that spessasynth is currently the only software that can read these files.
+	* @param writeOptions the options for writing.
+	* @returns the binary file data.
+	*/
+	writeSFE(writeOptions = DEFAULT_SFE_WRITE_OPTIONS) {
+		return writeSFEInternal(this, writeOptions);
 	}
 	addPresets(...presets) {
 		this.presets.push(...presets);
@@ -11941,33 +12034,29 @@ var SoundFont2 = class extends BasicSoundBank {
 	/**
 	* Initializes a new SoundFont2 Parser and parses the given data array
 	*/
-	constructor(arrayBuffer, warnDeprecated = true) {
-		super("sf2");
-		if (warnDeprecated) throw new Error("Using the constructor directly is deprecated. Use SoundBankLoader.fromArrayBuffer() instead.");
+	constructor(arrayBuffer, sfe) {
+		super(sfe ? "sfe" : "sf2");
 		const mainFileArray = new IndexedByteArray(arrayBuffer);
 		SpessaLog.group("%cParsing a SoundFont2 file...", ConsoleColors.info);
-		if (!mainFileArray) {
-			SpessaLog.groupEnd();
-			this.parsingError("No data provided!");
-		}
-		const firstChunk = RIFFChunk.read(mainFileArray, false);
-		this.verifyHeader(firstChunk, "riff");
+		const fourCC = readBinaryString(mainFileArray, 4).toLowerCase();
+		this.verifyTexts(fourCC, ["riff", "rifs"]);
+		const rf64 = fourCC === "rifs";
+		if (rf64) SpessaLog.info("%cRIFF64 Detected!", ConsoleColors.recognized);
+		RIFFChunk.read(mainFileArray, rf64, false);
 		const type = readBinaryStringIndexed(mainFileArray, 4).toLowerCase();
-		if (type !== "sfbk" && type !== "sfpk") {
-			SpessaLog.groupEnd();
-			throw new SyntaxError(`Invalid soundFont! Expected "sfbk" or "sfpk" got "${type}"`);
-		}
+		this.verifyTexts(type, [
+			"sfbk",
+			"sfpk",
+			"sfen"
+		]);
 		const isSF2Pack = type === "sfpk";
-		const infoChunk = RIFFChunk.read(mainFileArray);
+		const infoChunk = RIFFChunk.read(mainFileArray, rf64);
 		this.verifyHeader(infoChunk, "list");
 		const infoString = readBinaryStringIndexed(infoChunk.data, 4);
-		if (infoString !== "INFO") {
-			SpessaLog.groupEnd();
-			throw new SyntaxError(`Invalid soundFont! Expected "INFO" got "${infoString}"`);
-		}
+		this.verifyText(infoString, "info");
 		let xdtaChunk;
 		while (infoChunk.data.length > infoChunk.data.currentIndex) {
-			const chunk = RIFFChunk.read(infoChunk.data);
+			const chunk = RIFFChunk.read(infoChunk.data, rf64);
 			const text = readBinaryString(chunk.data, chunk.data.length);
 			const headerTyped = chunk.header;
 			switch (headerTyped) {
@@ -12025,27 +12114,27 @@ var SoundFont2 = class extends BasicSoundBank {
 		this.printInfo();
 		const xChunks = {};
 		if (xdtaChunk !== void 0) {
-			xChunks.phdr = RIFFChunk.read(xdtaChunk.data);
-			xChunks.pbag = RIFFChunk.read(xdtaChunk.data);
-			xChunks.pmod = RIFFChunk.read(xdtaChunk.data);
-			xChunks.pgen = RIFFChunk.read(xdtaChunk.data);
-			xChunks.inst = RIFFChunk.read(xdtaChunk.data);
-			xChunks.ibag = RIFFChunk.read(xdtaChunk.data);
-			xChunks.imod = RIFFChunk.read(xdtaChunk.data);
-			xChunks.igen = RIFFChunk.read(xdtaChunk.data);
-			xChunks.shdr = RIFFChunk.read(xdtaChunk.data);
+			xChunks.phdr = RIFFChunk.read(xdtaChunk.data, rf64);
+			xChunks.pbag = RIFFChunk.read(xdtaChunk.data, rf64);
+			xChunks.pmod = RIFFChunk.read(xdtaChunk.data, rf64);
+			xChunks.pgen = RIFFChunk.read(xdtaChunk.data, rf64);
+			xChunks.inst = RIFFChunk.read(xdtaChunk.data, rf64);
+			xChunks.ibag = RIFFChunk.read(xdtaChunk.data, rf64);
+			xChunks.imod = RIFFChunk.read(xdtaChunk.data, rf64);
+			xChunks.igen = RIFFChunk.read(xdtaChunk.data, rf64);
+			xChunks.shdr = RIFFChunk.read(xdtaChunk.data, rf64);
 		}
-		const sdtaChunk = RIFFChunk.read(mainFileArray, false);
+		const sdtaChunk = RIFFChunk.read(mainFileArray, rf64, false);
 		this.verifyHeader(sdtaChunk, "list");
 		this.verifyText(readBinaryStringIndexed(mainFileArray, 4), "sdta");
 		SpessaLog.info("%cVerifying smpl chunk...", ConsoleColors.warn);
-		const sampleDataChunk = RIFFChunk.read(mainFileArray, false);
+		const sampleDataChunk = RIFFChunk.read(mainFileArray, rf64, false);
 		this.verifyHeader(sampleDataChunk, "smpl");
 		let sampleData;
 		if (isSF2Pack) {
 			SpessaLog.info("%cSF2Pack detected, attempting to decode the smpl chunk...", ConsoleColors.info);
 			try {
-				sampleData = stb.decode(mainFileArray.buffer.slice(mainFileArray.currentIndex, mainFileArray.currentIndex + sdtaChunk.size - 12)).data[0];
+				sampleData = stb.decode(mainFileArray.buffer.slice(mainFileArray.currentIndex, mainFileArray.currentIndex + sdtaChunk.size - 4 - sdtaChunk.headerSize)).data[0];
 			} catch (error) {
 				SpessaLog.groupEnd();
 				throw new Error(`SF2Pack Ogg Vorbis decode error: ${error}`, { cause: error });
@@ -12055,29 +12144,29 @@ var SoundFont2 = class extends BasicSoundBank {
 			sampleData = mainFileArray;
 			this.sampleDataStartIndex = mainFileArray.currentIndex;
 		}
-		SpessaLog.info(`%cSkipping sample chunk, length: %c${sdtaChunk.size - 12}`, ConsoleColors.info, ConsoleColors.value);
-		mainFileArray.currentIndex += sdtaChunk.size - 12;
+		SpessaLog.info(`%cSkipping sample chunk, length: %c${sdtaChunk.size - 4 - sdtaChunk.headerSize}`, ConsoleColors.info, ConsoleColors.value);
+		mainFileArray.currentIndex += sdtaChunk.size - 4 - sdtaChunk.headerSize;
 		SpessaLog.info("%cLoading preset data chunk...", ConsoleColors.warn);
-		const presetChunk = RIFFChunk.read(mainFileArray);
+		const presetChunk = RIFFChunk.read(mainFileArray, rf64);
 		this.verifyHeader(presetChunk, "list");
 		readBinaryStringIndexed(presetChunk.data, 4);
-		const phdrChunk = RIFFChunk.read(presetChunk.data);
+		const phdrChunk = RIFFChunk.read(presetChunk.data, rf64);
 		this.verifyHeader(phdrChunk, "phdr");
-		const pbagChunk = RIFFChunk.read(presetChunk.data);
+		const pbagChunk = RIFFChunk.read(presetChunk.data, rf64);
 		this.verifyHeader(pbagChunk, "pbag");
-		const pmodChunk = RIFFChunk.read(presetChunk.data);
+		const pmodChunk = RIFFChunk.read(presetChunk.data, rf64);
 		this.verifyHeader(pmodChunk, "pmod");
-		const pgenChunk = RIFFChunk.read(presetChunk.data);
+		const pgenChunk = RIFFChunk.read(presetChunk.data, rf64);
 		this.verifyHeader(pgenChunk, "pgen");
-		const instChunk = RIFFChunk.read(presetChunk.data);
+		const instChunk = RIFFChunk.read(presetChunk.data, rf64);
 		this.verifyHeader(instChunk, "inst");
-		const ibagChunk = RIFFChunk.read(presetChunk.data);
+		const ibagChunk = RIFFChunk.read(presetChunk.data, rf64);
 		this.verifyHeader(ibagChunk, "ibag");
-		const imodChunk = RIFFChunk.read(presetChunk.data);
+		const imodChunk = RIFFChunk.read(presetChunk.data, rf64);
 		this.verifyHeader(imodChunk, "imod");
-		const igenChunk = RIFFChunk.read(presetChunk.data);
+		const igenChunk = RIFFChunk.read(presetChunk.data, rf64);
 		this.verifyHeader(igenChunk, "igen");
-		const shdrChunk = RIFFChunk.read(presetChunk.data);
+		const shdrChunk = RIFFChunk.read(presetChunk.data, rf64);
 		this.verifyHeader(shdrChunk, "shdr");
 		SpessaLog.info("%cParsing samples...", ConsoleColors.info);
 		/**
@@ -12159,6 +12248,12 @@ var SoundFont2 = class extends BasicSoundBank {
 			this.parsingError(`Invalid FourCC: Expected "${expected.toLowerCase()}" got "${text.toLowerCase()}"\``);
 		}
 	}
+	verifyTexts(text, expected) {
+		if (!expected.includes(text.toLowerCase())) {
+			SpessaLog.groupEnd();
+			this.parsingError(`Invalid FourCC: Expected ${expected.map((s) => `"${s}"`).join(", ")} but got "${text.toLowerCase()}"`);
+		}
+	}
 };
 //#endregion
 //#region src/soundbank/sound_bank_loader.ts
@@ -12169,8 +12264,11 @@ var SoundBankLoader = class {
 	* @returns The loaded sound bank, a BasicSoundBank instance.
 	*/
 	static fromArrayBuffer(buffer) {
-		if (readBinaryStringIndexed(new IndexedByteArray(buffer.slice(8, 12)), 4).toLowerCase() === "dls ") return this.loadDLS(buffer);
-		return new SoundFont2(buffer, false);
+		const riffText = readBinaryStringIndexed(new IndexedByteArray(buffer.slice(0, 4)), 4);
+		if (riffText !== "RIFF" && riffText !== "RIFS") throw new Error(`Expected 'RIFF' or 'RIFS' header, got '${riffText}'`);
+		const id = readBinaryStringIndexed(new IndexedByteArray(riffText === "RIFS" ? buffer.slice(12, 16) : buffer.slice(8, 12)), 4).toLowerCase();
+		if (id === "dls ") return this.loadDLS(buffer);
+		return new SoundFont2(buffer, id === "sfen");
 	}
 	static loadDLS(buffer) {
 		return DownloadableSounds.read(buffer).toSF();
@@ -13004,7 +13102,7 @@ function noteOn(midiNote, velocity, emit = true) {
 	}
 	const black = this.synthCore.systemParameters.blackMIDIMode;
 	if (black && this.synthCore.voiceCount > 200 && velocity < 40 || black && velocity < 10 || this._systemParameters.isMuted || !this.preset) return;
-	let realVelocity = clamp(velocity * (this._midiParameters.velocitySenseDepth / 64) + (this._midiParameters.velocitySenseOffset - 64) * 2, 0, 127);
+	let realVelocity = clamp(Math.floor(velocity * (this._midiParameters.velocitySenseDepth / 64) + (this._midiParameters.velocitySenseOffset - 64) * 2), 0, 127);
 	let soundBankNote = midiNote + this.currentKeyShift;
 	if (midiNote > 127 || midiNote < 0) return;
 	const program = this.preset.program;
@@ -13240,10 +13338,12 @@ var DynamicModulatorManager = class {
 		const centeredNormalized = centeredValue / 64;
 		const normalizedNotCentered = data / 127;
 		switch (addr3 & 15) {
-			case 0:
-				this.setModulator(source, isCC, GeneratorTypes.fineTune, centeredValue * 100, bipolar);
-				SpessaLog.coolInfo(`Channel ${this.channel} ${sourceName} pitch control`, centeredValue, "semitones");
+			case 0: {
+				const v = Math.min(24, Math.max(-24, centeredValue));
+				this.setModulator(source, isCC, GeneratorTypes.fineTune, v * 100, bipolar);
+				SpessaLog.coolInfo(`Channel ${this.channel} ${sourceName} pitch control`, v, "semitones");
 				break;
+			}
 			case 1:
 				this.setModulator(source, isCC, GeneratorTypes.initialFilterFc, centeredNormalized * 9600, bipolar);
 				SpessaLog.coolInfo(`Channel ${this.channel} ${sourceName} filter control`, centeredNormalized * 9600, "cents");
