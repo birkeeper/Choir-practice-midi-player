@@ -4,6 +4,7 @@
     "description": "Web-based Midi player specifically targeted to target choir practice.",
     "start_url": "./midi_player.html",
     "display": "standalone",
+    "background_color": "#212529",
     "icons": [
         {
             "src": "./icons/midiplayer-icon.svg",
