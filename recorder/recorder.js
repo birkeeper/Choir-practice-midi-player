@@ -2,7 +2,7 @@
 import { BasicMIDI } from '../libraries/spessasynth_core_dist/index.js';
 import { getFileOpenSvg, getFileHistorySvg, getMicSvg, getStopSvg, getDownloadSvg } from '../js/icons.js';
 
-const VERSION = "v3.0.1dev1"; // keep in sync with midi_player.js
+const VERSION = "v3.0.1dev2"; // keep in sync with midi_player.js
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
 const DEFAULT_MAIN_VOLUME = 100; // GM default value of the main volume controller (CC7); shown until the user changes it
 const ICON_SIZE_PX = 24; // size of button icons
