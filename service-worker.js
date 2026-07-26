@@ -2,7 +2,7 @@
 
 const SOUNDFONT_GM = "./soundfonts/GeneralUserGS.sf3"; // General Midi soundfont
 const SOUNTFONT_SPECIAL ="./soundfonts/Choir_practice.sf2"; //special soundfont
-const CACHE_NAME = "v11";
+const CACHE_NAME = "v11.1";
 
 // Resolves when the activate phase (which migrates settings from the previous
 // versioned cache into CACHE_NAME) has finished. A page can load while a new
@@ -181,7 +181,37 @@ const putInCache = async (request, response) => {
           });
         })
         .catch(() => {return Promise.resolve(undefined);}),
-    ]).then(() => {console.log("SW: Service worker installed");})); 
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          return fetch('./recorder/recorder.html', {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put('./recorder/recorder.html', response);
+          });
+        })
+        .catch(() => {return Promise.resolve(undefined);}),
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          return fetch('./recorder/recorder.js', {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put('./recorder/recorder.js', response);
+          });
+        })
+        .catch(() => {return Promise.resolve(undefined);}),
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          return fetch('./recorder/recorder-worker.js', {cache: "reload"}).then((response) => {
+            if (!response.ok) {
+              throw new TypeError("bad response status");
+            }
+            return cache.put('./recorder/recorder-worker.js', response);
+          });
+        })
+        .catch(() => {return Promise.resolve(undefined);}),
+    ]).then(() => {console.log("SW: Service worker installed");}));
   });
 
   self.addEventListener("fetch", (event) => {
