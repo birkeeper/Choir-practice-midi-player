@@ -1,6 +1,6 @@
 // import the modules
 import { BasicMIDI } from '../libraries/spessasynth_core_dist/index.js';
-import { getFileOpenSvg, getFileHistorySvg, getMicSvg, getStopSvg, getDownloadSvg, getNoteSvg } from '../js/icons.js';
+import { getFileOpenSvg, getFileHistorySvg, getMicSvg, getStopSvg, getDownloadSvg } from '../js/icons.js';
 
 const VERSION = "v3.0.1dev1"; // keep in sync with midi_player.js
 const DEFAULT_PERCUSSION_CHANNEL = 9; // In GM channel 9 is used as a percussion channel
@@ -76,7 +76,6 @@ document.getElementById("record-label").innerHTML = getMicSvg(ICON_SIZE_PX);
 document.getElementById("download-label").innerHTML = getDownloadSvg(ICON_SIZE_PX);
 document.getElementById("midi_input-label").innerHTML = getFileOpenSvg(ICON_SIZE_PX);
 document.getElementById("history-label").innerHTML = getFileHistorySvg(ICON_SIZE_PX);
-document.getElementById("player-link").innerHTML = getNoteSvg(ICON_SIZE_PX);
 
 const recorderWorker = new Worker('./recorder-worker.js', { type: "module" });
 recorderWorker.onerror = e => console.error("WORKER ERROR:", e.message, e);
@@ -96,7 +95,7 @@ const midiInput = document.getElementById("midi_input");
 const historyButton = document.getElementById("history");
 
 let file = null; // the midi file to record
-let song = null; // { name, midiName, duration_s, channels }
+let song = null; // { fileName, duration_s, channels }
 let changedChannelSettings = new Map(); // channel number -> only the settings the user actually changed
 let recording = false;
 let recordingStart_ms = 0;
@@ -114,13 +113,13 @@ recorderWorker.onmessage = (e) => {
         recording = false;
         setControlsDisabled(false);
         recordLabel.innerHTML = getMicSvg(ICON_SIZE_PX);
-        messageDisplay.innerText = song?.midiName ?? "open midi file";
+        messageDisplay.innerText = song?.fileName ?? "open midi file";
         resetProgress();
     } else if (msg.type === 'error') {
         recording = false;
         setControlsDisabled(false);
         recordLabel.innerHTML = getMicSvg(ICON_SIZE_PX);
-        messageDisplay.innerText = song?.midiName ?? "open midi file";
+        messageDisplay.innerText = song?.fileName ?? "open midi file";
         appendAlert(`Recording failed: ${msg.reason}`, 'danger', 'recordError');
     }
 };
@@ -129,21 +128,23 @@ async function activateApplication(instruments) {
     midiInput.disabled = false;
     messageDisplay.innerText = "open midi file";
 
-    async function setupApplication() {
+    // `fileName` is the name of the opened midi file; the recording is saved under that name with a
+    // .wav extension. Files taken from the history are stored in the cache without their original file
+    // name, so for those the name of the midi itself is used.
+    async function setupApplication(fileName) {
         const buffer = await file.arrayBuffer();
-        const midi = BasicMIDI.fromArrayBuffer(buffer, file.name);
-        recorderWorker.postMessage({ type: 'LOAD_MIDI', buffer: buffer, name: file.name });
+        const midi = BasicMIDI.fromArrayBuffer(buffer, fileName);
+        recorderWorker.postMessage({ type: 'LOAD_MIDI', buffer: buffer, name: fileName });
 
         song = {
-            name: file.name,
-            midiName: midi.getName(),
+            fileName,
             duration_s: midi.duration, // [s] start of the file to `midi.lastVoiceEventTick`
             channels: getChannels(midi)
         };
         changedChannelSettings = new Map(); // a newly opened file starts as the unmodified original
         clearDownload();
 
-        messageDisplay.innerText = song.midiName;
+        messageDisplay.innerText = song.fileName;
         totalTimeDisplay.textContent = formatTime(song.duration_s);
         progressSlider.max = Math.max(1, Math.floor(song.duration_s));
         resetProgress();
@@ -274,7 +275,7 @@ async function activateApplication(instruments) {
 
     file = await retrieveSettings("current_midi_file"); // the file last opened in the player, if any
     if (file) {
-        setupApplication();
+        setupApplication(file.name);
     }
 
     midiInput.addEventListener("change", async event => {
@@ -287,7 +288,7 @@ async function activateApplication(instruments) {
         }
         console.log("file opened");
         file = selectedFile;
-        setupApplication();
+        setupApplication(file.name);
     });
 
     historyButton.addEventListener("click", async () => {
@@ -308,6 +309,7 @@ async function activateApplication(instruments) {
             const li = document.createElement('li');
             li.innerHTML = `<a class="dropdown-item">${item.midiName}</a>`;
             li.midiFileHash = `${item.midiFileHash}`;
+            li.midiName = `${item.midiName}`;
             li.onclick = async (event) => {
                 const li = event.target.closest('li');
                 const historyFile = await retrieveSettings(`blob_${li.midiFileHash}`);
@@ -316,7 +318,7 @@ async function activateApplication(instruments) {
                     appendAlert("File not found. Select a different file or open a new one.", 'warning', 'fileError');
                 } else {
                     file = historyFile;
-                    setupApplication();
+                    setupApplication(li.midiName); // the cache does not hold the original file name of history files
                 }
             };
             historyDropdown.appendChild(li);
@@ -339,7 +341,7 @@ function finishRecording(msg) {
     recording = false;
     setControlsDisabled(false);
     recordLabel.innerHTML = getMicSvg(ICON_SIZE_PX);
-    messageDisplay.innerText = song?.midiName ?? "";
+    messageDisplay.innerText = song?.fileName ?? "";
     progressSlider.value = progressSlider.max;
     currentTimeDisplay.textContent = formatTime(msg.duration_s);
 
@@ -367,8 +369,9 @@ function clearDownload() {
     document.getElementById("recordReady")?.closest('div.alert')?.remove();
 }
 
+// The recording is saved under the name of the midi file, with its extension replaced by .wav
 function wavFileName() {
-    const baseName = (song?.name ?? "recording").replace(/\.(mid|midi)$/i, "");
+    const baseName = (song?.fileName ?? "recording").replace(/\.(mid|midi|kar)$/i, "");
     return `${baseName.replace(/[\\/:*?"<>|]/g, '_')}.wav`;
 }
 
